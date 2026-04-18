@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 // importa todos os locales dos módulos (registro global via side-effect)
 import "@/shared/locales/register-all-modules";
+import { startMockServer } from "@/mocks";
+
+startMockServer();
 import { Stack, router } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAppConfigStore } from "@/modules/app-config/store/app-config.store";
@@ -17,6 +20,8 @@ import * as Linking from "expo-linking";
 import { styles } from "@/shared/styles/root-layout.styles";
 import { useUIStore } from "@/shared/store/ui.store";
 import { t } from "@/shared/locales";
+import { ErrorScreen } from "@/shared/components/error-screen";
+import { colors } from "@/shared/constants";
 
 const queryClient = new QueryClient();
 
@@ -60,16 +65,6 @@ function ForceUpdateScreen({ latestVersion }: Readonly<{ latestVersion: string }
   );
 }
 
-function ConfigErrorScreen({ onRetry }: Readonly<{ onRetry: () => void }>) {
-  return (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorTitle}>{t("root.configErrorTitle")}</Text>
-      <Text style={styles.errorBody}>{t("root.configErrorBody")}</Text>
-      <Button title={t("root.configRetry")} onPress={onRetry} />
-    </View>
-  );
-}
-
 export default function RootLayout() {
   const { config, setConfig, isStale } = useAppConfigStore();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
@@ -108,17 +103,18 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="error" options={{ headerShown: false, animation: 'fade_from_bottom', gestureEnabled: false }} />
       </Stack>
       <GlobalLoading />
       {!config && !configError && (
-        <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>
-          <ActivityIndicator size="large" color="#007AFF" />
+        <View style={[StyleSheet.absoluteFill, styles.loadingContainer, { backgroundColor: colors.background.DEFAULT }]}>
+          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
           <Text style={styles.loadingText}>{t("root.configLoading")}</Text>
         </View>
       )}
       {!config && configError && (
-        <View style={StyleSheet.absoluteFill}>
-          <ConfigErrorScreen onRetry={fetchConfig} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background.DEFAULT }]}>
+          <ErrorScreen variant="network" onRetry={fetchConfig} />
         </View>
       )}
     </QueryClientProvider>

@@ -1,6 +1,24 @@
 import axios from 'axios';
+import { router } from 'expo-router';
 import { TokenService } from '@/modules/auth/services/token.service';
 import { KeycloakService } from '@/modules/auth/services/keycloak.service';
+import { useErrorStore } from '@/shared/store/error.store';
+import type { ErrorVariant } from '@/shared/components/error-screen';
+
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    _skipGlobalError?: boolean;
+    _retry?: boolean;
+  }
+}
+
+function mapStatusToVariant(status?: number): ErrorVariant {
+  if (!status) return 'network';
+  if (status === 404) return '404';
+  if (status === 409) return '409';
+  if (status >= 500) return '500';
+  return 'generic';
+}
 
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_BFF_URL,
@@ -16,7 +34,7 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Refresh automático no 401
+// Refresh automático no 401 + redirect global para erros de API
 apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -32,11 +50,17 @@ apiClient.interceptors.response.use(
           return apiClient.request(originalRequest);
         }
       } catch (refreshError) {
-        // Se falhar o refresh, desloga
         await TokenService.clear();
         return Promise.reject(refreshError);
       }
     }
+
+    if (!originalRequest._skipGlobalError && error.response?.status !== 401) {
+      const variant = mapStatusToVariant(error.response?.status);
+      useErrorStore.getState().setError({ variant });
+      router.navigate('/error');
+    }
+
     return Promise.reject(error);
   }
 );

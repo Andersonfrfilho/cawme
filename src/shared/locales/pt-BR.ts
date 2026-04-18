@@ -57,6 +57,18 @@ export const ptBR = {
     loadError: 'Erro ao buscar resultados.',
     empty: 'Nenhum resultado encontrado.',
   },
+  errors: {
+    networkTitle: 'Sem conexão',
+    networkMessage: 'Verifique sua internet e tente novamente.',
+    notFoundTitle: 'Não encontrado',
+    notFoundMessage: 'O conteúdo que você procura não existe ou foi removido.',
+    conflictTitle: 'Operação em conflito',
+    conflictMessage: 'Esta ação não pode ser concluída pois há um conflito com o estado atual.',
+    serverTitle: 'Erro no servidor',
+    serverMessage: 'Algo deu errado no nosso lado. Aguarde um instante e tente novamente.',
+    genericTitle: 'Algo deu errado',
+    genericMessage: 'Ocorreu um erro inesperado. Por favor, tente novamente.',
+  },
   root: {
     updateRequiredTitle: 'Atualização Obrigatória',
     updateRequiredBody: 'Uma nova versão do Cawme está disponível. Por favor, atualize o app para continuar.',
