@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "cawme.app"
-               BlueprintName = "cawme"
-               ReferencedContainer = "container:cawme.xcodeproj">
+               BuildableName = "Cawme.app"
+               BlueprintName = "Cawme"
+               ReferencedContainer = "container:Cawme.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "cawmeTests.xctest"
-               BlueprintName = "cawmeTests"
-               ReferencedContainer = "container:cawme.xcodeproj">
+               BuildableName = "CawmeTests.xctest"
+               BlueprintName = "CawmeTests"
+               ReferencedContainer = "container:Cawme.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "cawme.app"
-            BlueprintName = "cawme"
-            ReferencedContainer = "container:cawme.xcodeproj">
+            BuildableName = "Cawme.app"
+            BlueprintName = "Cawme"
+            ReferencedContainer = "container:Cawme.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "cawme.app"
-            BlueprintName = "cawme"
-            ReferencedContainer = "container:cawme.xcodeproj">
+            BuildableName = "Cawme.app"
+            BlueprintName = "Cawme"
+            ReferencedContainer = "container:Cawme.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

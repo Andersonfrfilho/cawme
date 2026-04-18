@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAppConfigStore } from '@/store/app-config.store';
-import { useAuthStore } from '@/store/auth.store';
-import { AppConfigService } from '@/services/api/app-config.service';
+import { useAppConfigStore } from '@/modules/app-config/store/app-config.store';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
+import { AppConfigService } from '@/modules/app-config/services/app-config.service';
 import { View, Text, Button, ActivityIndicator } from 'react-native';
 import * as Linking from 'expo-linking';
 

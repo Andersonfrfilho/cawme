@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, FlatList } from 'react-native';
-import { useAuthStore } from '@/store/auth.store';
-import { useContractorDashboard, useProviderDashboard } from '@/hooks/useDashboard';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
+import { useContractorDashboard, useProviderDashboard } from '@/modules/dashboard/hooks/useDashboard';
 import { Ionicons } from '@expo/vector-icons';
-import { ServiceRequestSummary } from '@/types/bff/dashboard.types';
+import { ServiceRequestSummary } from '@/modules/dashboard/types/dashboard.types';
 
 function StatCard({ label, value, icon }: { label: string, value: string | number, icon: any }) {
   return (

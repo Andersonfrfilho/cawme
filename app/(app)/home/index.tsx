@@ -1,6 +1,6 @@
 import { View, Text, ActivityIndicator } from 'react-native';
-import { useHome } from '@/hooks/useHome';
-import { SduiRenderer } from '@/components/sdui/SduiRenderer';
+import { useHome } from '@/modules/home/hooks/useHome';
+import { SduiRenderer } from '@/modules/sdui/components/SduiRenderer';
 
 export default function HomeScreen() {
   const { data, isLoading, error, refetch } = useHome();

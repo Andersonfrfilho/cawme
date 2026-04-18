@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/modules/notifications/hooks/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
-import { NotificationItem } from '@/types/bff/notification.types';
+import { NotificationItem } from '@/modules/notifications/types/notification.types';
 
 export default function NotificationsScreen() {
   const { notifications, isLoading, refetch, markAsRead } = useNotifications();

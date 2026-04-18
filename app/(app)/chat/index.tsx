@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { useChatRooms } from '@/hooks/useChat';
+import { useChatRooms } from '@/modules/chat/hooks/useChat';
 import { ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
 

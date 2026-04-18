@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { useProviderProfile } from '@/hooks/useProviderProfile';
+import { useProviderProfile } from '@/modules/provider-profile/hooks/useProviderProfile';
 import { ExpoImage } from 'expo-image';
 
 export default function ProviderProfileScreen() {

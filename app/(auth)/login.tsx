@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import { KeycloakService } from '@/services/auth/keycloak.service';
-import { useAuthStore } from '@/store/auth.store';
+import { KeycloakService } from '@/modules/auth/services/keycloak.service';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { apiClient } from '@/services/api/api-client';
+import { apiClient } from '@/shared/services/api-client';
 
 export default function LoginScreen() {
   const setUser = useAuthStore((s) => s.setUser);

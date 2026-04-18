@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, TextInput, FlatList, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { useSearch } from '@/hooks/useSearch';
-import { SduiRenderer } from '@/components/sdui/SduiRenderer';
-import { ScreenComponentData } from '@/types/bff/sdui.types';
+import { useSearch } from '@/modules/search/hooks/useSearch';
+import { SduiRenderer } from '@/modules/sdui/components/SduiRenderer';
+import { ScreenComponentData } from '@/modules/sdui/types/sdui.types';
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');

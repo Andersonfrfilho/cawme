@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { useAppConfigStore } from '@/store/app-config.store';
+import { useAppConfigStore } from '@/modules/app-config/store/app-config.store';
 import { Ionicons } from '@expo/vector-icons';
 
 const DEFAULT_TABS = [

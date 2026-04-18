@@ -10,8 +10,8 @@ import {
   Platform 
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { useChatMessages } from '@/hooks/useChat';
-import { useAuthStore } from '@/store/auth.store';
+import { useChatMessages } from '@/modules/chat/hooks/useChat';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ChatScreen() {
