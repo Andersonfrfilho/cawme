@@ -32,11 +32,49 @@ src/
       store/          # zustand store (*.store.ts)
       hooks/          # hooks que combinam store + query + services (use*.ts)
       components/     # componentes específicos do módulo
-app/                  # rotas Expo Router (apenas layout e page shells)
+app/                  # rotas Expo Router (apenas layouts e index files que exportam screens)
 ```
 
 **Regra:** `app/` só pode importar de `src/modules/<modulo>/hooks` e `src/shared/`.
 Nunca importar services ou stores diretamente em `app/`.
+
+---
+
+## Regras de Telas (Screens)
+
+- Toda página em `app/` deve ter seu conteúdo lógico em um arquivo `[name].screens.tsx` no mesmo diretório.
+- O arquivo `index.tsx` do diretório da rota deve apenas exportar o screen como default.
+- Estilos devem estar sempre em `styles.ts`.
+
+Exemplo de estrutura:
+```
+app/(app)/home/
+  index.tsx           # export { default } from './home.screens';
+  home.screens.tsx    # implementação da tela
+  styles.ts           # estilos da tela
+```
+
+---
+
+## Internacionalização e Textos (Locales)
+
+- NUNCA usar strings literais diretamente nos componentes/telas.
+- Todos os textos devem ser extraídos para arquivos de locale em `src/shared/locales/`.
+- Usar o sistema de tradução do projeto para acessar os textos.
+
+---
+
+## Constantes e Valores Mágicos
+
+- NUNCA usar strings ou números "jogados" (magic values).
+- Valores fixos devem ser exportados como constantes em arquivos dedicados (ex: `constants/*.ts` ou no próprio módulo).
+
+---
+
+## Loading Global
+
+- O projeto possui um sistema de loading global gerenciado via estado (Zustand).
+- Utilizar o hook `useLoading` para disparar ou ocultar o loading em processos assíncronos que bloqueiam a tela.
 
 ---
 

@@ -3,7 +3,11 @@
     "allow": [
       "Bash(./node_modules/.bin/expo install *)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "Bash(pod install *)",
+      "Bash(pkill -f \"react-native\")",
+      "Bash(pkill -f \"metro\")",
+      "Bash(pkill -f \"expo\")"
     ]
   }
 }

@@ -1,13 +1,42 @@
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 import type { StateStorage } from 'zustand/middleware';
 import type { CacheProvider } from '../cache.types';
 
+type StorageLike = {
+  getString: (key: string) => string | undefined;
+  set: (key: string, value: string) => void;
+  delete?: (key: string) => void;
+  remove?: (key: string) => void;
+  clearAll: () => void;
+};
+
+function createMemoryFallbackStorage(): StorageLike {
+  const memory = new Map<string, string>();
+
+  return {
+    getString: (key: string) => memory.get(key),
+    set: (key: string, value: string) => {
+      memory.set(key, value);
+    },
+    delete: (key: string) => {
+      memory.delete(key);
+    },
+    clearAll: () => {
+      memory.clear();
+    },
+  };
+}
+
 class MmkvStorage implements CacheProvider {
   private static instance: MmkvStorage;
-  private readonly storage: MMKV;
+  private readonly storage: StorageLike;
 
   private constructor() {
-    this.storage = new MMKV();
+    try {
+      this.storage = createMMKV();
+    } catch {
+      this.storage = createMemoryFallbackStorage();
+    }
   }
 
   static getInstance(): MmkvStorage {
@@ -26,7 +55,8 @@ class MmkvStorage implements CacheProvider {
   }
 
   remove(key: string): void {
-    this.storage.delete(key);
+    if (typeof this.storage.delete === 'function') this.storage.delete(key);
+    else if (typeof this.storage.remove === 'function') this.storage.remove(key);
   }
 
   clear(): void {

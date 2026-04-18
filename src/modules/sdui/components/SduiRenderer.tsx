@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { ScreenComponentData, ComponentType, SduiComponentProps } from '@/modules/sdui/types/sdui.types';
 import { resolveSduiAction } from '@/shared/utils/sdui-action';
+import { styles } from './styles';
 
 import BannerCarousel from './BannerCarousel';
 import CategoryList from './CategoryList';
@@ -29,7 +30,7 @@ const COMPONENT_MAP: Record<ComponentType, React.ComponentType<SduiComponentProp
 
 export function SduiRenderer({ layout }: { layout: ScreenComponentData[] }) {
   return (
-    <ScrollView style={{ flex: 1 }}>
+    <ScrollView style={styles.scrollView}>
       {layout
         .sort((a, b) => a.order - b.order)
         .map((component) => {

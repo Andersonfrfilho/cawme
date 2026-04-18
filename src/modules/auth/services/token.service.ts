@@ -2,8 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { SaveTokensParams, SaveTokensResult } from '@/modules/auth/types/auth.types';
 
 const KEYS = {
-  ACCESS: 'auth:access_token',
-  REFRESH: 'auth:refresh_token',
+  ACCESS: 'auth_access_token',
+  REFRESH: 'auth_refresh_token',
 };
 
 export const TokenService = {

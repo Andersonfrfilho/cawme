@@ -1,12 +1,14 @@
 {
   "name": "cawme",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "check-locales": "node ./scripts/check-locales.js",
+    "postinstall": "node ./scripts/patch-expo-modules-core-swift.js"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.9",

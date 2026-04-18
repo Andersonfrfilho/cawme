@@ -1,13 +1,14 @@
 import { Tabs } from 'expo-router';
 import { useAppConfigStore } from '@/modules/app-config/store/app-config.store';
 import { Ionicons } from '@expo/vector-icons';
+import { t } from '@/shared/locales';
 
 const DEFAULT_TABS = [
-  { id: 'home', label: 'Início', icon: 'home-outline' },
-  { id: 'search', label: 'Buscar', icon: 'search-outline' },
-  { id: 'dashboard', label: 'Dashboard', icon: 'stats-chart-outline' },
-  { id: 'chat', label: 'Chat', icon: 'chatbubbles-outline' },
-  { id: 'notifications', label: 'Avisos', icon: 'notifications-outline' },
+  { id: 'home', label: t('navigation.home'), icon: 'home-outline' },
+  { id: 'search', label: t('navigation.search'), icon: 'search-outline' },
+  { id: 'dashboard', label: t('navigation.dashboard'), icon: 'stats-chart-outline' },
+  { id: 'chat', label: t('navigation.chat'), icon: 'chatbubbles-outline' },
+  { id: 'notifications', label: t('navigation.notifications'), icon: 'notifications-outline' },
 ];
 
 export default function AppLayout() {
@@ -38,7 +39,7 @@ export default function AppLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name={getIconName(tab.icon)} size={size} color={color} />
             ),
-            tabBarBadge: tab.badge || undefined,
+                tabBarBadge: (tab as any).badge || undefined,
           }}
         />
       ))}
