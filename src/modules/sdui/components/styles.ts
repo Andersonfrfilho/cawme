@@ -1,9 +1,23 @@
 import { StyleSheet } from 'react-native';
+import { theme } from "@/shared/constants";
 
 export const styles = StyleSheet.create({
   // Estilo base compartilhado por todos os componentes SDUI placeholder
-  card: { padding: 10, margin: 5, backgroundColor: '#f0f0f0', borderRadius: 8 },
-  cardTitle: { fontWeight: 'bold' },
+  card: {
+    padding: theme.spacing[4],
+    margin: theme.spacing[2],
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.radii.lg,
+    ...theme.shadows.sm,
+  },
+  cardTitle: {
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
   // SduiRenderer
-  scrollView: { flex: 1 },
+  scrollView: {
+    flex: 1,
+    backgroundColor: theme.colors.background.DEFAULT,
+  },
 });

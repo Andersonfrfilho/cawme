@@ -1,67 +1,60 @@
-import * as AuthSession from 'expo-auth-session';
-import { TokenService } from './token.service';
-import axios from 'axios';
-import * as Linking from 'expo-linking';
+import axios from "axios";
+import { TokenService } from "./token.service";
+import { AUTH_ENDPOINTS, CLIENT, HEADERS } from "../auth.constants";
+import { BASE_URL, FORM_HEADERS } from "./keycloak.constants";
+import { decodeJwtPayload } from "@/shared/utils/jwt";
+import type {
+  LoginServiceParams,
+  LoginServiceResult,
+  ForgotPasswordServiceParams,
+} from "./types";
 
-const KEYCLOAK_URL = process.env.EXPO_PUBLIC_KEYCLOAK_URL;
-const REALM = process.env.EXPO_PUBLIC_KEYCLOAK_REALM;
-const CLIENT_ID = process.env.EXPO_PUBLIC_KEYCLOAK_CLIENT_ID;
 
-const discovery = {
-  authorizationEndpoint: `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth`,
-  tokenEndpoint: `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`,
-  revocationEndpoint: `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/logout`,
-  endSessionEndpoint: `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/logout`,
-};
 
 export const KeycloakService = {
-  getDiscovery() {
-    return discovery;
-  },
-
-  getClientId() {
-    return CLIENT_ID!;
-  },
-
-  getRedirectUri() {
-    return AuthSession.makeRedirectUri({
-      scheme: 'cawme',
-      path: 'callback',
-    });
-  },
-
-  async handleTokenExchange(code: string, codeVerifier: string): Promise<void> {
+  async login({
+    username,
+    password,
+  }: LoginServiceParams): Promise<LoginServiceResult> {
     const response = await axios.post(
-      discovery.tokenEndpoint,
+      `${BASE_URL}${AUTH_ENDPOINTS.TOKEN}`,
       new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: CLIENT_ID!,
-        code,
-        redirect_uri: this.getRedirectUri(),
-        code_verifier: codeVerifier,
+        grant_type: HEADERS.GRANT_TYPE.PASSWORD,
+        client_id: CLIENT.ID,
+        client_secret: CLIENT.SECRET,
+        username,
+        password,
       }).toString(),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      { headers: FORM_HEADERS },
     );
 
     await TokenService.save({
       accessToken: response.data.access_token,
       refreshToken: response.data.refresh_token,
     });
+
+    const claims = decodeJwtPayload(response.data.access_token);
+    return {
+      id: claims.sub,
+      name: claims.name ?? claims.given_name ?? username,
+      email: claims.email ?? username,
+    };
   },
 
   async refresh(): Promise<void> {
     const refreshToken = await TokenService.getRefresh();
-    if (!refreshToken) throw new Error('No refresh token available');
+    if (!refreshToken) throw new Error("No refresh token available");
 
     try {
       const response = await axios.post(
-        discovery.tokenEndpoint,
+        `${BASE_URL}${AUTH_ENDPOINTS.TOKEN}`,
         new URLSearchParams({
-          grant_type: 'refresh_token',
-          client_id: CLIENT_ID!,
+          grant_type: HEADERS.GRANT_TYPE.REFRESH_TOKEN,
+          client_id: CLIENT.ID,
+          client_secret: CLIENT.SECRET,
           refresh_token: refreshToken,
         }).toString(),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        { headers: FORM_HEADERS },
       );
 
       await TokenService.save({
@@ -75,21 +68,26 @@ export const KeycloakService = {
   },
 
   async logout(): Promise<void> {
-    const accessToken = await TokenService.getAccess();
-    if (accessToken) {
+    const refreshToken = await TokenService.getRefresh();
+    if (refreshToken) {
       try {
         await axios.post(
-          discovery.revocationEndpoint,
+          `${BASE_URL}${AUTH_ENDPOINTS.LOGOUT}`,
           new URLSearchParams({
-            client_id: CLIENT_ID!,
-            token: accessToken,
+            client_id: CLIENT.ID,
+            client_secret: CLIENT.SECRET,
+            refresh_token: refreshToken,
           }).toString(),
-          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+          { headers: FORM_HEADERS },
         );
-      } catch (e) {
-        console.error('Keycloak logout error', e);
+      } catch {
+        // logout failure is non-fatal
       }
     }
     await TokenService.clear();
+  },
+
+  async forgotPassword({ email }: ForgotPasswordServiceParams): Promise<void> {
+    await axios.post(`${BASE_URL}${AUTH_ENDPOINTS.FORGOT_PASSWORD}`, { email });
   },
 };

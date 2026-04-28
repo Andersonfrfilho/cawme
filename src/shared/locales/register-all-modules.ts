@@ -8,4 +8,4 @@
  * import "@/modules/chat/locales";
  */
 
-export {};
+import "@/modules/auth/locales";

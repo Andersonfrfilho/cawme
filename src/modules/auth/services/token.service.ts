@@ -1,13 +1,16 @@
-import * as SecureStore from 'expo-secure-store';
-import { SaveTokensParams, SaveTokensResult } from '@/modules/auth/types/auth.types';
+import * as SecureStore from "expo-secure-store";
+import type {
+  TokenServiceInterface,
+  SaveTokensParams,
+  SaveTokensResult,
+} from "@/modules/auth/types/auth.types";
+import { KEYS } from "../auth.constants";
 
-const KEYS = {
-  ACCESS: 'auth_access_token',
-  REFRESH: 'auth_refresh_token',
-};
-
-export const TokenService = {
-  async save({ accessToken, refreshToken }: SaveTokensParams): SaveTokensResult {
+export const TokenService: TokenServiceInterface = {
+  async save({
+    accessToken,
+    refreshToken,
+  }: SaveTokensParams): SaveTokensResult {
     await Promise.all([
       SecureStore.setItemAsync(KEYS.ACCESS, accessToken),
       SecureStore.setItemAsync(KEYS.REFRESH, refreshToken),

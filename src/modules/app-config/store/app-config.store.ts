@@ -1,14 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { mmkvStorage } from '@/shared/providers/cache';
-import { AppConfigResponse } from '@/modules/app-config/types/app-config.types';
-
-interface AppConfigStore {
-  config: AppConfigResponse | null;
-  fetchedAt: number | null;
-  setConfig: (config: AppConfigResponse) => void;
-  isStale: () => boolean;
-}
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { mmkvStorage } from "@/shared/providers/cache";
+import { AppConfigStore } from "@/modules/app-config/types/app-config.types";
 
 export const useAppConfigStore = create<AppConfigStore>()(
   persist(
@@ -23,8 +16,8 @@ export const useAppConfigStore = create<AppConfigStore>()(
       },
     }),
     {
-      name: 'app-config',
+      name: "app-config",
       storage: createJSONStorage(() => mmkvStorage.asStateStorage()),
-    }
-  )
+    },
+  ),
 );

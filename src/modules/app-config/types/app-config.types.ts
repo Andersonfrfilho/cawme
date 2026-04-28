@@ -19,3 +19,10 @@ export interface AppConfigResponse {
 }
 
 export type GetAppConfigResult = Promise<AppConfigResponse>;
+
+export interface AppConfigStore {
+  config: AppConfigResponse | null;
+  fetchedAt: number | null;
+  setConfig: (config: AppConfigResponse) => void;
+  isStale: () => boolean;
+}

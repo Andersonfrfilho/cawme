@@ -2,6 +2,7 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { TokenService } from '@/modules/auth/services/token.service';
 import { KeycloakService } from '@/modules/auth/services/keycloak.service';
+import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { useErrorStore } from '@/shared/store/error.store';
 import type { ErrorVariant } from '@/shared/components/error-screen';
 
@@ -42,17 +43,23 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      try {
-        await KeycloakService.refresh();
-        const newToken = await TokenService.getAccess();
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return apiClient.request(originalRequest);
+      const refreshToken = await TokenService.getRefresh();
+      if (refreshToken) {
+        try {
+          await KeycloakService.refresh();
+          const newToken = await TokenService.getAccess();
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return apiClient.request(originalRequest);
+          }
+        } catch (refreshError) {
+          await TokenService.clear();
+          useAuthStore.getState().logout();
+          return Promise.reject(refreshError);
         }
-      } catch (refreshError) {
-        await TokenService.clear();
-        return Promise.reject(refreshError);
       }
+      useAuthStore.getState().logout();
+      return Promise.reject(error);
     }
 
     if (!originalRequest._skipGlobalError && error.response?.status !== 401) {

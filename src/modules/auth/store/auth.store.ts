@@ -1,20 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { mmkvStorage } from '@/shared/providers/cache';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  type: 'contractor' | 'provider';
-}
-
-interface AuthStore {
-  user: UserProfile | null;
-  isSignedIn: boolean;
-  setUser: (user: UserProfile | null) => void;
-  logout: () => void;
-}
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { mmkvStorage } from "@/shared/providers/cache";
+import type { AuthStore } from "@/modules/auth/types/auth.store.types";
 
 export const useAuthStore = create<AuthStore>()(
   persist(
@@ -25,8 +12,8 @@ export const useAuthStore = create<AuthStore>()(
       logout: () => set({ user: null, isSignedIn: false }),
     }),
     {
-      name: 'auth-store',
+      name: "auth-store",
       storage: createJSONStorage(() => mmkvStorage.asStateStorage()),
-    }
-  )
+    },
+  ),
 );

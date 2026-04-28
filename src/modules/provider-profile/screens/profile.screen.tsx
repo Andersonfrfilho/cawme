@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { useProviderProfile } from "@/modules/provider-profile/hooks/useProviderProfile";
-import { Image as ExpoImage } from "expo-image";
+import { ProfileHeader, ServiceItem } from "../components";
 import { styles } from "./styles";
 import { t } from "@/shared/locales";
 
@@ -13,7 +13,7 @@ export default function ProviderProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={styles.servicePrice.color} />
       </View>
     );
   }
@@ -27,29 +27,16 @@ export default function ProviderProfileScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: profile.name }} />
 
-      <View style={styles.header}>
-        <ExpoImage
-          source={profile.avatarUrl}
-          style={styles.avatar}
-          contentFit="cover"
-          transition={200}
-        />
-        <View style={styles.headerInfo}>
-          <Text style={styles.name}>{profile.name}</Text>
-          <Text style={styles.location}>
-            {profile.location.city}, {profile.location.state}
-          </Text>
-          <View style={styles.ratingContainer}>
-            <Text style={styles.rating}>⭐ {profile.rating.toFixed(1)}</Text>
-            <Text style={styles.reviews}>
-              ({profile.reviewCount} {t("profile.reviews")})
-            </Text>
-          </View>
-        </View>
-      </View>
+      <ProfileHeader
+        name={profile.name}
+        avatarUrl={profile.avatarUrl}
+        location={profile.location}
+        rating={profile.rating}
+        reviewCount={profile.reviewCount}
+      />
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t("profile.about")}</Text>
@@ -59,12 +46,12 @@ export default function ProviderProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t("profile.services")}</Text>
         {profile.services.map((service) => (
-          <View key={service.id} style={styles.serviceItem}>
-            <Text style={styles.serviceName}>{service.name}</Text>
-            <Text style={styles.servicePrice}>
-              R$ {service.price.toFixed(2)} / {service.unit}
-            </Text>
-          </View>
+          <ServiceItem
+            key={service.id}
+            name={service.name}
+            price={service.price}
+            unit={service.unit}
+          />
         ))}
       </View>
     </ScrollView>

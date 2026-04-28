@@ -4,8 +4,10 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start --dev-client",
+    "start:clean": "expo start --dev-client --clear",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:clean": "xcodebuild clean -workspace ios/Cawme.xcworkspace -scheme Cawme -quiet && expo run:ios",
     "web": "expo start --web",
     "check-locales": "node ./scripts/check-locales.js",
     "postinstall": "node ./scripts/patch-expo-modules-core-swift.js"

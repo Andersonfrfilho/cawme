@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { colors } from './colors';
+import { colors, palette } from './colors';
 
 // Espaçamento — base 4px (grid de 4)
 export const spacing = {
@@ -180,6 +180,7 @@ export const breakpoints = {
 
 export const theme = {
   colors,
+  palette,
   spacing,
   radii,
   typography,
