@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
     paddingBottom: theme.spacing[10],
   },
   iconArea: {
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: theme.spacing[7],
   },
   iconCircle: {
@@ -51,12 +51,14 @@ export const styles = StyleSheet.create({
     color: theme.colors.text.primary,
     letterSpacing: theme.typography.letterSpacing.tight,
     marginBottom: theme.spacing[2],
+    textAlign: "center",
   },
   subtitle: {
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.secondary,
     lineHeight: 22,
     marginBottom: theme.spacing[8],
+    textAlign: "center",
   },
 
   // ── Fields ────────────────────────────────────────

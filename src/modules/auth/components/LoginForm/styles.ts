@@ -7,6 +7,7 @@ export const styles = StyleSheet.create({
     backgroundColor: theme.palette.neutral[0],
     borderTopLeftRadius: theme.radii["3xl"],
     borderTopRightRadius: theme.radii["3xl"],
+    marginTop: -theme.radii["3xl"],
     paddingHorizontal: theme.spacing[7],
     paddingTop: theme.spacing[8],
     paddingBottom: theme.spacing[10],

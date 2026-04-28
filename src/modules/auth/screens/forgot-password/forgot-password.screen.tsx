@@ -45,7 +45,8 @@ export default function ForgotPasswordScreen() {
     try {
       await KeycloakService.forgotPassword({ email });
       setSubmitted(true);
-    } catch {
+    } catch (error) {
+      console.error("[forgot-password] request failed", error);
       setError("root", { message: t("auth.forgotPasswordError") });
     }
   };

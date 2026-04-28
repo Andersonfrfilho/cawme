@@ -88,6 +88,18 @@ export const KeycloakService = {
   },
 
   async forgotPassword({ email }: ForgotPasswordServiceParams): Promise<void> {
-    await axios.post(`${BASE_URL}${AUTH_ENDPOINTS.FORGOT_PASSWORD}`, { email });
+    try {
+      await axios.post(`${BASE_URL}${AUTH_ENDPOINTS.FORGOT_PASSWORD}`, { email });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("[forgotPassword] failed", {
+          status: error.response?.status,
+          url: error.config?.url,
+          data: error.response?.data,
+          message: error.message,
+        });
+      }
+      throw error;
+    }
   },
 };

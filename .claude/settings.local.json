@@ -9,7 +9,11 @@
       "Bash(pkill -f \"metro\")",
       "Bash(pkill -f \"expo\")",
       "Bash(npm install *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(git remote *)",
+      "Bash(ssh *)",
+      "Bash(xxd /Users/anderson.filho/Documents/personal/domestic/cawme/.claude/AuthFlow.md)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -n -P)"
     ]
   }
 }
