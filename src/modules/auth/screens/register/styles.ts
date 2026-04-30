@@ -1,42 +1,67 @@
 import { StyleSheet } from "react-native";
 import { theme } from "@/shared/constants";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
 
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background.DEFAULT,
+    backgroundColor: theme.palette.neutral[50],
   },
-  content: {
+  safeArea: {
     flex: 1,
+    backgroundColor: theme.palette.neutral[50],
+  },
+  header: {
+    backgroundColor: theme.palette.neutral[0],
+    alignItems: "center",
+    paddingBottom: verticalScale(24),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.palette.neutral[100],
+    shadowColor: theme.colors.primary.darker,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  logoMark: {
+    width: verticalScale(48),
+    height: verticalScale(48),
+    borderRadius: theme.radii.xl,
+    backgroundColor: theme.colors.primary.surface,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: theme.spacing[8],
-    gap: theme.spacing[4],
+    marginBottom: verticalScale(12),
+    shadowColor: theme.colors.primary.DEFAULT,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  title: {
-    fontSize: theme.typography.fontSize["2xl"],
+  appName: {
+    fontSize: moderateScale(24, 0.3),
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.text.primary,
-    textAlign: "center",
+    letterSpacing: theme.typography.letterSpacing.tight,
   },
-  subtitle: {
-    fontSize: theme.typography.fontSize.base,
+  tagline: {
+    fontSize: moderateScale(13, 0.3),
     color: theme.colors.text.secondary,
-    textAlign: "center",
+    marginTop: verticalScale(4),
   },
-  backButton: {
-    marginTop: theme.spacing[6],
-    paddingVertical: theme.spacing[3],
-    paddingHorizontal: theme.spacing[6],
-    borderRadius: theme.radii.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.primary.DEFAULT,
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: theme.palette.neutral[50],
   },
-  backButtonText: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.primary.DEFAULT,
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  formContainer: {
+    flex: 1,
+    paddingHorizontal: moderateScale(24, 0.5),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(40),
   },
 });
-
-export default styles;

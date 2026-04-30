@@ -1,9 +1,8 @@
 import { useEffect, useCallback } from "react";
 import "@/shared/locales/register-all-modules";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAppConfigStore } from "@/modules/app-config/store/app-config.store";
-import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { AppConfigService } from "@/modules/app-config/services/app-config.service";
 import {
   View,
@@ -50,7 +49,6 @@ function ForceUpdateOverlay({ latestVersion }: Readonly<{ latestVersion: string 
 
 export default function RootLayout() {
   const { config, setConfig, isStale } = useAppConfigStore();
-  const isSignedIn = useAuthStore((s) => s.isSignedIn);
 
   const fetchConfig = useCallback(() => {
     AppConfigService.get()
@@ -61,21 +59,15 @@ export default function RootLayout() {
   }, [setConfig]);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      router.replace("/(auth)");
-      return;
-    }
-    // Navigate immediately — no waiting for config
-    router.replace("/(app)/home");
-    // Fetch config background if stale or missing
     if (isStale() || !config) {
       fetchConfig();
     }
-  }, [isSignedIn]);
+  }, [config, fetchConfig, isStale]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
         <Stack.Screen

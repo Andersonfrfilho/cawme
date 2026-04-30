@@ -10,6 +10,7 @@ declare module 'axios' {
   interface InternalAxiosRequestConfig {
     _skipGlobalError?: boolean;
     _retry?: boolean;
+    _skipLog?: boolean;
   }
 }
 
@@ -21,25 +22,62 @@ function mapStatusToVariant(status?: number): ErrorVariant {
   return 'generic';
 }
 
+function formatDuration(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_BFF_URL,
   timeout: 10_000,
 });
 
-// Injeta Bearer token em todas as requests
+// Request logging + token injection
 apiClient.interceptors.request.use(async (config) => {
+  (config as any)._startTime = Date.now();
+
   const token = await TokenService.getAccess();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  if (!config._skipLog) {
+    console.log(
+      `[API] → ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`,
+      config.params ? `params: ${JSON.stringify(config.params)}` : '',
+    );
+  }
+
   return config;
 });
 
-// Refresh automático no 401 + redirect global para erros de API
+// Response logging + error handling
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const duration = Date.now() - ((res.config as any)._startTime ?? 0);
+    if (!(res.config as any)._skipLog) {
+      console.log(
+        `[API] ← ${res.status} ${res.config.method?.toUpperCase()} ${res.config.url} (${formatDuration(duration)})`,
+      );
+    }
+    return res;
+  },
   async (error) => {
     const originalRequest = error.config;
+    const duration = Date.now() - (originalRequest?._startTime ?? 0);
+
+    if (originalRequest && !originalRequest._skipLog) {
+      const status = error.response?.status ?? 'NET';
+      if (status === 401 && !originalRequest._retry) {
+        console.log(
+          `[API] ~ ${status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url} (${formatDuration(duration)}) — no token`,
+        );
+      } else {
+        console.error(
+          `[API] ✗ ${status} ${originalRequest.method?.toUpperCase()} ${originalRequest.url} (${formatDuration(duration)})`,
+          error.response?.data ? JSON.stringify(error.response.data).slice(0, 200) : error.message,
+        );
+      }
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -69,5 +107,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

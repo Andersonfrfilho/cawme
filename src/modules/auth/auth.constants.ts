@@ -25,4 +25,16 @@ export const AUTH_ENDPOINTS = {
   TOKEN: "/auth/token",
   LOGOUT: "/auth/logout",
   FORGOT_PASSWORD: "/bff/auth/forgot-password",
+  REGISTER: "/bff/auth/register",
+  VERIFICATION_SEND: "/bff/auth/verification/send",
+  VERIFICATION_VERIFY: "/bff/auth/verification/verify",
 };
+
+export const HERO_OVERLAY = {
+  white80: "rgba(255, 255, 255, 0.8)",
+  white08: "rgba(255, 255, 255, 0.08)",
+  white05: "rgba(255, 255, 255, 0.05)",
+  white03: "rgba(255, 255, 255, 0.03)",
+} as const;
+
+export const TOGGLE_PILL_WIDTH = 140 as const;

@@ -210,5 +210,3 @@ export const styles = StyleSheet.create({
     fontWeight: theme.typography.fontWeight.bold,
   },
 });
-
-export default styles;

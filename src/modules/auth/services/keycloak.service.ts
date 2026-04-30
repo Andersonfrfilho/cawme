@@ -7,6 +7,8 @@ import type {
   LoginServiceParams,
   LoginServiceResult,
   ForgotPasswordServiceParams,
+  RegisterServiceParams,
+  RegisterServiceResult,
 } from "./types";
 
 
@@ -101,5 +103,38 @@ export const KeycloakService = {
       }
       throw error;
     }
+  },
+
+  async register(params: RegisterServiceParams): Promise<RegisterServiceResult> {
+    const response = await axios.post(
+      `${BASE_URL}${AUTH_ENDPOINTS.REGISTER}`,
+      params,
+      { headers: { "Content-Type": "application/json" } },
+    );
+    return response.data;
+  },
+
+  async sendVerificationCode(params: {
+    type: "email" | "phone";
+    target: string;
+  }): Promise<void> {
+    await axios.post(
+      `${BASE_URL}${AUTH_ENDPOINTS.VERIFICATION_SEND}`,
+      params,
+      { headers: { "Content-Type": "application/json" } },
+    );
+  },
+
+  async verifyCode(params: {
+    type: "email" | "phone";
+    target: string;
+    code: string;
+  }): Promise<{ verified: boolean }> {
+    const response = await axios.post(
+      `${BASE_URL}${AUTH_ENDPOINTS.VERIFICATION_VERIFY}`,
+      params,
+      { headers: { "Content-Type": "application/json" } },
+    );
+    return response.data;
   },
 };

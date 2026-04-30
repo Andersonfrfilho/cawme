@@ -17,7 +17,7 @@ import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { mmkvStorage } from "@/shared/providers/cache";
 import { LoginHero, LoginForm } from "../../components";
 import { LoginScreenParams, LoginFormValues, loginSchema } from "./types";
-import styles from "./styles";
+import { styles } from "./styles";
 import { LocaleKeys, useLocale } from "@/shared/locales";
 
 const REMEMBERED_USERNAME_KEY = "auth_remembered_username";

@@ -63,5 +63,3 @@ export const styles = StyleSheet.create({
     marginTop: theme.spacing[1],
   },
 });
-
-export default styles;

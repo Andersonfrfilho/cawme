@@ -1,0 +1,125 @@
+import { StyleSheet } from "react-native";
+import { theme } from "@/shared/constants";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
+
+export const styles = StyleSheet.create({
+  formCard: {
+    backgroundColor: theme.palette.neutral[0],
+    borderTopLeftRadius: theme.radii["3xl"],
+    borderTopRightRadius: theme.radii["3xl"],
+    paddingHorizontal: moderateScale(24, 0.5),
+    paddingTop: verticalScale(32),
+    paddingBottom: verticalScale(40),
+    shadowColor: theme.colors.primary.darker,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardTitle: {
+    fontSize: moderateScale(24, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: verticalScale(8),
+  },
+  cardSubtitle: {
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.secondary,
+    marginBottom: verticalScale(24),
+  },
+  fields: {
+    gap: verticalScale(16),
+  },
+  row: {
+    flexDirection: "row",
+    gap: moderateScale(12, 0.5),
+  },
+  rowHalf: {
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: verticalScale(56),
+    backgroundColor: theme.palette.neutral[50],
+    borderWidth: 1,
+    borderColor: theme.palette.neutral[200],
+    borderRadius: theme.radii.md,
+    paddingHorizontal: moderateScale(16, 0.5),
+    shadowColor: theme.colors.primary.darker,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  inputRowFocused: {
+    borderColor: theme.colors.primary.DEFAULT,
+    backgroundColor: theme.palette.neutral[0],
+    shadowColor: theme.colors.primary.DEFAULT,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputRowError: {
+    borderColor: theme.colors.status.error,
+    backgroundColor: theme.palette.error[50],
+    shadowColor: theme.colors.status.error,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  inputIcon: {
+    marginRight: moderateScale(12, 0.5),
+  },
+  inputText: {
+    flex: 1,
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.text.primary,
+  },
+  fieldError: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.status.error,
+    marginTop: verticalScale(4),
+    marginLeft: moderateScale(4, 0.5),
+  },
+  eyeButton: {
+    padding: moderateScale(8, 0.5),
+  },
+  providerSection: {
+    backgroundColor: theme.colors.primary.surface,
+    borderRadius: theme.radii.md,
+    padding: moderateScale(16, 0.5),
+    marginTop: verticalScale(8),
+  },
+  providerSectionTitle: {
+    fontSize: moderateScale(16, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: verticalScale(4),
+  },
+  providerSectionDesc: {
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  advanceButton: {
+    backgroundColor: theme.colors.primary.DEFAULT,
+    height: verticalScale(56),
+    borderRadius: theme.radii.xl,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: verticalScale(24),
+    shadowColor: theme.colors.primary.DEFAULT,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  advanceButtonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: theme.palette.neutral[0],
+    fontSize: moderateScale(16, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+});
