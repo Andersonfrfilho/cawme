@@ -1,7 +1,10 @@
 export type VerificationScreenParams = {
   email: string;
   phone: string;
-  userType: "contractor" | "provider";
+  firstName: string;
+  lastName: string;
+  cpf: string;
+  password: string;
 };
 
 export type VerificationTarget = "email" | "phone";

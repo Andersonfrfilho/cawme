@@ -12,6 +12,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.andersonfilho.cawme',
+    infoPlist: {
+      NSLocationWhenInUseUsageDescription: 'O Cawme precisa da sua localização para selecionar seu endereço e encontrar profissionais próximos.',
+      NSLocationAlwaysAndWhenInUseUsageDescription: 'O Cawme precisa da sua localização para selecionar seu endereço e encontrar profissionais próximos.',
+    },
   },
   android: {
     adaptiveIcon: {
@@ -19,6 +23,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#1A45E8',
     },
     package: 'com.andersonfilho.cawme',
+    permissions: [
+      'ACCESS_FINE_LOCATION',
+      'ACCESS_COARSE_LOCATION',
+    ],
   },
   web: {
     bundler: 'metro',
@@ -29,10 +37,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-secure-store',
     [
+      'expo-location',
+      {
+        locationWhenInUsePermission: 'O Cawme precisa da sua localização para selecionar seu endereço e encontrar profissionais próximos.',
+      },
+    ],
+    [
       'expo-notifications',
       {
         icon: './assets/images/notification-icon.png',
         color: '#ffffff',
+      },
+    ],
+    [
+      'react-native-maps',
+      {
+        // Para usar Google Maps no iOS, adicione a chave abaixo:
+        // GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       },
     ],
   ],

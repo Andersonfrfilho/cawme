@@ -1,0 +1,28 @@
+appId: com.andersonfilho.cawme
+name: 🐵 Monkey Test - Random Exploration
+description: Simula usuário aleatório explorando o app
+tags:
+  - monkey
+  - stress
+  - exploration
+---
+- launchApp:
+    clearState: false
+- repeat:
+    times: 200
+    commands:
+      - tapOn: "random"
+      - runFlow:
+          when:
+            visible: ".*"
+          file: "random-swipe.yaml"
+      - inputText: "teste"
+      - tapOn: "random"
+      - assertVisible: ".*"
+      - runFlow:
+          when:
+            visible: "Criar conta|Entrar"
+          file: "navigate-to-register.yaml"
+          continueOnFailure: true
+- takeScreenshot: "monkey-test-final.png"
+- assertNoCrash: true

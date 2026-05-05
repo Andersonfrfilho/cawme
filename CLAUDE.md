@@ -345,6 +345,17 @@ const styles = StyleSheet.create({
 - NUNCA usar valores hex ou números mágicos em StyleSheet
 - NUNCA importar `colors` ou `palette` diretamente — sempre via `theme.colors` e `theme.palette`
 
+### Contraste de texto por fundo
+
+| Fundo | Cor de texto obrigatória |
+|---|---|
+| `theme.colors.primary.DEFAULT` (azul) | `theme.palette.neutral[0]` (branco) |
+| `theme.colors.background.DEFAULT` (claro) | `theme.colors.text.primary` (escuro) |
+| `theme.colors.background.elevated` (claro) | `theme.colors.text.primary` (escuro) |
+| `theme.colors.background.card` (claro) | `theme.colors.text.primary` (escuro) |
+
+**Regra:** toda seção ou componente com fundo azul (`primary`) **deve** usar texto branco (`neutral[0]`) — incluindo títulos, subtítulos, labels, ícones e setas de navegação. Fundo claro usa texto escuro (`text.primary` / `text.secondary`). Nunca usar texto escuro sobre fundo azul nem texto branco sobre fundo claro.
+
 Paleta principal:
 - **Primary**: `#1A45E8` (azul royal)
 - **Accent green**: `#22C55E`
@@ -394,6 +405,75 @@ const styles = StyleSheet.create({
 ```
 
 Base de design: **390 × 844px** (iPhone 14).
+
+---
+
+## Navegação entre Telas
+
+| Situação | Método | Motivo |
+|---|---|---|
+| Usuário pode voltar | `router.push` | Mantém o histórico |
+| Usuário **não deve** voltar (pós-auth, pós-verificação, pós-termos) | `router.replace` | Remove a tela do stack |
+| Redirecionar para início de fluxo | `router.replace` | Evita stack infinito |
+
+Sempre tipar os params de navegação via `useLocalSearchParams<NomeTela>()`.
+
+---
+
+## Locales — Dois Arquivos Obrigatórios
+
+Ao adicionar ou alterar strings, **dois arquivos devem ser atualizados juntos**:
+
+1. `src/modules/<modulo>/locales.ts` — valor real da string
+2. `src/shared/locales/pt-BR.ts` — mesma chave/valor (define o tipo `LocaleKeys`)
+
+Se apenas o `locales.ts` do módulo for atualizado, o TypeScript não reconhece a nova chave e compila com erro.
+
+---
+
+## Mapeamento UI → API (Enum Divergente)
+
+Quando o frontend usa um valor diferente do que a API aceita para o mesmo conceito, criar uma função de mapeamento explícita — nunca converter inline:
+
+```typescript
+// ✅ função nomeada — intenção clara, testável, ponto único de mudança
+const toApiType = (target: VerificationTarget): "email" | "sms" =>
+  target === "phone" ? "sms" : "email";
+
+await sendCode({ type: toApiType(target), destination });
+
+// ❌ conversão inline — duplicado, silencioso, fácil de esquecer
+await sendCode({ type: target === "phone" ? "sms" : "email", destination });
+```
+
+---
+
+## Validação de Campos — On-Submit, Não Real-Time
+
+Verificações de disponibilidade via API (email existe, telefone já cadastrado, CPF em uso) devem ocorrer **apenas no submit**, não enquanto o usuário digita:
+
+- ❌ `useEffect` watching field value → `verifyWithDebounce` → request a cada keystroke
+- ✅ `onSubmit` → verificar todos os campos críticos sequencialmente → bloquear ou navegar
+
+Exceção: máscaras e validações de formato (CPF, telefone) podem ser síncronas em tempo real via `zod` ou formatters locais — sem request.
+
+---
+
+## Estado de Elementos Interativos
+
+Todo botão, aba ou input que dispara uma operação assíncrona deve ser desabilitado:
+- **Durante** a operação (`loading === true`)
+- **Após** cumprir seu propósito (ex: aba já verificada, formulário já enviado)
+
+```typescript
+// ✅ desabilitar quando ambos verificados — só Avançar fica ativo
+<TouchableOpacity disabled={bothVerified} onPress={() => switchToTab("email")} />
+
+// ✅ desabilitar durante loading
+<TouchableOpacity disabled={!isCodeComplete || loading} onPress={handleVerify} />
+```
+
+Nunca deixar o usuário disparar a mesma ação duas vezes por falta de feedback.
 
 ---
 

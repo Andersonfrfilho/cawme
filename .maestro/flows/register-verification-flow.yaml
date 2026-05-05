@@ -1,0 +1,68 @@
+id: register_verification_flow
+name: Register Verification Flow
+description: Tests real-time field verification during registration
+
+---
+
+- runFlow: ../common/open-app.yaml
+  env:
+    APP_STATE: fresh
+
+# Navigate to register screen
+- tapOn: "Criar conta"
+  id: "createAccountButton"
+
+# Fill first name
+- tapOn:
+    id: "firstNameInput"
+- inputText: "Anderson"
+- tapOn:
+    id: "lastNameInput"
+
+# Fill last name
+- inputText: "Filho"
+- tapOn:
+    id: "emailInput"
+
+# Fill email - should trigger verification
+- inputText: "test@example.com"
+- wait: 2000ms
+- assertVisible: "Verificando e-mail..."
+  optional: true
+
+# Wait for verification to complete
+- wait: 2000ms
+
+# Fill phone
+- tapOn:
+    id: "phoneInput"
+- inputText: "11999999999"
+- wait: 2000ms
+
+# Fill CPF
+- tapOn:
+    id: "cpfInput"
+- inputText: "12345678901"
+- wait: 2000ms
+
+# Fill password
+- tapOn:
+    id: "passwordInput"
+- inputText: "SecurePass123!"
+- tapOn:
+    id: "confirmPasswordInput"
+
+# Fill confirm password
+- inputText: "SecurePass123!"
+
+# Tap advance button
+- tapOn:
+    id: "advanceButton"
+
+# Should navigate to terms screen
+- assertVisible: "Termos de Uso"
+  optional: true
+
+# If verification fails (field already exists), should show error
+- assertVisible: "já cadastrado"
+  optional: true

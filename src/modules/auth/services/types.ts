@@ -14,25 +14,29 @@ export type ForgotPasswordServiceParams = {
 };
 
 export type RegisterServiceParams = {
-  fullName: string;
   email: string;
-  phone: string;
   password: string;
-  userType: "contractor" | "provider";
+  firstName: string;
+  lastName: string;
+  phone: string;
+  cpf: string;
 };
 
 export type RegisterServiceResult = {
+  keycloakId: string;
+  email: string;
+  success: boolean;
   message: string;
 };
 
 export type SendCodeParams = {
-  type: "email" | "phone";
-  target: string;
+  type: "email" | "sms";
+  destination: string;
 };
 
 export type VerifyCodeParams = {
-  type: "email" | "phone";
-  target: string;
+  type: "email" | "sms";
+  destination: string;
   code: string;
 };
 

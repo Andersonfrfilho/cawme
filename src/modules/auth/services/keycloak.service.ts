@@ -1,4 +1,5 @@
 import axios from "axios";
+import { apiClient } from '@/shared/services/api-client';
 import { TokenService } from "./token.service";
 import { AUTH_ENDPOINTS, CLIENT, HEADERS } from "../auth.constants";
 import { BASE_URL, FORM_HEADERS } from "./keycloak.constants";
@@ -90,50 +91,32 @@ export const KeycloakService = {
   },
 
   async forgotPassword({ email }: ForgotPasswordServiceParams): Promise<void> {
-    try {
-      await axios.post(`${BASE_URL}${AUTH_ENDPOINTS.FORGOT_PASSWORD}`, { email });
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("[forgotPassword] failed", {
-          status: error.response?.status,
-          url: error.config?.url,
-          data: error.response?.data,
-          message: error.message,
-        });
-      }
-      throw error;
-    }
+    await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
   },
 
   async register(params: RegisterServiceParams): Promise<RegisterServiceResult> {
-    const response = await axios.post(
-      `${BASE_URL}${AUTH_ENDPOINTS.REGISTER}`,
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.REGISTER,
       params,
-      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   },
 
   async sendVerificationCode(params: {
-    type: "email" | "phone";
-    target: string;
+    type: "email" | "sms";
+    destination: string;
   }): Promise<void> {
-    await axios.post(
-      `${BASE_URL}${AUTH_ENDPOINTS.VERIFICATION_SEND}`,
-      params,
-      { headers: { "Content-Type": "application/json" } },
-    );
+    await apiClient.post(AUTH_ENDPOINTS.VERIFICATION_SEND, params);
   },
 
   async verifyCode(params: {
-    type: "email" | "phone";
-    target: string;
+    type: "email" | "sms";
+    destination: string;
     code: string;
   }): Promise<{ verified: boolean }> {
-    const response = await axios.post(
-      `${BASE_URL}${AUTH_ENDPOINTS.VERIFICATION_VERIFY}`,
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.VERIFICATION_VERIFY,
       params,
-      { headers: { "Content-Type": "application/json" } },
     );
     return response.data;
   },

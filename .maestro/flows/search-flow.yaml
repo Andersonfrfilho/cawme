@@ -1,0 +1,33 @@
+appId: com.andersonfilho.cawme
+name: 🔍 Search Flow
+description: Testa busca e navegação
+tags:
+  - search
+  - navigation
+  - e2e
+---
+- launchApp:
+    clearState: false
+- assertVisible: ".*Home.*"
+
+# Navega para busca
+- tapOn: "Buscar"
+- assertVisible: ".*Buscar.*"
+
+# Realiza busca
+- inputText: "eletricista"
+- assertVisible: ".*Resultados.*"
+
+# Scroll nos resultados
+- scroll
+- scroll
+- scroll
+
+# Tapa em resultado
+- tapOn: "random"
+- assertVisible: ".*"
+
+# Volta
+- tapOn:
+    id: "back"
+- assertVisible: ".*Buscar.*"

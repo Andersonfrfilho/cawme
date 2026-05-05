@@ -6,7 +6,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const replacements = [
   {
     relativePath:
-      'node_modules/expo/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift',
+      'node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift',
     from:
       '  public final class HostingView<Props: ViewProps, ContentView: View<Props>>: ExpoView, @MainActor AnyExpoSwiftUIHostingView {',
     to:
@@ -14,12 +14,12 @@ const replacements = [
   },
   {
     relativePath:
-      'node_modules/expo/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift',
+      'node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift',
     from: 'extension ExpoSwiftUI.SwiftUIVirtualView: @MainActor ExpoSwiftUI.ViewWrapper {',
     to: '@MainActor\nextension ExpoSwiftUI.SwiftUIVirtualView: ExpoSwiftUI.ViewWrapper {',
   },
   {
-    relativePath: 'node_modules/expo/node_modules/expo-modules-core/ios/Core/Views/ViewDefinition.swift',
+    relativePath: 'node_modules/expo-modules-core/ios/Core/Views/ViewDefinition.swift',
     from: 'extension UIView: @MainActor AnyArgument {',
     to: '@MainActor\nextension UIView: AnyArgument {',
   },

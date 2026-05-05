@@ -1,0 +1,25 @@
+appId: com.andersonfilho.cawme
+name: 🔐 Login Flow
+description: Testa fluxo de login
+tags:
+  - critical
+  - login
+  - e2e
+---
+- launchApp:
+    clearState: false
+- assertVisible: "Cawme"
+
+# Navega para login
+- tapOn: "Entrar"
+- assertVisible: ".*Login.*"
+
+# Preenche credenciais
+- inputText: "test@example.com"
+- inputText: "password123"
+
+# Submete
+- tapOn: "Entrar"
+
+# Aguarda navegação
+- assertVisible: ".*Home.*|.*Dashboard.*"

@@ -131,7 +131,7 @@ src/modules/auth/
 // types.ts
 type SlideData = {
   id: string;
-  illustration: React.ReactNode;  // SVG ou Lottie futuro
+  illustration: React.ReactNode; // SVG ou Lottie futuro
   headline: string;
   description: string;
 };
@@ -144,6 +144,7 @@ type WelcomeSlidesProps = {
 ```
 
 **Implementação:**
+
 - FlatList horizontal com `pagingEnabled` + `showsHorizontalScrollIndicator={false}`
 - `onScroll` → `useSharedValue` para tracking do offset
 - Animated dots: `useAnimatedStyle` com scale/opacity baseado no índice ativo
@@ -155,19 +156,21 @@ type WelcomeSlidesProps = {
 
 ```typescript
 type WelcomeActionsProps = {
-  onHireService: () => void;       // → Register(contractor)
-  onOfferService: () => void;      // → Register(provider)
+  onHireService: () => void; // → Register(contractor)
+  onOfferService: () => void; // → Register(provider)
   onAlreadyHaveAccount: () => void; // → Login
 };
 ```
 
 **Implementação:**
+
 - Botão primary azul: "Quero contratar" com ícone `search-outline`
 - Botão outline: "Quero cadastrar meu serviço" com ícone `briefcase-outline`
 - Link text: "Já tenho conta"
 - Animações: `FadeInUp` stagger (delay 100ms entre cada)
 
 **Estilo:**
+
 ```typescript
 // Exemplo de medidas seguindo regras do projeto
 primaryButton: {
@@ -201,6 +204,7 @@ type UserTypeToggleProps = {
 ```
 
 **Implementação:**
+
 - Dois botões lado a lado com animação de pill deslizante
 - `useAnimatedStyle` para mover o indicador com `withSpring`
 - Texto ativo: branco. Inativo: cor do texto secundário
@@ -237,19 +241,23 @@ type RegisterFormProps = {
 ```
 
 **Zod Schema:**
+
 ```typescript
-const registerSchema = z.object({
-  fullName: z.string().min(3),
-  email: z.string().email(),
-  password: z.string().min(8),
-  passwordConfirmation: z.string(),
-}).refine(data => data.password === data.passwordConfirmation, {
-  message: "As senhas não conferem",
-  path: ["passwordConfirmation"],
-});
+const registerSchema = z
+  .object({
+    fullName: z.string().min(3),
+    email: z.string().email(),
+    password: z.string().min(8),
+    passwordConfirmation: z.string(),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: "As senhas não conferem",
+    path: ["passwordConfirmation"],
+  });
 ```
 
 **Campos:**
+
 1. Nome completo — ícone `person-outline`, placeholder "Nome completo"
 2. Email — ícone `mail-outline`, keyboardType email, autoCapitalize none
 3. Senha — ícone `lock-closed-outline`, secureTextEntry + toggle
@@ -271,6 +279,7 @@ type TermsContentProps = {
 ```
 
 **Implementação:**
+
 - ScrollView com texto placeholder dos termos
 - Checkbox customizado (mesmo estilo do "Lembrar-me" do LoginForm)
 - Texto com links: "Termos de Uso" e "Política de Privacidade" (TouchableOpacity com texto colorido)
@@ -331,14 +340,14 @@ SuccessScreen (ou estado interno)
 
 ## 6. Estilo — Regras de Scale (Obrigatório)
 
-| Propriedade | Função | Fator |
-|---|---|---|
-| `width`, `minWidth`, `maxWidth`, `iconSize` | `scale` | — |
-| `height` de seção/hero/layout | `verticalScale` | — |
-| `height` de componente (botão, input) | `verticalScale` | — |
-| `fontSize` | `moderateScale` | `0.3` |
-| `padding`, `margin`, `gap` | `moderateScale` | `0.5` |
-| `borderRadius`, `borderWidth` | **fixo** — não escalar | — |
+| Propriedade                                 | Função                 | Fator |
+| ------------------------------------------- | ---------------------- | ----- |
+| `width`, `minWidth`, `maxWidth`, `iconSize` | `scale`                | —     |
+| `height` de seção/hero/layout               | `verticalScale`        | —     |
+| `height` de componente (botão, input)       | `verticalScale`        | —     |
+| `fontSize`                                  | `moderateScale`        | `0.3` |
+| `padding`, `margin`, `gap`                  | `moderateScale`        | `0.5` |
+| `borderRadius`, `borderWidth`               | **fixo** — não escalar | —     |
 
 ```typescript
 import { scale, verticalScale, moderateScale } from "@/shared/utils/scale";
@@ -351,7 +360,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: verticalScale(56),
-    borderRadius: theme.radii.md,       // fixo via theme
+    borderRadius: theme.radii.md, // fixo via theme
     fontSize: moderateScale(15, 0.3),
     paddingHorizontal: moderateScale(16, 0.5),
     backgroundColor: theme.colors.background.card,
@@ -367,9 +376,9 @@ const styles = StyleSheet.create({
 
 // ❌ Errado — NUNCA usar
 const bad = StyleSheet.create({
-  hero: { height: 260 },                    // número mágico
+  hero: { height: 260 }, // número mágico
   input: { fontSize: 15, paddingHorizontal: 16 }, // sem scale
-  title: { color: "#0F172A" },             // hex direto
+  title: { color: "#0F172A" }, // hex direto
 });
 ```
 
@@ -377,7 +386,7 @@ const bad = StyleSheet.create({
 
 ## 7. BFF — Auth Module (Sem Alterações do Design Original)
 
-Mantido igual ao design v1. O BFF não muda com o novo fluxo mobile — ele só recebe `POST /bff/auth/register`.
+Mantido igual ao design v1. O BFF não muda com o novo fluxo mobile — ele só recebe `POST /auth/register`.
 
 ---
 

@@ -25,9 +25,13 @@ export const AUTH_ENDPOINTS = {
   TOKEN: "/auth/token",
   LOGOUT: "/auth/logout",
   FORGOT_PASSWORD: "/bff/auth/forgot-password",
-  REGISTER: "/bff/auth/register",
-  VERIFICATION_SEND: "/bff/auth/verification/send",
-  VERIFICATION_VERIFY: "/bff/auth/verification/verify",
+  REGISTER: "/bff/onboarding/register",
+  VERIFICATION_SEND: "/bff/onboarding/verification/send",
+  VERIFICATION_VERIFY: "/bff/onboarding/verification/verify",
+  TERMS_CURRENT: "/bff/auth/terms/current",
+  TERMS_VERSIONS: "/bff/auth/terms/versions",
+  TERMS_CHECK_PENDING: "/bff/auth/terms/check-pending",
+  TERMS_ACCEPT: "/bff/auth/terms/accept",
 };
 
 export const HERO_OVERLAY = {

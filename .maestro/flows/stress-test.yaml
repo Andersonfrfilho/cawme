@@ -1,0 +1,36 @@
+appId: com.andersonfilho.cawme
+name: 💥 Stress Test - Rapid Clicks
+description: Testa cliques rápidos e múltiplos
+tags:
+  - stress
+  - performance
+  - clicks
+---
+- launchApp:
+    clearState: false
+- assertVisible: ".*"
+
+# Cliques rápidos em sequência
+- repeat:
+    times: 50
+    commands:
+      - tapOn: "random"
+      - tapOn: "random"
+      - tapOn: "random"
+
+# Scroll rápido
+- repeat:
+    times: 20
+    commands:
+      - scroll
+      - scroll
+
+# Input rápido de texto
+- repeat:
+    times: 10
+    commands:
+      - inputText: "teste${RANDOM_NUMBER}"
+
+# Verifica que app não crashou
+- assertNoCrash: true
+- takeScreenshot: "stress-test-result.png"

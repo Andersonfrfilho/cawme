@@ -1,0 +1,6 @@
+flows:
+  - path: "flows/*.yaml"
+
+exclude:
+  - path: "flows/**/*-draft.yaml"
+  - path: "flows/**/*-template.yaml"

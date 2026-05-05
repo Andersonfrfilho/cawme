@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: theme.colors.primary.DEFAULT,
-    paddingTop: verticalScale(60),
+    paddingTop: verticalScale(24),
     paddingBottom: verticalScale(24),
     paddingHorizontal: moderateScale(24, 0.5),
     alignItems: "center",
@@ -29,6 +29,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: moderateScale(24, 0.5),
     paddingTop: verticalScale(32),
   },
+  progressContainer: {
+    alignItems: "center",
+    marginBottom: verticalScale(16),
+  },
+  progressText: {
+    fontSize: moderateScale(13, 0.3),
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
   tabContainer: {
     flexDirection: "row",
     backgroundColor: theme.colors.background.elevated,
@@ -38,13 +47,24 @@ export const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    height: verticalScale(40),
+    height: verticalScale(44),
     justifyContent: "center",
     alignItems: "center",
     borderRadius: theme.radii.sm,
   },
   tabActive: {
     backgroundColor: theme.colors.primary.DEFAULT,
+  },
+  tabVerified: {
+    backgroundColor: "transparent",
+  },
+  tabContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(4, 0.5),
+  },
+  tabIcon: {
+    marginRight: moderateScale(2, 0.5),
   },
   tabText: {
     fontSize: moderateScale(14, 0.3),
@@ -54,6 +74,34 @@ export const styles = StyleSheet.create({
   tabTextActive: {
     color: theme.palette.neutral[0],
     fontWeight: theme.typography.fontWeight.semibold,
+  },
+  tabTextVerified: {
+    color: theme.colors.status.success,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  verifiedContainer: {
+    alignItems: "center",
+    paddingVertical: verticalScale(32),
+    gap: verticalScale(12),
+  },
+  verifiedText: {
+    fontSize: moderateScale(16, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.status.success,
+  },
+  advanceButton: {
+    marginTop: verticalScale(24),
+    backgroundColor: theme.colors.primary.DEFAULT,
+    height: verticalScale(56),
+    borderRadius: theme.radii.xl,
+    justifyContent: "center",
+    alignItems: "center",
+    ...theme.shadows.md,
+  },
+  advanceButtonText: {
+    color: theme.palette.neutral[0],
+    fontSize: moderateScale(16, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
   },
   codeContainer: {
     flexDirection: "row",

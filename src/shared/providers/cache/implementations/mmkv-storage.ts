@@ -1,4 +1,4 @@
-import { createMMKV } from 'react-native-mmkv';
+import { MMKV } from 'react-native-mmkv';
 import type { StateStorage } from 'zustand/middleware';
 import type { CacheProvider } from '../cache.types';
 
@@ -33,7 +33,7 @@ class MmkvStorage implements CacheProvider {
 
   private constructor() {
     try {
-      this.storage = createMMKV();
+      this.storage = new MMKV();
     } catch {
       this.storage = createMemoryFallbackStorage();
     }

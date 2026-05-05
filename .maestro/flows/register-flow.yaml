@@ -1,0 +1,40 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Flow - Complete
+description: Testa fluxo completo de cadastro
+tags:
+  - critical
+  - register
+  - e2e
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Cawme"
+- assertVisible: ".*Bem-vindo.*"
+
+# Navega para cadastro
+- tapOn: "Criar conta"
+- assertVisible: "Crie sua conta"
+
+# Preenche formulário
+- inputText: "Monkey"
+- inputText: "Test"
+- inputText: "monkey${RANDOM_NUMBER}@test.com"
+- inputText: "11999999999"
+- inputText: "12345678909"
+- inputText: "password123"
+- inputText: "password123"
+
+# Avança
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+# Aceita termos
+- tapOn: "Li e aceito"
+- tapOn: "Finalizar cadastro"
+
+# Verifica sucesso
+- assertVisible: "Cadastro realizado|Sucesso"
+
+# Cleanup: volta para login
+- tapOn: "Ir para login"
+- assertVisible: "Entrar"

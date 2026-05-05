@@ -6,6 +6,7 @@ export const searchLocale = {
     placeholder: "O que você precisa?",
     loadError: "Erro ao buscar resultados.",
     empty: "Nenhum resultado encontrado.",
+    noResults: "Nenhum resultado encontrado para sua busca.",
   },
 };
 

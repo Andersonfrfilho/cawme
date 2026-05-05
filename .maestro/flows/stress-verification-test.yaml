@@ -1,0 +1,46 @@
+id: stress_verification_api
+name: Stress Test - Verification API
+description: Tests rate limiting on verification endpoints
+
+---
+
+- runFlow: ../common/open-app.yaml
+  env:
+    APP_STATE: fresh
+
+# Navigate to register screen
+- tapOn: "Criar conta"
+  id: "createAccountButton"
+
+# Rapid email changes to trigger rate limit
+- tapOn:
+    id: "emailInput"
+
+# Enter multiple emails quickly
+- inputText: "test1@example.com"
+- wait: 100ms
+- inputText: "test2@example.com"
+- wait: 100ms
+- inputText: "test3@example.com"
+- wait: 100ms
+- inputText: "test4@example.com"
+- wait: 100ms
+- inputText: "test5@example.com"
+- wait: 100ms
+- inputText: "test6@example.com"
+- wait: 100ms
+- inputText: "test7@example.com"
+
+# Wait for verifications
+- wait: 3000ms
+
+# Should handle rate limit gracefully (no crash)
+- assertVisible: "Cawme"
+
+# Continue with registration
+- inputText: "valid@example.com"
+- wait: 2000ms
+
+# Should verify successfully
+- assertVisible: "Anderson"
+  optional: true

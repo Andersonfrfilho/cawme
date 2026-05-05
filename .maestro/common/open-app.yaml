@@ -1,0 +1,11 @@
+id: open_app
+name: Open App
+description: Opens the Cawme app
+
+---
+
+- clearState
+- launchApp:
+    appId: com.cawme.app
+    clearState: true
+- wait: 3000ms

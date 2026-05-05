@@ -7,6 +7,7 @@ arquitetura modular em camadas, onde cada domínio de negócio é autocontido em
 e o código verdadeiramente compartilhado vive em `src/shared/`.
 
 **Benefícios:**
+
 - Coesão: tudo de um domínio no mesmo lugar
 - Boundaries claros: `app/` só importa de hooks e shared
 - Escalabilidade: novos módulos seguem o mesmo padrão sem tocar no resto
@@ -68,13 +69,13 @@ e o código verdadeiramente compartilhado vive em `src/shared/`.
 
 ### 5.3 Tipos BFF → Módulos
 
-- [x] `src/types/bff/chat.types.ts` → `src/modules/chat/types/chat.types.ts`
-- [x] `src/types/bff/dashboard.types.ts` → `src/modules/dashboard/types/dashboard.types.ts`
-- [x] `src/types/bff/sdui.types.ts` → `src/modules/sdui/types/sdui.types.ts`
-- [x] `src/types/bff/search.types.ts` → `src/modules/search/types/search.types.ts`
-- [x] `src/types/bff/provider-profile.types.ts` → `src/modules/provider-profile/types/provider-profile.types.ts`
-- [x] `src/types/bff/app-config.types.ts` → `src/modules/app-config/types/app-config.types.ts`
-- [x] `src/types/bff/notification.types.ts` → `src/modules/notifications/types/notification.types.ts`
+- [x] `src/types/chat.types.ts` → `src/modules/chat/types/chat.types.ts`
+- [x] `src/types/dashboard.types.ts` → `src/modules/dashboard/types/dashboard.types.ts`
+- [x] `src/types/sdui.types.ts` → `src/modules/sdui/types/sdui.types.ts`
+- [x] `src/types/search.types.ts` → `src/modules/search/types/search.types.ts`
+- [x] `src/types/provider-profile.types.ts` → `src/modules/provider-profile/types/provider-profile.types.ts`
+- [x] `src/types/app-config.types.ts` → `src/modules/app-config/types/app-config.types.ts`
+- [x] `src/types/notification.types.ts` → `src/modules/notifications/types/notification.types.ts`
 
 ### 5.4 Services Auth → `modules/auth`
 

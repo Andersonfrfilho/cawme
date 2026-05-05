@@ -1,19 +1,13 @@
 import { Control, FieldErrors } from "react-hook-form";
 
 export type RegisterFormValues = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
+  cpf: string;
   password: string;
   passwordConfirmation: string;
-  document: string;
-  cep: string;
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  serviceTags: string[];
 };
 
 export type RegisterFormProps = {
@@ -22,5 +16,4 @@ export type RegisterFormProps = {
   isSubmitting: boolean;
   onSubmit: (values: RegisterFormValues) => void;
   handleSubmit: (callback: (values: RegisterFormValues) => void) => () => void;
-  userType: "contractor" | "provider";
 };

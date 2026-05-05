@@ -2,7 +2,7 @@ import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { router } from "expo-router";
-import axios from "axios";
+import { userAction } from "@/shared/utils/logger";
 import type { LoginServiceParams } from "../services/types";
 
 export function useAuth() {
@@ -10,27 +10,16 @@ export function useAuth() {
   const { showLoading, hideLoading } = useLoading();
 
   async function login(params: LoginServiceParams): Promise<void> {
+    userAction('login.submit', 'User submitted login form', { username: params.username });
     showLoading();
+    
     try {
       const { id, name, email } = await KeycloakService.login(params);
       setUser({ id, name, email, type: "contractor" });
+      userAction('login.success', 'User logged in successfully', { userId: id });
       router.replace("/(app)/home");
     } catch (error) {
-      if (__DEV__) {
-        if (axios.isAxiosError(error)) {
-          console.error("[auth/login] request failed", {
-            message: error.message,
-            code: error.code,
-            status: error.response?.status,
-            url: error.config?.url,
-            baseURL: error.config?.baseURL,
-            method: error.config?.method,
-            responseData: error.response?.data,
-          });
-        } else {
-          console.error("[auth/login] unexpected error", error);
-        }
-      }
+      userAction('login.error', 'Login failed');
       throw error;
     } finally {
       hideLoading();
@@ -41,6 +30,10 @@ export function useAuth() {
     showLoading();
     try {
       await KeycloakService.logout();
+      userAction('logout.success', 'User logged out');
+    } catch (error) {
+      userAction('logout.error', 'Logout failed');
+      throw error;
     } finally {
       clearUser();
       hideLoading();

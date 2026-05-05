@@ -1,5 +1,5 @@
-import { useLayoutEffect } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useLayoutEffect, useState } from "react";
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, StyleSheet } from "react-native";
 import { useNavigation, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHome } from "@/modules/home/hooks/useHome";
@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const { logout } = useAuth();
   const navigation = useNavigation();
+  const [searchTerm, setSearchTerm] = useState('');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -41,6 +42,16 @@ export default function HomeScreen() {
         ),
     });
   }, [navigation, isSignedIn, logout]);
+
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      router.push({
+        pathname: '/(app)/search' as any,
+        params: { q: searchTerm.trim() },
+      });
+      setSearchTerm('');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -81,7 +92,79 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar Fixa no Topo */}
+      <View style={localStyles.searchContainer}>
+        <View style={localStyles.searchBar}>
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color={theme.colors.text.secondary}
+            style={localStyles.searchIcon}
+          />
+          
+          <TextInput
+            style={localStyles.input}
+            placeholder="Buscar profissionais..."
+            placeholderTextColor={theme.colors.text.secondary}
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          
+          {searchTerm.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchTerm('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close-circle" size={20} color={theme.colors.text.secondary} />
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity
+            onPress={handleSearch}
+            style={localStyles.searchButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="search" size={20} color={theme.colors.primary.DEFAULT} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      
       <SduiRenderer layout={data?.layout ?? []} />
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  searchContainer: {
+    backgroundColor: theme.colors.background.DEFAULT,
+    paddingHorizontal: theme.spacing[4],
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border.DEFAULT,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.radii.xl,
+    paddingHorizontal: theme.spacing[4],
+    paddingVertical: verticalScale(10),
+    borderWidth: 1,
+    borderColor: theme.colors.border.DEFAULT,
+  },
+  searchIcon: {
+    marginRight: moderateScale(8, 0.5),
+  },
+  input: {
+    flex: 1,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.primary,
+    paddingVertical: 0,
+  },
+  searchButton: {
+    marginLeft: moderateScale(8, 0.5),
+    padding: moderateScale(4, 0.3),
+  },
+});

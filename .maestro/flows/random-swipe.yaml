@@ -1,0 +1,13 @@
+# Swipe aleatório em diferentes direções
+- swipe:
+    direction: "DOWN"
+    percentage: 50
+- swipe:
+    direction: "UP"
+    percentage: 50
+- swipe:
+    direction: "LEFT"
+    percentage: 30
+- swipe:
+    direction: "RIGHT"
+    percentage: 30
