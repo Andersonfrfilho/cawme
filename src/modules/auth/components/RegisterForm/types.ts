@@ -1,11 +1,14 @@
 import { Control, FieldErrors } from "react-hook-form";
 
+export type DocumentType = "cpf" | "cnpj" | "rg" | "passport";
+
 export type RegisterFormValues = {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  cpf: string;
+  documentType: DocumentType;
+  document: string;
   password: string;
   passwordConfirmation: string;
 };

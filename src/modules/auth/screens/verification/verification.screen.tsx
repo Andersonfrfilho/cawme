@@ -166,7 +166,8 @@ export default function VerificationScreen() {
         lastName: params.lastName,
         email: params.email,
         phone: params.phone,
-        cpf: params.cpf,
+        document: params.document,
+        documentType: params.documentType,
         password: params.password,
       },
     });

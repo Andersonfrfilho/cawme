@@ -22,7 +22,7 @@ export function useFieldVerification() {
     const apiFieldMap: Record<string, string> = {
       email: 'email',
       phone: 'phone',
-      cpf: 'document',  // API usa "document" em vez de "cpf"
+      document: 'document',
     };
     
     const apiField = apiFieldMap[field] || field;
@@ -162,7 +162,7 @@ export function useFieldVerification() {
     const minLength: Record<string, number> = {
       email: 5,
       phone: 10,
-      cpf: 11,
+      document: 6,
     };
 
     if (!value || rawValue.length < (minLength[field] || 1)) {

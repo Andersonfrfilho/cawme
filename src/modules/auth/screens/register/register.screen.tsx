@@ -26,7 +26,8 @@ export default function RegisterScreen() {
     lastName?: string;
     email?: string;
     phone?: string;
-    cpf?: string;
+    document?: string;
+    documentType?: string;
   }>();
   
   const {
@@ -65,7 +66,8 @@ export default function RegisterScreen() {
       lastName: "",
       email: "",
       phone: "",
-      cpf: "",
+      documentType: "cpf",
+      document: "",
       password: "",
       passwordConfirmation: "",
     },
@@ -87,7 +89,8 @@ export default function RegisterScreen() {
     if (params.lastName) setValue('lastName', params.lastName);
     if (params.email) setValue('email', params.email);
     if (params.phone) setValue('phone', params.phone);
-    if (params.cpf) setValue('cpf', params.cpf);
+    if (params.document) setValue('document', params.document);
+    if (params.documentType) setValue('documentType', params.documentType as any);
     
     // Mostra erro no campo específico (apenas se vier erro dos params)
     if (params.fieldError && params.errorMessage) {
@@ -125,14 +128,14 @@ export default function RegisterScreen() {
       email: values.email,
       hasFirstName: !!values.firstName,
       hasPhone: !!values.phone,
-      hasCpf: !!values.cpf,
+      hasDocument: !!values.document,
     });
 
     // Força verificação de TODOS os campos críticos antes de navegar
     const criticalFields = [
       { field: 'email', value: values.email, minLength: 5 },
       { field: 'phone', value: values.phone, minLength: 10 },
-      { field: 'cpf', value: values.cpf, minLength: 11 },
+      { field: 'document', value: values.document, minLength: 6 },
     ];
     
     // Armazena resultados localmente (não depende do estado do React)
@@ -168,7 +171,7 @@ export default function RegisterScreen() {
     const hasUnavailableField = 
       verificationOutcomes.email?.isAvailable === false ||
       verificationOutcomes.phone?.isAvailable === false ||
-      verificationOutcomes.cpf?.isAvailable === false;
+      verificationOutcomes.document?.isAvailable === false;
     
     if (hasUnavailableField) {
       // 🔄 FLUXO ALTERNATIVO: Campo indisponível
@@ -193,7 +196,8 @@ export default function RegisterScreen() {
         lastName: values.lastName,
         email: values.email,
         phone: values.phone,
-        cpf: values.cpf,
+        document: values.document,
+        documentType: values.documentType,
         password: values.password,
       },
     });

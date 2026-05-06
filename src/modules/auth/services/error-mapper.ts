@@ -21,7 +21,7 @@ interface BffError {
 const ERROR_MAP: Record<AuthErrorCode, string> = {
   EMAIL_ALREADY_EXISTS: "registerEmailExists",
   PHONE_ALREADY_EXISTS: "registerPhoneExists",
-  INVALID_CPF: "registerCpfInvalid",
+  INVALID_CPF: "registerDocumentInvalid",
   WEAK_PASSWORD: "registerPasswordMinLength",
   USER_NOT_FOUND: "loginError",
   INVALID_CREDENTIALS: "loginError",
@@ -61,7 +61,15 @@ export function mapAuthError(
   }
   
   if (message.includes('cpf') && (message.includes('invál') || message.includes('invalid'))) {
-    return { message: 'registerCpfInvalid', field: 'cpf' };
+    return { message: 'registerDocumentInvalid', field: 'document' };
+  }
+  
+  if (message.includes('cnpj') && (message.includes('invál') || message.includes('invalid'))) {
+    return { message: 'registerDocumentInvalid', field: 'document' };
+  }
+  
+  if (message.includes('documento') && (message.includes('invál') || message.includes('invalid'))) {
+    return { message: 'registerDocumentInvalid', field: 'document' };
   }
   
   if (message.includes('senha') && (message.includes('fraca') || message.includes('mínima'))) {

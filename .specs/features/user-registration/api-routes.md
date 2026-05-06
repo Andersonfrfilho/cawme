@@ -93,6 +93,23 @@ Verifica se email, telefone ou CPF já estão cadastrados antes do submit.
 }
 ```
 
+> **Campos de empresa (quando `documentType === "cnpj"`):**
+> ```json
+> {
+>   "email": "empresa@exemplo.com",
+>   "password": "SenhaForte123!",
+>   "firstName": "João",
+>   "lastName": "Silva",
+>   "phone": "+5511999999999",
+>   "document": "12345678000195",
+>   "documentType": "cnpj",
+>   "companyName": "Empresa LTDA",
+>   "tradeName": "Empresa"
+> }
+> ```
+> - `companyName` (string, obrigatório): Razão Social
+> - `tradeName` (string, opcional): Nome Fantasia
+
 **Arquivo:** `src/modules/auth/services/keycloak.service.ts:98`
 
 ---

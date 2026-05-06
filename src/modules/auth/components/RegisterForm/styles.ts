@@ -202,4 +202,41 @@ export const styles = StyleSheet.create({
     marginLeft: moderateScale(6, 0.3),
     fontWeight: theme.typography.fontWeight.medium,
   },
+  documentTypeContainer: {
+    marginTop: verticalScale(8),
+    marginBottom: verticalScale(4),
+  },
+  documentTypeLabel: {
+    fontSize: moderateScale(13, 0.3),
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.text.secondary,
+    marginBottom: verticalScale(8),
+    marginLeft: moderateScale(4, 0.5),
+  },
+  documentTypeRow: {
+    flexDirection: "row",
+    gap: moderateScale(8, 0.5),
+    flexWrap: "wrap",
+  },
+  documentTypeChip: {
+    paddingHorizontal: moderateScale(16, 0.5),
+    paddingVertical: verticalScale(8),
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.palette.neutral[50],
+    borderWidth: 1,
+    borderColor: theme.palette.neutral[200],
+  },
+  documentTypeChipSelected: {
+    backgroundColor: theme.colors.primary.DEFAULT,
+    borderColor: theme.colors.primary.DEFAULT,
+  },
+  documentTypeChipText: {
+    fontSize: moderateScale(12, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.secondary,
+    letterSpacing: 0.5,
+  },
+  documentTypeChipTextSelected: {
+    color: theme.palette.neutral[0],
+  },
 });

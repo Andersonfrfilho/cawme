@@ -19,7 +19,7 @@ export type RegisterServiceParams = {
   firstName: string;
   lastName: string;
   phone: string;
-  cpf: string;
+  document: string;
 };
 
 export type RegisterServiceResult = {

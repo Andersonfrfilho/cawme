@@ -9,3 +9,4 @@
  */
 
 import "@/modules/auth/locales";
+import "@/modules/company/locales";

@@ -19,7 +19,8 @@ export default function TermsScreen() {
     lastName: string;
     email: string;
     phone: string;
-    cpf: string;
+    document: string;
+    documentType: string;
     password: string;
   }>();
   const { register } = useRegister();
@@ -53,7 +54,7 @@ export default function TermsScreen() {
     params.lastName &&
     params.email &&
     params.phone &&
-    params.cpf &&
+    params.document &&
     params.password;
 
   const handleSubmit = async () => {
@@ -74,7 +75,7 @@ export default function TermsScreen() {
         firstName: params.firstName,
         lastName: params.lastName,
         phone: params.phone.replace(/\D/g, ""),
-        cpf: params.cpf.replace(/\D/g, ""),
+        document: params.document.replace(/\D/g, ""),
       });
       
       // ✅ FIM DO FLUXO: Sucesso
@@ -104,7 +105,19 @@ export default function TermsScreen() {
   };
 
   const handleBackToEdit = () => {
-    router.back();
+    router.push({
+      pathname: "/register" as any,
+      params: {
+        firstName: params.firstName,
+        lastName: params.lastName,
+        email: params.email,
+        phone: params.phone,
+        document: params.document,
+        documentType: params.documentType,
+        fieldError: fieldError?.field,
+        errorMessage: fieldError?.message,
+      },
+    });
   };
 
   if (screenState === "success") {
@@ -175,19 +188,19 @@ export default function TermsScreen() {
               </View>
             )}
             
-            {/* Campo CPF */}
+            {/* Campo Documento */}
             <View style={styles.summaryRow}>
               <Ionicons 
                 name="card-outline" 
                 size={moderateScale(16, 0.3)} 
-                color={fieldError?.field === 'cpf' ? theme.colors.status.error : theme.colors.text.secondary} 
+                color={fieldError?.field === 'document' ? theme.colors.status.error : theme.colors.text.secondary} 
               />
               <Text style={[
                 styles.summaryText,
-                fieldError?.field === 'cpf' && styles.summaryTextError
-              ]}>{params.cpf}</Text>
+                fieldError?.field === 'document' && styles.summaryTextError
+              ]}>{params.document}</Text>
             </View>
-            {fieldError?.field === 'cpf' && (
+            {fieldError?.field === 'document' && (
               <View style={styles.fieldErrorContainer}>
                 <Ionicons name="alert-circle" size={moderateScale(14, 0.3)} color={theme.colors.status.error} />
                 <Text style={styles.fieldErrorMessage}>{fieldError.message}</Text>

@@ -3,7 +3,8 @@ export type VerificationScreenParams = {
   phone: string;
   firstName: string;
   lastName: string;
-  cpf: string;
+  document: string;
+  documentType: string;
   password: string;
 };
 
