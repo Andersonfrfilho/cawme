@@ -168,6 +168,11 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 returnKeyType={config?.returnKeyType ?? "next"}
                 onSubmitEditing={config?.onSubmitEditing}
                 maxLength={config?.maxLength}
+                autoComplete={config?.secureTextEntry ? "off" : undefined}
+                textContentType={config?.secureTextEntry ? "none" : undefined}
+                importantForAutofill={config?.secureTextEntry ? "no" : undefined}
+                autoCorrect={false}
+                spellCheck={false}
               />
               {config?.showToggle && (
                 <TouchableOpacity

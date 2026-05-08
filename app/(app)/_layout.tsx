@@ -43,7 +43,19 @@ export default function AppLayout() {
   );
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: theme.colors.primary.DEFAULT }}>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: theme.palette.neutral[0],
+        tabBarInactiveTintColor: theme.palette.blue[200],
+        tabBarStyle: {
+          backgroundColor: theme.colors.primary.DEFAULT,
+          borderTopColor: theme.colors.primary.dark,
+        },
+        tabBarLabelStyle: {
+          color: theme.palette.neutral[0],
+        },
+      }}
+    >
       {tabs.map((tab) => (
         <Tabs.Screen
           key={tab.id}

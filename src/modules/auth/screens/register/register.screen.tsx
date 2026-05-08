@@ -178,7 +178,7 @@ export default function RegisterScreen() {
       logger.warn('RegisterScreen', 'submit.blocked', 'Bloqueando navegação - campo indisponível', {
         emailAvailable: verificationOutcomes.email?.isAvailable,
         phoneAvailable: verificationOutcomes.phone?.isAvailable,
-        cpfAvailable: verificationOutcomes.cpf?.isAvailable,
+        documentAvailable: verificationOutcomes.document?.isAvailable,
       });
       return;
     }
