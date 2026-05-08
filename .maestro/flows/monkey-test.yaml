@@ -1,6 +1,6 @@
 appId: com.andersonfilho.cawme
-name: 🐵 Monkey Test - Random Exploration
-description: Simula usuário aleatório explorando o app
+name: 🐵 Monkey Test - Random Exploration (Updated)
+description: Simula usuário aleatório explorando o app incluindo novas telas
 tags:
   - monkey
   - stress
@@ -11,18 +11,70 @@ tags:
 - repeat:
     times: 200
     commands:
+      # Taps aleatórios em qualquer lugar
       - tapOn: "random"
+      
+      # Swipes em direções aleatórias
       - runFlow:
           when:
             visible: ".*"
           file: "random-swipe.yaml"
-      - inputText: "teste"
-      - tapOn: "random"
-      - assertVisible: ".*"
+      
+      # Input de texto aleatório em campos
+      - inputText: "monkey${RANDOM_NUMBER}"
+      
+      # Tenta navegar para registro se disponível
       - runFlow:
           when:
-            visible: "Criar conta|Entrar"
+            visible: "Criar conta|Quero cadastrar"
           file: "navigate-to-register.yaml"
           continueOnFailure: true
+      
+      # Tenta interagir com termos se visível
+      - runFlow:
+          when:
+            visible: "Termos de Uso|política de privacidade"
+          commands:
+            - tapOn: "random"
+            - scroll
+          continueOnFailure: true
+      
+      # Tenta interagir com verificação se visível
+      - runFlow:
+          when:
+            visible: "Verificação|Verificar depois|Reenviar"
+          commands:
+            - tapOn: "random"
+            - inputText: "1"
+          continueOnFailure: true
+      
+      # Tenta interagir com upload de documento se visível
+      - runFlow:
+          when:
+            visible: "Verificação de Documento|Enviar depois"
+          commands:
+            - tapOn: "random"
+            - scroll
+          continueOnFailure: true
+      
+      # Tenta interagir com conta bloqueada se visível
+      - runFlow:
+          when:
+            visible: "Bloqueada|Suporte"
+          commands:
+            - tapOn: "random"
+          continueOnFailure: true
+      
+      # Tenta fazer logout se em área logada
+      - runFlow:
+          when:
+            visible: "Sair|Logout"
+          commands:
+            - tapOn: "random"
+          continueOnFailure: true
+      
+      # Assert que app ainda responde
+      - assertVisible: ".*"
+      
 - takeScreenshot: "monkey-test-final.png"
 - assertNoCrash: true

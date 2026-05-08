@@ -1,6 +1,6 @@
 appId: com.andersonfilho.cawme
-name: 🔐 Login Flow
-description: Testa fluxo de login
+name: 🔐 Login Flow - With Verification Check
+description: Testa fluxo de login com checagem de verificação pendente
 tags:
   - critical
   - login
@@ -12,7 +12,7 @@ tags:
 
 # Navega para login
 - tapOn: "Entrar"
-- assertVisible: ".*Login.*"
+- assertVisible: ".*Login.*|.*Entrar.*"
 
 # Preenche credenciais
 - inputText: "test@example.com"
@@ -21,5 +21,16 @@ tags:
 # Submete
 - tapOn: "Entrar"
 
-# Aguarda navegação
-- assertVisible: ".*Home.*|.*Dashboard.*"
+# Verifica se redirecionou para home ou verificação
+- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*|.*Verificação.*"
+
+# Se for redirecionado para verificação (conta pendente)
+- runFlow:
+    when:
+      visible: "Verificação"
+    commands:
+      - assertVisible: "Confirme seu e-mail e telefone"
+      - assertVisible: "Verificar depois"
+      - tapOn: "Verificar depois"
+      - assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
+    continueOnFailure: true

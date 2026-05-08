@@ -1,0 +1,26 @@
+appId: com.andersonfilho.cawme
+name: 🚫 Blocked Account Flow
+description: Testa tela de conta bloqueada e ações disponíveis
+tags:
+  - blocked
+  - error
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+# Simula navegação direta para tela de bloqueio
+- openLink: "cawme://blocked-account?reason=EMAIL_CONFLICT&message=Este%20email%20ja%20esta%20em%20uso"
+
+# Verifica elementos da tela
+- assertVisible: "Conta Temporariamente Bloqueada"
+- assertVisible: "EMAIL_CONFLICT"
+
+# Verifica botões de ação
+- assertVisible: "Falar com Suporte"
+- assertVisible: "Voltar para o Login"
+
+# Testa navegação para login
+- tapOn: "Voltar para o Login"
+- assertVisible: "Cawme"
+- assertVisible: ".*Entrar.*|.*Login.*"

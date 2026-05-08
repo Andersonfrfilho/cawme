@@ -1,6 +1,6 @@
 appId: com.andersonfilho.cawme
-name: ✅ Register Flow - Complete
-description: Testa fluxo completo de cadastro
+name: ✅ Register Flow - Complete (New Flow)
+description: Testa fluxo completo de cadastro com verificação pós-registro
 tags:
   - critical
   - register
@@ -15,6 +15,9 @@ tags:
 - tapOn: "Criar conta"
 - assertVisible: "Crie sua conta"
 
+# Seleciona tipo de documento (CPF)
+- tapOn: "CPF"
+
 # Preenche formulário
 - inputText: "Monkey"
 - inputText: "Test"
@@ -24,17 +27,33 @@ tags:
 - inputText: "password123"
 - inputText: "password123"
 
-# Avança
+# Avança para termos
 - tapOn: "Avançar"
 - assertVisible: "Termos de Uso"
 
 # Aceita termos
-- tapOn: "Li e aceito"
+- tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
-# Verifica sucesso
-- assertVisible: "Cadastro realizado|Sucesso"
+# Agora vai para verificação (novo fluxo)
+- assertVisible: "Verificação"
+- assertVisible: "Confirme seu e-mail e telefone"
 
-# Cleanup: volta para login
-- tapOn: "Ir para login"
-- assertVisible: "Entrar"
+# Verifica que código foi enviado para email
+- assertVisible: "Código enviado para"
+
+# Pular verificação (testa o fluxo alternativo)
+- tapOn: "Verificar depois"
+
+# Deve ir para home
+- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
+
+# Cleanup: faz logout
+- runFlow:
+    when:
+      visible: ".*menu.*|.*perfil.*|.*profile.*"
+    commands:
+      - tapOn: ".*menu.*|.*perfil.*|.*profile.*"
+      - tapOn: "Sair"
+      - assertVisible: "Cawme"
+    continueOnFailure: true

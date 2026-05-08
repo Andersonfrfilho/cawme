@@ -1,0 +1,72 @@
+appId: com.andersonfilho.cawme
+name: 📄 Document Upload Flow (Feature Flag)
+description: Testa fluxo de upload de documento quando feature flag está ativa
+tags:
+  - document
+  - upload
+  - feature-flag
+---
+- launchApp:
+    clearState: true
+
+# Navega para cadastro
+- tapOn: "Criar conta"
+- assertVisible: "Crie sua conta"
+
+# Seleciona tipo de documento
+- tapOn: "CPF"
+
+# Preenche formulário
+- inputText: "Test"
+- inputText: "Document"
+- inputText: "doc${RANDOM_NUMBER}@test.com"
+- inputText: "11988887777"
+- inputText: "12345678909"
+- inputText: "password123"
+- inputText: "password123"
+
+# Avança
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+# Aceita termos
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# Se feature flag ativa, vai para upload de documento
+- runFlow:
+    when:
+      visible: "Verificação de Documento"
+    commands:
+      # Seleciona tipo de documento
+      - assertVisible: "Tipo de documento"
+      - tapOn: "RG"
+      
+      # Área de upload
+      - assertVisible: "Tirar foto ou escolher da galeria"
+      
+      # Verifica diretrizes
+      - assertVisible: "Dicas para uma boa foto"
+      - assertVisible: "Esteja em um local bem iluminado"
+      
+      # Botão de skip deve existir
+      - assertVisible: "Enviar depois"
+      
+      # Pula upload (não podemos selecionar imagem no teste)
+      - tapOn: "Enviar depois"
+      
+      # Vai para verificação
+      - assertVisible: "Verificação"
+    continueOnFailure: true
+
+# Se feature flag desativa, vai direto para verificação
+- runFlow:
+    when:
+      visible: "Verificação"
+    commands:
+      - assertVisible: "Confirme seu e-mail e telefone"
+      - tapOn: "Verificar depois"
+    continueOnFailure: true
+
+# Home
+- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"

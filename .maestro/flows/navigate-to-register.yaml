@@ -1,0 +1,7 @@
+# Navega para a tela de registro
+- tapOn: "Criar conta"
+  optional: true
+- tapOn: "Quero cadastrar"
+  optional: true
+- assertVisible: "Crie sua conta"
+  optional: true

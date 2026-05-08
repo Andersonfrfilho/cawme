@@ -30,6 +30,7 @@ export const AUTH_ENDPOINTS = {
   VERIFICATION_VERIFY: "/bff/onboarding/verification/verify",
   VERIFICATION_STATUS: "/v1/users/me/verification-status",
   ACCOUNT_STATUS: "/v1/users/me/account-status",
+  DOCUMENT_UPLOAD: "/bff/onboarding/documents/upload",
   APP_CONFIG: "/bff/app-config",
   TERMS_CURRENT: "/bff/auth/terms/current",
   TERMS_VERSIONS: "/bff/auth/terms/versions",

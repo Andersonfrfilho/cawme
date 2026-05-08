@@ -1,0 +1,52 @@
+appId: com.andersonfilho.cawme
+name: ✅ Verification Flow - Post Register
+description: Testa fluxo de verificação de email/telefone após cadastro
+tags:
+  - verification
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+# Navega para cadastro
+- tapOn: "Criar conta"
+
+# Preenche formulário completo
+- tapOn: "CPF"
+- inputText: "Verify"
+- inputText: "Test"
+- inputText: "verify${RANDOM_NUMBER}@test.com"
+- inputText: "11977776666"
+- inputText: "12345678909"
+- inputText: "password123"
+- inputText: "password123"
+
+# Avança para termos
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+# Aceita termos
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# Tela de verificação
+- assertVisible: "Verificação"
+- assertVisible: "E-mail"
+
+# Código enviado
+- assertVisible: "Código enviado para"
+
+# Tenta inserir código (vai falhar pois é mock)
+- tapOn: ".*[0-9].*"
+  optional: true
+  repeat: 4
+
+# Verifica aba de telefone
+- tapOn: "Telefone"
+- assertVisible: "Código enviado para"
+
+# Pular verificação
+- tapOn: "Verificar depois"
+
+# Verifica se home carregou
+- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"

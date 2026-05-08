@@ -1,6 +1,6 @@
 appId: com.andersonfilho.cawme
-name: 💥 Stress Test - Rapid Clicks
-description: Testa cliques rápidos e múltiplos
+name: 💥 Stress Test - Rapid Clicks & New Screens
+description: Testa cliques rápidos e múltiplos nas novas telas
 tags:
   - stress
   - performance
@@ -10,26 +10,65 @@ tags:
     clearState: false
 - assertVisible: ".*"
 
-# Cliques rápidos em sequência
+# Fase 1: Cliques rápidos no welcome
 - repeat:
-    times: 50
+    times: 20
     commands:
       - tapOn: "random"
       - tapOn: "random"
-      - tapOn: "random"
 
-# Scroll rápido
+# Fase 2: Navega para registro e clica rápido
+- tapOn: "Criar conta"
+- assertVisible: "Crie sua conta"
+
+# Cliques rápidos nos campos
+- repeat:
+    times: 30
+    commands:
+      - tapOn: "random"
+      - inputText: "stress"
+
+# Seleciona tipo de documento várias vezes
+- repeat:
+    times: 10
+    commands:
+      - tapOn: "CPF"
+      - tapOn: "CNPJ"
+      - tapOn: "RG"
+      - tapOn: "PASSAPORTE"
+
+# Fase 3: Scroll rápido
 - repeat:
     times: 20
     commands:
       - scroll
       - scroll
 
-# Input rápido de texto
+# Fase 4: Avança e clica rápido nos termos
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
 - repeat:
-    times: 10
+    times: 15
     commands:
-      - inputText: "teste${RANDOM_NUMBER}"
+      - tapOn: "random"
+      - tapOn: "Eu li e concordo"
+
+# Fase 5: Stress na tela de verificação
+- tapOn: "Finalizar cadastro"
+- runFlow:
+    when:
+      visible: "Verificação"
+    commands:
+      - repeat:
+          times: 20
+          commands:
+            - tapOn: "random"
+            - tapOn: "E-mail"
+            - tapOn: "Telefone"
+            - inputText: "1"
+      - tapOn: "Verificar depois"
+    continueOnFailure: true
 
 # Verifica que app não crashou
 - assertNoCrash: true

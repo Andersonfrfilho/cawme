@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { apiClient } from '@/shared/services/api-client';
 import { logger } from '@/shared/utils/logger';
+import { useLocale, LocaleKeys } from '@/shared/locales';
 
 export interface VerificationResult {
   isValid: boolean;
@@ -9,6 +10,7 @@ export interface VerificationResult {
 }
 
 export function useFieldVerification() {
+  const { auth } = useLocale<LocaleKeys>();
   const [checkingFields, setCheckingFields] = useState<Record<string, boolean>>({});
   const [verificationResults, setVerificationResults] = useState<Record<string, VerificationResult>>({});
   
@@ -115,7 +117,17 @@ export function useFieldVerification() {
           field, 
           apiField 
         });
-        return null;
+        
+        const rateLimitMessage = 'Muitas tentativas. Aguarde um momento.';
+        setVerificationResults(prev => ({
+          ...prev,
+          [field]: {
+            isValid: true,
+            isAvailable: true,
+            error: rateLimitMessage,
+          }
+        }));
+        return { isValid: true, isAvailable: true, error: rateLimitMessage };
       }
 
       if (error.response?.status === 400 || error.response?.status === 422) {

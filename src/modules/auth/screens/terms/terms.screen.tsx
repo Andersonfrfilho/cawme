@@ -9,6 +9,7 @@ import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { logger } from "@/shared/utils/logger";
 import { useRegister } from "@/modules/auth/hooks/useRegister";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useAppConfig } from "@/modules/auth/hooks/useAppConfig";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { getErrorMessage } from "@/modules/auth/services/error-mapper";
 import { styles } from "./styles";
@@ -46,6 +47,7 @@ export default function TermsScreen() {
   }, [navigation]);
 
   const setUser = useAuthStore((s) => s.setUser);
+  const { isDocumentPhotoVerificationEnabled } = useAppConfig();
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [screenState, setScreenState] = useState<"terms" | "error">("terms");
@@ -88,20 +90,34 @@ export default function TermsScreen() {
         password: params.password,
       });
 
-      // 3. Redireciona para verificação
-      logger.screenEvent('TermsScreen', 'register.redirect-verification', { email: params.email });
+      // 3. Salva usuário no store
+      logger.screenEvent('TermsScreen', 'register.redirect', { email: params.email });
       setUser({ id, name, email, type: "contractor" });
 
-      router.replace({
-        pathname: "/verification" as any,
-        params: {
-          email: params.email,
-          phone: params.phone,
-          firstName: params.firstName,
-          lastName: params.lastName,
-          mode: "post-register",
-        },
-      });
+      // 4. Decide próxima tela conforme feature flags
+      if (isDocumentPhotoVerificationEnabled) {
+        logger.screenEvent('TermsScreen', 'register.redirect-document-upload', { email: params.email });
+        router.replace({
+          pathname: "/document-upload" as any,
+          params: {
+            email: params.email,
+            phone: params.phone,
+            mode: "post-register",
+          },
+        });
+      } else {
+        logger.screenEvent('TermsScreen', 'register.redirect-verification', { email: params.email });
+        router.replace({
+          pathname: "/verification" as any,
+          params: {
+            email: params.email,
+            phone: params.phone,
+            firstName: params.firstName,
+            lastName: params.lastName,
+            mode: "post-register",
+          },
+        });
+      }
     } catch (error: any) {
       // 🔄 FLUXO ALTERNATIVO: Erro no registro
       logger.error('TermsScreen', 'register.error', 'Erro no registro', error, {

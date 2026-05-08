@@ -74,14 +74,29 @@ maestro test .maestro/flows/*.yaml
 ### E2E Testing
 
 ```bash
-# Rodar fluxo de cadastro
+# Rodar fluxo de cadastro completo (Register → Terms → Verification → Home)
 maestro test .maestro/flows/register-flow.yaml
 
-# Rodar fluxo de login
+# Rodar fluxo de login com checagem de verificação pendente
 maestro test .maestro/flows/login-flow.yaml
+
+# Rodar fluxo de verificação (email + SMS)
+maestro test .maestro/flows/verification-flow.yaml
+
+# Rodar fluxo de conta bloqueada
+maestro test .maestro/flows/blocked-account-flow.yaml
+
+# Rodar fluxo de upload de documento (feature flag)
+maestro test .maestro/flows/document-upload-flow.yaml
 
 # Rodar fluxo de busca
 maestro test .maestro/flows/search-flow.yaml
+
+# Rodar todos os testes E2E
+npm run test:e2e
+
+# Rodar TODOS os testes (e2e + monkey + stress)
+npm run test:e2e:all
 ```
 
 ### Debug
@@ -165,24 +180,18 @@ No Sentry:
 
 ```
 .maestro/
-  config.yaml              # Configuração do Maestro
+  config.yaml                    # Configuração do Maestro
   flows/
-    monkey-test.yaml       # Teste aleatório
-    stress-test.yaml       # Teste de estresse
-    register-flow.yaml     # E2E cadastro
-    login-flow.yaml        # E2E login
-    search-flow.yaml       # E2E busca
-
-src/shared/
-  services/
-    sentry.ts              # Error tracking
-    logger.ts              # Logger customizado
-  utils/
-    error-tracker.ts       # Wrapper de erros
-
-docs/
-  TESTING_STRATEGY.md      # Estratégia completa
-  LOGGER.md                # Documentação do logger
+    monkey-test.yaml             # Teste aleatório (200 ações)
+    stress-test.yaml             # Teste de estresse (cliques rápidos)
+    register-flow.yaml           # E2E cadastro completo
+    login-flow.yaml              # E2E login com verificação
+    verification-flow.yaml       # E2E verificação email/SMS
+    blocked-account-flow.yaml    # E2E conta bloqueada
+    document-upload-flow.yaml    # E2E upload de documento
+    search-flow.yaml             # E2E busca
+    navigate-to-register.yaml    # Helper: navega para registro
+    random-swipe.yaml            # Helper: swipe aleatório
 ```
 
 ## 🔧 Troubleshooting
