@@ -158,7 +158,7 @@ export function useFieldVerification() {
     }
 
     // Validações básicas antes de verificar
-    const rawValue = value.replace(/\D/g, '');
+    const rawValue = field === 'email' ? value : value.replace(/\D/g, '');
     const minLength: Record<string, number> = {
       email: 5,
       phone: 10,

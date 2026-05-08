@@ -143,7 +143,7 @@ export default function RegisterScreen() {
     
     // Verifica cada campo crítico (mesmo que já tenha sido verificado antes)
     for (const { field, value, minLength } of criticalFields) {
-      const rawValue = value.replace(/\D/g, '');
+      const rawValue = field === 'email' ? value : value.replace(/\D/g, '');
       if (rawValue.length >= minLength) {
         logger.screenEvent('RegisterScreen', 'submit.verifying', { field, valueLength: rawValue.length });
         setIsVerifying(true);
