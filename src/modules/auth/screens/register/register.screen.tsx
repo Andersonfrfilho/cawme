@@ -183,14 +183,14 @@ export default function RegisterScreen() {
       return;
     }
     
-    // ✅ FIM DO FLUXO: Navegação para verificação por código
-    logger.screenNavigate('RegisterScreen', 'VerificationScreen', {
+    // ✅ FIM DO FLUXO: Navegação para termos
+    logger.screenNavigate('RegisterScreen', 'TermsScreen', {
       email: values.email,
       phone: values.phone,
     });
 
     router.push({
-      pathname: "/verification" as any,
+      pathname: "/terms" as any,
       params: {
         firstName: values.firstName,
         lastName: values.lastName,

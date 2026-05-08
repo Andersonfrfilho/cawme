@@ -173,4 +173,16 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: verticalScale(16),
   },
+  skipButton: {
+    marginTop: verticalScale(16),
+    height: verticalScale(48),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  skipButtonText: {
+    fontSize: moderateScale(14, 0.3),
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.text.secondary,
+    textDecorationLine: "underline",
+  },
 });

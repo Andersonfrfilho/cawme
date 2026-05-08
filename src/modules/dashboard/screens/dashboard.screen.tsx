@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { PendingVerificationBadge } from "@/modules/auth/components/PendingVerificationBadge/PendingVerificationBadge.component";
 
 import { styles } from "./styles";
 import ContractorDashboard from "@/modules/dashboard/components/ContractorDashboard";
@@ -20,9 +21,14 @@ export default function DashboardScreen() {
     );
   }
 
-  return user.type === "provider" ? (
-    <ProviderDashboard />
-  ) : (
-    <ContractorDashboard />
+  return (
+    <View style={styles.container}>
+      <PendingVerificationBadge variant="banner" />
+      {user.type === "provider" ? (
+        <ProviderDashboard />
+      ) : (
+        <ContractorDashboard />
+      )}
+    </View>
   );
 }

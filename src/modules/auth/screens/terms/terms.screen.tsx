@@ -5,11 +5,12 @@ import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
-import { scale, moderateScale, verticalScale } from "@/shared/utils/scale";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { logger } from "@/shared/utils/logger";
 import { useRegister } from "@/modules/auth/hooks/useRegister";
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { getErrorMessage } from "@/modules/auth/services/error-mapper";
-import { RegisterSuccess } from "../../components";
 import { styles } from "./styles";
 
 export default function TermsScreen() {
@@ -44,9 +45,10 @@ export default function TermsScreen() {
     });
   }, [navigation]);
 
+  const setUser = useAuthStore((s) => s.setUser);
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [screenState, setScreenState] = useState<"terms" | "success" | "error">("terms");
+  const [screenState, setScreenState] = useState<"terms" | "error">("terms");
   const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
 
   const allFieldsValid =
@@ -59,31 +61,47 @@ export default function TermsScreen() {
 
   const handleSubmit = async () => {
     if (!accepted || !allFieldsValid) return;
-    
+
     // 🚀 INÍCIO DO FLUXO: Registro de usuário
     logger.screenEvent('TermsScreen', 'register.start', {
       email: params.email,
       firstName: params.firstName,
       lastName: params.lastName,
     });
-    
+
     setLoading(true);
     try {
+      // 1. Cria conta
       await register({
         email: params.email,
         password: params.password,
         firstName: params.firstName,
         lastName: params.lastName,
         phone: params.phone.replace(/\D/g, ""),
-        document: params.document.replace(/\D/g, ""),
+        cpf: params.document.replace(/\D/g, ""),
       });
-      
-      // ✅ FIM DO FLUXO: Sucesso
-      logger.screenEvent('TermsScreen', 'register.success', {
-        email: params.email,
+
+      // 2. Login automático para obter token
+      logger.screenEvent('TermsScreen', 'register.auto-login', { email: params.email });
+      const { id, name, email } = await KeycloakService.login({
+        username: params.email,
+        password: params.password,
       });
-      
-      setScreenState("success");
+
+      // 3. Redireciona para verificação
+      logger.screenEvent('TermsScreen', 'register.redirect-verification', { email: params.email });
+      setUser({ id, name, email, type: "contractor" });
+
+      router.replace({
+        pathname: "/verification" as any,
+        params: {
+          email: params.email,
+          phone: params.phone,
+          firstName: params.firstName,
+          lastName: params.lastName,
+          mode: "post-register",
+        },
+      });
     } catch (error: any) {
       // 🔄 FLUXO ALTERNATIVO: Erro no registro
       logger.error('TermsScreen', 'register.error', 'Erro no registro', error, {
@@ -95,7 +113,7 @@ export default function TermsScreen() {
       const messageKey = getErrorMessage(error);
       const field = (error as any)?.response?.data?.field || 'email';
       const message = auth[messageKey as keyof typeof auth] || messageKey;
-      
+
       // Mostra erro inline na tela
       setFieldError({ field, message });
       setScreenState("error");
@@ -119,18 +137,6 @@ export default function TermsScreen() {
       },
     });
   };
-
-  if (screenState === "success") {
-    return (
-      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
-        <StatusBar barStyle="dark-content" />
-        <RegisterSuccess
-          email={params.email}
-          onGoToLogin={() => router.replace("/login" as any)}
-        />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <View style={styles.root}>

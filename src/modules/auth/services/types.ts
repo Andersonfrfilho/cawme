@@ -19,14 +19,12 @@ export type RegisterServiceParams = {
   firstName: string;
   lastName: string;
   phone: string;
-  document: string;
+  cpf: string;
 };
 
 export type RegisterServiceResult = {
+  userId: string;
   keycloakId: string;
-  email: string;
-  success: boolean;
-  message: string;
 };
 
 export type SendCodeParams = {

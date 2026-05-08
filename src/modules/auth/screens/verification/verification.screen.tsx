@@ -42,8 +42,8 @@ export default function VerificationScreen() {
   const [error, setError] = useState("");
   const [canResend, setCanResend] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(params.emailVerified === "true");
+  const [phoneVerified, setPhoneVerified] = useState(params.phoneVerified === "true");
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -159,18 +159,11 @@ export default function VerificationScreen() {
   };
 
   const handleAdvance = () => {
-    router.replace({
-      pathname: "/terms" as any,
-      params: {
-        firstName: params.firstName,
-        lastName: params.lastName,
-        email: params.email,
-        phone: params.phone,
-        document: params.document,
-        documentType: params.documentType,
-        password: params.password,
-      },
-    });
+    router.replace("/(app)/home" as any);
+  };
+
+  const handleSkipVerification = () => {
+    router.replace("/(app)/home" as any);
   };
 
   const isCodeComplete = code.every((digit) => digit !== "");
@@ -330,6 +323,16 @@ export default function VerificationScreen() {
               activeOpacity={0.85}
             >
               <Text style={styles.advanceButtonText}>{auth.verificationAdvanceButton}</Text>
+            </TouchableOpacity>
+          )}
+
+          {!bothVerified && (
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={handleSkipVerification}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipButtonText}>{auth.verificationSkip}</Text>
             </TouchableOpacity>
           )}
         </View>

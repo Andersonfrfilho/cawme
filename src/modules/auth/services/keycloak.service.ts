@@ -120,4 +120,43 @@ export const KeycloakService = {
     );
     return response.data;
   },
+
+  async getVerificationStatus(): Promise<{
+    emailVerified: boolean;
+    phoneVerified: boolean;
+    status: string;
+  }> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.VERIFICATION_STATUS);
+    return response.data;
+  },
+
+  async getAppConfig(): Promise<{
+    features: {
+      documentPhotoVerification: boolean;
+    };
+  }> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.APP_CONFIG);
+    return response.data;
+  },
+
+  async getAccountBlockStatus(): Promise<{
+    blocked: boolean;
+    status: string;
+    reason: string | null;
+    message: string | null;
+    title: string | null;
+    icon: string | null;
+    severity: string | null;
+    actions: Array<{
+      type: string;
+      label: string;
+      url?: string;
+      route?: string;
+      variant?: string;
+    }>;
+    canRetryAt: string | null;
+  }> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.ACCOUNT_STATUS);
+    return response.data;
+  },
 };
