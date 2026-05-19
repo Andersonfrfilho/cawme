@@ -40,26 +40,30 @@ export default function AddressScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  useLayoutEffect(() => {
+  const handleBack = useCallback(() => {
     if (step === "autocomplete") {
-      navigation.setOptions({ headerShown: false });
-      return;
+      setStep("cep");
+    } else {
+      router.back();
     }
+  }, [step]);
+
+  useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
       headerLeft: () => (
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBack}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ marginLeft: 16 }}
         >
           <Ionicons name="chevron-back" size={moderateScale(22, 0.3)} color={theme.colors.text.primary} />
         </TouchableOpacity>
       ),
-      headerTitle: auth.addressTitle,
+      headerTitle: step === "autocomplete" ? "" : auth.addressTitle,
       headerShadowVisible: false,
     });
-  }, [navigation, step]);
+  }, [navigation, handleBack, step]);
 
   const [step, setStep] = useState<ScreenStep>("cep");
   const [cep, setCep] = useState("");
@@ -239,15 +243,6 @@ export default function AddressScreen() {
       <View style={styles.root}>
         <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
           <View style={styles.searchHeader}>
-            <TouchableOpacity
-              style={styles.searchBackButton}
-              onPress={() => setStep("cep")}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={moderateScale(22, 0.3)} color={theme.colors.primary.DEFAULT} />
-              <Text style={styles.searchBackText}>{auth.addressSearchBack}</Text>
-            </TouchableOpacity>
-
             <View style={styles.searchInputRow}>
               <Ionicons
                 name="search-outline"
