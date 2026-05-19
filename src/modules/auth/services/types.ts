@@ -58,6 +58,7 @@ export type VerifyCodeParams = {
   type: "email" | "sms";
   destination: string;
   code: string;
+  keycloakId?: string;
 };
 
 export type VerifyCodeResult = {

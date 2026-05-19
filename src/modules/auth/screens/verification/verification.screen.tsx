@@ -166,7 +166,10 @@ export default function VerificationScreen() {
     setError("");
     try {
       const destination = target === "email" ? effectiveEmail : effectivePhone;
-      const result = await verifyCode({ type: toApiType(target), destination, code: fullCode });
+      const keycloakId = params.mode === "post-register"
+        ? (useRegisterStore.getState().keycloakId ?? undefined)
+        : undefined;
+      const result = await verifyCode({ type: toApiType(target), destination, code: fullCode, keycloakId });
 
       if (result.verified) {
         if (target === "email") {

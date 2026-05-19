@@ -125,6 +125,7 @@ export const KeycloakService = {
     type: "email" | "sms";
     destination: string;
     code: string;
+    keycloakId?: string;
   }): Promise<{ verified: boolean }> {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.VERIFICATION_VERIFY,
