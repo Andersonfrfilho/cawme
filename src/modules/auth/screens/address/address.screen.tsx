@@ -41,6 +41,10 @@ export default function AddressScreen() {
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
+    if (step === "autocomplete") {
+      navigation.setOptions({ headerShown: false });
+      return;
+    }
     navigation.setOptions({
       headerShown: true,
       headerLeft: () => (
@@ -55,7 +59,7 @@ export default function AddressScreen() {
       headerTitle: auth.addressTitle,
       headerShadowVisible: false,
     });
-  }, [navigation]);
+  }, [navigation, step]);
 
   const [step, setStep] = useState<ScreenStep>("cep");
   const [cep, setCep] = useState("");
