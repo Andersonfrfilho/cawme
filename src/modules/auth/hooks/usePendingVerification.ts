@@ -40,12 +40,11 @@ export function usePendingVerification() {
 
     try {
       const documents = await DocumentService.listDocuments();
-      const hasPendingDocument = documents.some((doc) =>
-        DOCUMENT_PENDING_STATUSES.includes(doc.status)
-      );
-      documentVerified = !hasPendingDocument;
+      // Sem documentos = usuário ainda não enviou nenhum → pendente
+      documentVerified =
+        documents.length > 0 &&
+        !documents.some((doc) => DOCUMENT_PENDING_STATUSES.includes(doc.status));
     } catch {
-      // Se falhar (404 = não tem documento), assume pendente
       documentVerified = false;
     }
 
