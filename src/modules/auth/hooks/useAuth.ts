@@ -10,16 +10,25 @@ export function useAuth() {
   const { showLoading, hideLoading } = useLoading();
 
   async function checkVerificationStatusAndRedirect(userId: string, name: string, email: string) {
-    const { setVerificationStatus } = useAuthStore.getState();
     try {
       const status = await KeycloakService.getVerificationStatus();
+      const local = useAuthStore.getState().verificationStatus;
 
-      if (!status.emailVerified || !status.phoneVerified) {
+      // Combina API com estado local: uma vez verificado localmente, mantém como verificado
+      const effectiveEmailVerified = status.emailVerified || local.emailVerified;
+      const effectivePhoneVerified = status.phoneVerified || local.phoneVerified;
+
+      // Atualiza o store apenas promovendo para true, nunca rebaixando para false
+      useAuthStore.getState().setVerificationStatus({
+        emailVerified: effectiveEmailVerified,
+        phoneVerified: effectivePhoneVerified,
+      });
+
+      if (!effectiveEmailVerified || !effectivePhoneVerified) {
         userAction('login.verification.pending', 'User has pending verification', {
-          emailVerified: status.emailVerified,
-          phoneVerified: status.phoneVerified
+          emailVerified: effectiveEmailVerified,
+          phoneVerified: effectivePhoneVerified,
         });
-        setVerificationStatus({ emailVerified: status.emailVerified, phoneVerified: status.phoneVerified });
         const storedPhone = useAuthStore.getState().user?.phone ?? "";
         router.replace({
           pathname: "/(auth)/verification" as any,
@@ -27,21 +36,29 @@ export function useAuth() {
             email,
             phone: storedPhone,
             mode: "post-login",
-            emailVerified: status.emailVerified ? "true" : "false",
-            phoneVerified: status.phoneVerified ? "true" : "false",
+            emailVerified: effectiveEmailVerified ? "true" : "false",
+            phoneVerified: effectivePhoneVerified ? "true" : "false",
           },
         });
         return;
       }
 
-      setVerificationStatus({ emailVerified: true, phoneVerified: true });
       const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
       setUser({ id: userId, name, email, type: "contractor", phone: storedPhone });
       router.replace("/(app)/home");
     } catch (error) {
-      // If verification status check fails, still allow login but default to home
-      setUser({ id: userId, name, email, type: "contractor" });
-      router.replace("/(app)/home");
+      // Se falhar a checagem, usa o estado local para decidir
+      const local = useAuthStore.getState().verificationStatus;
+      const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
+      setUser({ id: userId, name, email, type: "contractor", phone: storedPhone });
+      if (local.emailVerified && local.phoneVerified) {
+        router.replace("/(app)/home");
+      } else {
+        router.replace({
+          pathname: "/(auth)/verification" as any,
+          params: { email, phone: storedPhone ?? "", mode: "post-login", emailVerified: local.emailVerified ? "true" : "false", phoneVerified: local.phoneVerified ? "true" : "false" },
+        });
+      }
     }
   }
 
