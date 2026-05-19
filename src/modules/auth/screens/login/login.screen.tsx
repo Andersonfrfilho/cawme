@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   KeyboardAvoidingView,
@@ -24,6 +24,7 @@ const REMEMBERED_USERNAME_KEY = "auth_remembered_username";
 
 export default function LoginScreen(_: LoginScreenParams) {
   const { login } = useAuth();
+  const navigatingRef = useRef(false);
   const {
     auth: { loginError, loginSubtitle },
   } = useLocale<LocaleKeys>();
@@ -91,7 +92,12 @@ export default function LoginScreen(_: LoginScreenParams) {
               onSubmit={onSubmit}
               handleSubmit={handleSubmit}
               onForgotPassword={() => router.push("/forgot-password" as any)}
-              onRegister={() => router.push("/register" as any)}
+              onRegister={() => {
+                if (navigatingRef.current) return;
+                navigatingRef.current = true;
+                router.push("/register" as any);
+                setTimeout(() => { navigatingRef.current = false; }, 1000);
+              }}
               onContinueAsGuest={() => router.replace("/(app)/search" as any)}
               rememberMe={rememberMe}
               onToggleRememberMe={() => setRememberMe((remember) => !remember)}

@@ -48,6 +48,8 @@ export default function SearchBar({ config, onItemPress }: SduiComponentProps) {
           onChangeText={setSearchTerm}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
+          textContentType="none"
+          autoComplete="off"
         />
         
         {searchTerm.length > 0 && (
@@ -55,14 +57,6 @@ export default function SearchBar({ config, onItemPress }: SduiComponentProps) {
             <Ionicons name="close-circle" size={20} color={theme.colors.text.secondary} />
           </TouchableOpacity>
         )}
-        
-        <TouchableOpacity
-          onPress={handleSearch}
-          style={localStyles.searchButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="search" size={20} color={theme.colors.primary.DEFAULT} />
-        </TouchableOpacity>
       </View>
       
       {searchBarConfig.showFilters && (
@@ -107,10 +101,6 @@ const localStyles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.primary,
     paddingVertical: 0,
-  },
-  searchButton: {
-    marginLeft: moderateScale(8, 0.5),
-    padding: moderateScale(4, 0.3),
   },
   filtersRow: {
     flexDirection: 'row',

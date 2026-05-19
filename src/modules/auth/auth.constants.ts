@@ -28,14 +28,15 @@ export const AUTH_ENDPOINTS = {
   REGISTER: "/bff/onboarding/register",
   VERIFICATION_SEND: "/bff/onboarding/verification/send",
   VERIFICATION_VERIFY: "/bff/onboarding/verification/verify",
-  VERIFICATION_STATUS: "/v1/users/me/verification-status",
-  ACCOUNT_STATUS: "/v1/users/me/account-status",
+  VERIFICATION_STATUS: "/bff/auth/verification-status",
+  ACCOUNT_STATUS: "/bff/auth/account-status",
   DOCUMENT_UPLOAD: "/bff/onboarding/documents/upload",
   APP_CONFIG: "/bff/app-config",
   TERMS_CURRENT: "/bff/auth/terms/current",
   TERMS_VERSIONS: "/bff/auth/terms/versions",
   TERMS_CHECK_PENDING: "/bff/auth/terms/check-pending",
   TERMS_ACCEPT: "/bff/auth/terms/accept",
+  ADDRESS_SAVE: "/bff/onboarding/address",
 };
 
 export const HERO_OVERLAY = {

@@ -58,7 +58,7 @@ export function useFieldVerification() {
       const response = await apiClient.post(
         `/bff/onboarding/verify/${apiField}`,
         { [apiField]: value },
-        { signal: controller.signal }
+        { signal: controller.signal, _skipGlobalError: true }
       );
 
       // ✅ FIM DO FLUXO: Sucesso

@@ -1,12 +1,13 @@
 export type MapPickerScreenParams = {
-  initialLat?: number;
-  initialLng?: number;
+  initialLatitude?: number;
+  initialLongitude?: number;
   initialAddress?: string;
+  returnTo?: string;
 };
 
 export type MapPickerResult = {
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   street: string;
   number: string;
   neighborhood: string;

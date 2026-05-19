@@ -127,13 +127,11 @@ await register({
   cpf: documentDigitsOnly, // backend usa "cpf" no payload de registro
 });
 
-// 2. Login automático para obter token
-await KeycloakService.login({ username: email, password });
+// 2. Salva credenciais temporárias para auto-login pós-verificação
+// (Keycloak com verifyEmail=true não permite login antes da verificação)
+useRegisterStore.getState().setTempCredentials({ email, password });
 
-// 3. Salva usuário no store
-setUser({ id, name, email, type: "contractor" });
-
-// 4. Redireciona para verificação
+// 3. Redireciona para verificação
 router.replace({
   pathname: "/verification",
   params: { email, phone, mode: "post-register" }

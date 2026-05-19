@@ -19,12 +19,34 @@ export type RegisterServiceParams = {
   firstName: string;
   lastName: string;
   phone: string;
-  cpf: string;
+  userType: "contractor" | "provider";
+  cpf?: string;
+  cnpj?: string;
+  rg?: string;
+  passport?: string;
+  termsAccepted: boolean;
 };
 
 export type RegisterServiceResult = {
   userId: string;
   keycloakId: string;
+};
+
+export type SaveAddressParams = {
+  keycloakId: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  latitude?: string;
+  longitude?: string;
+};
+
+export type SaveAddressResult = {
+  addressId: string;
 };
 
 export type SendCodeParams = {

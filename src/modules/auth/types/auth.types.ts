@@ -17,4 +17,5 @@ export type UserProfile = {
   email: string;
   name: string;
   type: "contractor" | "provider";
+  phone?: string;
 };

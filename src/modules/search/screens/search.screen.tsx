@@ -64,7 +64,7 @@ export function SearchResults() {
             name="search-outline"
             size={20}
             color={colors.text.secondary}
-            style={{ marginRight: moderateScale(8, 0.5) }}
+            style={localStyles.searchIcon}
           />
           
           <TextInput
@@ -75,6 +75,9 @@ export function SearchResults() {
             onChangeText={setSearchTerm}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
+            textContentType="none"
+            autoComplete="off"
+            autoFocus={!params.q}
           />
           
           {searchTerm.length > 0 && (
@@ -89,14 +92,6 @@ export function SearchResults() {
               <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           )}
-          
-          <TouchableOpacity
-            onPress={handleSearch}
-            style={localStyles.searchButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="search" size={20} color={theme.colors.primary.DEFAULT} />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -139,7 +134,7 @@ export default function SearchScreen() {
         <TouchableOpacity
           onPress={() => router.replace("/(auth)")}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ marginLeft: 16 }}
+          style={{ marginLeft: moderateScale(16, 0.5) }}
         >
           <Ionicons name="arrow-back" size={22} color={colors.text.primary} />
         </TouchableOpacity>
@@ -172,14 +167,13 @@ const localStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border.DEFAULT,
   },
+  searchIcon: {
+    marginRight: moderateScale(8, 0.5),
+  },
   input: {
     flex: 1,
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.primary,
     paddingVertical: 0,
-  },
-  searchButton: {
-    marginLeft: moderateScale(8, 0.5),
-    padding: moderateScale(4, 0.3),
   },
 });

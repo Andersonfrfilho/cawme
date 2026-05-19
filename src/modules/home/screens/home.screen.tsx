@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useHome } from "@/modules/home/hooks/useHome";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
+import { PendingVerificationBadge } from "@/modules/auth/components/PendingVerificationBadge/PendingVerificationBadge.component";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { SduiRenderer } from "@/modules/sdui/components/SduiRenderer";
 import { styles } from "./styles";
@@ -18,6 +19,7 @@ export default function HomeScreen() {
   const { logout } = useAuth();
   const navigation = useNavigation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -43,15 +45,6 @@ export default function HomeScreen() {
     });
   }, [navigation, isSignedIn, logout]);
 
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      router.push({
-        pathname: '/(app)/search' as any,
-        params: { q: searchTerm.trim() },
-      });
-      setSearchTerm('');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -92,6 +85,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {isSignedIn && <PendingVerificationBadge variant="banner" />}
       {/* Search Bar Fixa no Topo */}
       <View style={localStyles.searchContainer}>
         <View style={localStyles.searchBar}>
@@ -108,8 +102,9 @@ export default function HomeScreen() {
             placeholderTextColor={theme.colors.text.secondary}
             value={searchTerm}
             onChangeText={setSearchTerm}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
+            returnKeyType="done"
+            textContentType="none"
+            autoComplete="off"
           />
           
           {searchTerm.length > 0 && (
@@ -120,18 +115,15 @@ export default function HomeScreen() {
               <Ionicons name="close-circle" size={20} color={theme.colors.text.secondary} />
             </TouchableOpacity>
           )}
-          
-          <TouchableOpacity
-            onPress={handleSearch}
-            style={localStyles.searchButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="search" size={20} color={theme.colors.primary.DEFAULT} />
-          </TouchableOpacity>
         </View>
       </View>
       
-      <SduiRenderer layout={data?.layout ?? []} />
+      <SduiRenderer
+        layout={data?.layout ?? []}
+        activeFilter={activeFilter}
+        searchTerm={searchTerm}
+        onFilterChange={setActiveFilter}
+      />
     </View>
   );
 }
@@ -162,9 +154,5 @@ const localStyles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.primary,
     paddingVertical: 0,
-  },
-  searchButton: {
-    marginLeft: moderateScale(8, 0.5),
-    padding: moderateScale(4, 0.3),
   },
 });

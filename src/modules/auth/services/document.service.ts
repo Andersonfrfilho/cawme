@@ -1,5 +1,7 @@
 import { apiClient } from "@/shared/services/api-client";
 import { AUTH_ENDPOINTS } from "../auth.constants";
+import { useRegisterStore } from "../store/register.store";
+import { useAuthStore } from "../store";
 
 export type DocumentType = "RG" | "CNH" | "CPF" | "CNPJ" | "PASSPORT";
 
@@ -26,6 +28,17 @@ export type UserDocument = {
 
 export const DocumentService = {
   async uploadDocument(payload: UploadDocumentPayload): Promise<{ id: string; status: DocumentStatus }> {
+    const keycloakId =
+      useRegisterStore.getState().keycloakId ??
+      useAuthStore.getState().user?.id ??
+      null;
+
+    if (!keycloakId) {
+      const error = new Error("Usuário não identificado. Faça login e tente novamente.");
+      (error as any).code = "KEYCLOAK_ID_MISSING";
+      throw error;
+    }
+
     const formData = new FormData();
     
     // @ts-ignore — React Native FormData aceita objetos com uri
@@ -42,6 +55,7 @@ export const DocumentService = {
       {
         headers: {
           "Content-Type": "multipart/form-data",
+          "X-User-Id": keycloakId,
         },
       }
     );
@@ -50,7 +64,7 @@ export const DocumentService = {
   },
 
   async listDocuments(): Promise<UserDocument[]> {
-    const response = await apiClient.get("/v1/users/me/documents");
-    return response.data.documents || [];
+    const response = await apiClient.get("/bff/auth/documents");
+    return response.data || [];
   },
 };

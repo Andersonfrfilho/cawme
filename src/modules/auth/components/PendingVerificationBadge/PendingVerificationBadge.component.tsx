@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { usePendingVerification } from "../../hooks/usePendingVerification";
+import { useAuthStore } from "../../store/auth.store";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { styles } from "./styles";
 
@@ -19,20 +20,48 @@ export const PendingVerificationBadge: React.FC<PendingVerificationBadgeProps> =
   variant = "banner",
   onPress,
 }) => {
-  const { pendingCount, isLoading } = usePendingVerification();
+  const { pendingCount, pendingItems, isLoading } = usePendingVerification();
+  const user = useAuthStore((state) => state.user);
   const { auth } = useLocale<LocaleKeys>();
 
-  if (isLoading || pendingCount === 0) return null;
+  if (isLoading) return null;
+  if (pendingCount === 0) return null;
+
+  const getSubtitle = () => {
+    if (pendingItems.length === 1) {
+      const item = pendingItems[0];
+      if (item === "email") return auth.verificationPendingEmail;
+      if (item === "phone") return auth.verificationPendingPhone;
+      if (item === "document") return auth.verificationPendingDocument;
+    }
+    if (pendingItems.includes("email") && pendingItems.includes("phone")) {
+      return auth.verificationPendingBoth;
+    }
+    if (pendingItems.includes("document")) {
+      if (pendingItems.length === 2) {
+        const other = pendingItems.find((i) => i !== "document");
+        if (other === "email") return auth.verificationPendingEmail + " e documento";
+        if (other === "phone") return auth.verificationPendingPhone + " e documento";
+      }
+      return auth.verificationPendingDocument;
+    }
+    return auth.verificationPendingEmail;
+  };
 
   const handlePress = () => {
     if (onPress) {
       onPress();
       return;
     }
-    router.push({
-      pathname: "/verification" as any,
-      params: { mode: "post-login" },
-    });
+    const hasDocument = pendingItems.includes("document");
+    if (hasDocument) {
+      router.push({ pathname: "/(auth)/document-upload" as any, params: { mode: "post-login" } });
+    } else {
+      router.push({
+        pathname: "/(auth)/verification" as any,
+        params: { mode: "post-login", email: user?.email ?? "", phone: user?.phone ?? "" },
+      });
+    }
   };
 
   if (variant === "dot") {
@@ -64,11 +93,7 @@ export const PendingVerificationBadge: React.FC<PendingVerificationBadgeProps> =
       </View>
       <View style={styles.bannerContent}>
         <Text style={styles.bannerTitle}>{auth.verificationPendingTitle}</Text>
-        <Text style={styles.bannerSubtitle}>
-          {pendingCount === 2
-            ? auth.verificationPendingBoth
-            : auth.verificationPendingEmail}
-        </Text>
+        <Text style={styles.bannerSubtitle}>{getSubtitle()}</Text>
       </View>
       <View style={styles.bannerArrow}>
         <Ionicons name="chevron-forward" size={moderateScale(18, 0.3)} color={theme.colors.primary.DEFAULT} />

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
@@ -7,15 +7,30 @@ import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { useVerification } from "@/modules/auth/hooks/useVerification";
+import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useRegisterStore } from "@/modules/auth/store/register.store";
+import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { useLoading } from "@/shared/hooks/useLoading";
+import { logger } from "@/shared/utils/logger";
+import { DocumentUploadSheet } from "@/modules/auth/components/DocumentUploadSheet";
 import { styles } from "./styles";
 import type { VerificationScreenParams, VerificationTarget } from "./types";
 
 const CODE_LENGTH = 4;
 
+function formatPhoneDisplay(digits: string): string {
+  const d = digits.replace(/\D/g, "");
+  if (d.length <= 2) return d;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 export default function VerificationScreen() {
   const { auth } = useLocale<LocaleKeys>();
   const params = useLocalSearchParams<VerificationScreenParams>();
   const { sendCode, verifyCode } = useVerification();
+  const { showLoading, hideLoading } = useLoading();
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
@@ -36,6 +51,11 @@ export default function VerificationScreen() {
     });
   }, [navigation]);
 
+  const authUser = useAuthStore((state) => state.user);
+
+  const effectiveEmail = params.email || authUser?.email || "";
+  const effectivePhone = params.phone || authUser?.phone || "";
+
   const [target, setTarget] = useState<VerificationTarget>("email");
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [loading, setLoading] = useState(false);
@@ -44,6 +64,7 @@ export default function VerificationScreen() {
   const [countdown, setCountdown] = useState(60);
   const [emailVerified, setEmailVerified] = useState(params.emailVerified === "true");
   const [phoneVerified, setPhoneVerified] = useState(params.phoneVerified === "true");
+  const [showDocumentSheet, setShowDocumentSheet] = useState(false);
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -52,6 +73,12 @@ export default function VerificationScreen() {
   const isCurrentVerified = target === "email" ? emailVerified : phoneVerified;
 
   useEffect(() => {
+    logger.screenEvent('VerificationScreen', 'screen.open', {
+      mode: params.mode,
+      email: params.email,
+      phone: params.phone,
+      hasTempCredentials: !!useRegisterStore.getState().tempCredentials,
+    });
     sendInitialCode();
   }, []);
 
@@ -67,10 +94,11 @@ export default function VerificationScreen() {
     verificationTarget === "phone" ? "sms" : "email";
 
   const sendInitialCode = async () => {
+    if (!effectiveEmail) return;
     setLoading(true);
     setError("");
     try {
-      await sendCode({ type: "email", destination: params.email });
+      await sendCode({ type: "email", destination: effectiveEmail });
       setCountdown(60);
       setCanResend(false);
     } catch {
@@ -82,10 +110,14 @@ export default function VerificationScreen() {
 
   const handleSendCode = async (overrideTarget?: VerificationTarget) => {
     const activeTarget = overrideTarget ?? target;
+    const destination = activeTarget === "email" ? effectiveEmail : effectivePhone;
+    if (!destination) {
+      setError(auth.verificationSendError);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      const destination = activeTarget === "email" ? params.email : params.phone;
       await sendCode({ type: toApiType(activeTarget), destination });
       setCountdown(60);
       setCanResend(false);
@@ -133,17 +165,19 @@ export default function VerificationScreen() {
     setLoading(true);
     setError("");
     try {
-      const destination = target === "email" ? params.email : params.phone;
+      const destination = target === "email" ? effectiveEmail : effectivePhone;
       const result = await verifyCode({ type: toApiType(target), destination, code: fullCode });
 
       if (result.verified) {
         if (target === "email") {
           setEmailVerified(true);
+          useAuthStore.getState().setVerificationStatus({ emailVerified: true });
           if (!phoneVerified) {
             await switchToTab("phone");
           }
         } else {
           setPhoneVerified(true);
+          useAuthStore.getState().setVerificationStatus({ phoneVerified: true });
         }
         setCode(Array(CODE_LENGTH).fill(""));
       } else {
@@ -158,11 +192,58 @@ export default function VerificationScreen() {
     }
   };
 
-  const handleAdvance = () => {
+  const handleAdvance = async () => {
+    const isPostRegister = params.mode === "post-register";
+    const tempCreds = useRegisterStore.getState().tempCredentials;
+
+    if (isPostRegister && tempCreds) {
+      logger.screenEvent('VerificationScreen', 'verify.auto-login', { email: tempCreds.email });
+      showLoading();
+      try {
+        const { id, name, email } = await KeycloakService.login({
+          username: tempCreds.email,
+          password: tempCreds.password,
+        });
+        useAuthStore.getState().setUser({ id, name, email, type: "contractor", phone: effectivePhone || undefined });
+
+        useRegisterStore.getState().clearAddress();
+        useRegisterStore.getState().clearKeycloakId();
+        useRegisterStore.getState().clearTempCredentials();
+
+        setShowDocumentSheet(true);
+        return;
+      } catch (error) {
+        logger.error('VerificationScreen', 'verify.auto-login.error', 'Auto-login falhou após verificação', error);
+        useRegisterStore.getState().clearTempCredentials();
+        useRegisterStore.getState().clearAddress();
+        useRegisterStore.getState().clearKeycloakId();
+        router.replace("/(auth)" as any);
+        return;
+      } finally {
+        hideLoading();
+      }
+    }
+
     router.replace("/(app)/home" as any);
   };
 
+  const handleSheetNow = useCallback(() => {
+    setShowDocumentSheet(false);
+    router.replace({
+      pathname: "/(auth)/document-upload" as any,
+      params: { documentType: params.documentType, mode: "post-register" },
+    });
+  }, [params.documentType]);
+
+  const handleSheetLater = useCallback(() => {
+    setShowDocumentSheet(false);
+    router.replace("/(app)/home" as any);
+  }, []);
+
   const handleSkipVerification = () => {
+    useRegisterStore.getState().clearTempCredentials();
+    useRegisterStore.getState().clearAddress();
+    useRegisterStore.getState().clearKeycloakId();
     router.replace("/(app)/home" as any);
   };
 
@@ -170,6 +251,11 @@ export default function VerificationScreen() {
 
   return (
     <View style={styles.root}>
+      <DocumentUploadSheet
+        visible={showDocumentSheet}
+        onNow={handleSheetNow}
+        onLater={handleSheetLater}
+      />
       <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{auth.verificationTitle}</Text>
@@ -262,7 +348,7 @@ export default function VerificationScreen() {
                 {(target === "email"
                   ? auth.verificationEmailSent
                   : auth.verificationPhoneSent
-                ).replace("{target}", target === "email" ? params.email : params.phone)}
+                ).replace("{target}", target === "email" ? effectiveEmail : formatPhoneDisplay(effectivePhone))}
               </Text>
 
               <View style={styles.codeContainer}>

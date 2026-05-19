@@ -9,8 +9,8 @@ export type TermsScreenParams = {
   neighborhood: string;
   city: string;
   state: string;
-  lat: string;
-  lng: string;
+  latitude: string;
+  longitude: string;
   serviceTags: string;
   password: string;
   userType: "contractor" | "provider";

@@ -14,6 +14,7 @@ export const styles = StyleSheet.create({
   },
   header: {
     marginBottom: verticalScale(24),
+    alignItems: "center",
   },
   headerIcon: {
     width: moderateScale(64, 0.5),
@@ -37,6 +38,7 @@ export const styles = StyleSheet.create({
   },
   documentTypeSection: {
     marginBottom: verticalScale(24),
+    alignItems: "center",
   },
   sectionLabel: {
     fontSize: moderateScale(14, 0.3),
@@ -72,6 +74,7 @@ export const styles = StyleSheet.create({
   },
   uploadArea: {
     aspectRatio: 16 / 10,
+    alignSelf: "stretch",
     backgroundColor: theme.palette.neutral[0],
     borderRadius: theme.radii.lg,
     borderWidth: 2,
@@ -79,7 +82,9 @@ export const styles = StyleSheet.create({
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: verticalScale(24),
+
+    width: "100%",
+    marginBottom: verticalScale(8),
     overflow: "hidden",
   },
   uploadAreaActive: {

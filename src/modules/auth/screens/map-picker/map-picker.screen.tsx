@@ -10,25 +10,33 @@ import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { styles } from "./styles";
-import type { MapPickerScreenParams, MapPickerResult } from "./types";
+import type { MapPickerResult } from "./types";
 
-const DEFAULT_LAT = -23.5505;
-const DEFAULT_LNG = -46.6333;
+const DEFAULT_LATITUDE = -23.5505;
+const DEFAULT_LONGITUDE = -46.6333;
 
 export default function MapPickerScreen() {
   const { auth } = useLocale<LocaleKeys>();
   const params = useLocalSearchParams();
-  const initialLat = params.initialLat ? parseFloat(params.initialLat as string) : DEFAULT_LAT;
-  const initialLng = params.initialLng ? parseFloat(params.initialLng as string) : DEFAULT_LNG;
+  const currentLatitude = params.initialLatitude ? parseFloat(params.initialLatitude as string) : DEFAULT_LATITUDE;
+  const currentLongitude = params.initialLongitude ? parseFloat(params.initialLongitude as string) : DEFAULT_LONGITUDE;
   const initialAddress = (params.initialAddress as string) ?? "";
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  const [lat, setLat] = useState(initialLat);
-  const [lng, setLng] = useState(initialLng);
+  const [latitude, setLatitude] = useState(currentLatitude);
+  const [longitude, setLongitude] = useState(currentLongitude);
   const [address, setAddress] = useState(initialAddress);
   const [loading, setLoading] = useState(false);
   const [selecting, setSelecting] = useState(false);
+  const [addressDetails, setAddressDetails] = useState<{
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    cep: string;
+  }>({ street: "", number: "", neighborhood: "", city: "", state: "", cep: "" });
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -61,14 +69,23 @@ export default function MapPickerScreen() {
     });
   }, [navigation, loading, address]);
 
-  const reverseGeocode = useCallback(async (latitude: number, longitude: number) => {
+  const reverseGeocode = useCallback(async (geocodeLatitude: number, geocodeLongitude: number) => {
     setLoading(true);
     try {
-      const result = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const result = await Location.reverseGeocodeAsync({ latitude: geocodeLatitude, longitude: geocodeLongitude });
       if (result.length > 0) {
-        const loc = result[0];
+        const location = result[0];
+        const details = {
+          street: location.street ?? "",
+          number: location.streetNumber ?? "",
+          neighborhood: location.district ?? location.subregion ?? "",
+          city: location.city ?? "",
+          state: location.region ?? "",
+          cep: location.postalCode ?? "",
+        };
+        setAddressDetails(details);
         setAddress(
-          [loc.street, loc.streetNumber, loc.district, loc.city, loc.region]
+          [details.street, details.number, details.neighborhood, details.city, details.state]
             .filter(Boolean)
             .join(", "),
         );
@@ -81,12 +98,12 @@ export default function MapPickerScreen() {
   }, []);
 
   const handleMarkerDragEnd = useCallback(
-    async (e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
-      const { latitude, longitude } = e.nativeEvent.coordinate;
-      setLat(latitude);
-      setLng(longitude);
+    async (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
+      const { latitude: markerLatitude, longitude: markerLongitude } = event.nativeEvent.coordinate;
+      setLatitude(markerLatitude);
+      setLongitude(markerLongitude);
       setSelecting(true);
-      await reverseGeocode(latitude, longitude);
+      await reverseGeocode(markerLatitude, markerLongitude);
       setSelecting(false);
     },
     [reverseGeocode],
@@ -94,22 +111,27 @@ export default function MapPickerScreen() {
 
   const handleConfirm = useCallback(() => {
     const result: MapPickerResult = {
-      lat,
-      lng,
-      street: "",
-      number: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-      cep: "",
+      latitude,
+      longitude,
+      street: addressDetails.street,
+      number: addressDetails.number,
+      neighborhood: addressDetails.neighborhood,
+      city: addressDetails.city,
+      state: addressDetails.state,
+      cep: addressDetails.cep,
       formattedAddress: address,
     };
 
-    router.dismiss();
-    router.setParams({
-      mapPickerResult: JSON.stringify(result),
+    const returnTo = (params.returnTo as string) ?? "/address";
+    const { initialLatitude, initialLongitude, initialAddress: _ia, returnTo: _rt, mapPickerResult, ...restParams } = params;
+    router.navigate({
+      pathname: returnTo as any,
+      params: {
+        ...restParams,
+        mapPickerResult: JSON.stringify(result),
+      },
     });
-  }, [lat, lng, address]);
+  }, [latitude, longitude, address, addressDetails, params]);
 
   const handleGetCurrentLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -121,10 +143,10 @@ export default function MapPickerScreen() {
     setLoading(true);
     try {
       const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-      setLat(latitude);
-      setLng(longitude);
-      await reverseGeocode(latitude, longitude);
+      const { latitude: currentLocationLatitude, longitude: currentLocationLongitude } = location.coords;
+      setLatitude(currentLocationLatitude);
+      setLongitude(currentLocationLongitude);
+      await reverseGeocode(currentLocationLatitude, currentLocationLongitude);
     } catch {
       Alert.alert(auth.mapPickerError, auth.mapPickerErrorDesc);
     } finally {
@@ -137,8 +159,8 @@ export default function MapPickerScreen() {
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: lat,
-          longitude: lng,
+          latitude,
+          longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
@@ -146,7 +168,7 @@ export default function MapPickerScreen() {
         showsMyLocationButton={false}
       >
         <Marker
-          coordinate={{ latitude: lat, longitude: lng }}
+          coordinate={{ latitude, longitude }}
           draggable
           onDragEnd={handleMarkerDragEnd}
           pinColor={theme.colors.primary.DEFAULT}

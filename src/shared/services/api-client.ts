@@ -13,6 +13,12 @@ declare module 'axios' {
     _skipLog?: boolean;
     _requestId?: string;
   }
+  interface AxiosRequestConfig {
+    _skipGlobalError?: boolean;
+    _retry?: boolean;
+    _skipLog?: boolean;
+    _requestId?: string;
+  }
 }
 
 function mapStatusToVariant(status?: number): ErrorVariant {
@@ -61,6 +67,7 @@ apiClient.interceptors.request.use(async (config) => {
       payload: config.data,
     });
     (config as any)._requestId = requestId;
+    config.headers['X-Request-Id'] = requestId;
   }
 
   return config;

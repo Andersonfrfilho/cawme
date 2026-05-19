@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { Controller } from "react-hook-form";
+import { Controller, useFormState } from "react-hook-form";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
@@ -19,8 +19,12 @@ function formatPhone(value: string): string {
 }
 
 function formatDocument(value: string, documentType: DocumentType): string {
+  if (documentType === "passport") {
+    return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 12);
+  }
+
   const digits = value.replace(/\D/g, "");
-  
+
   if (documentType === "cpf") {
     const formatted = digits.slice(0, 11);
     if (formatted.length <= 3) return formatted;
@@ -57,7 +61,7 @@ function getDocumentMaxLength(documentType: DocumentType): number {
 }
 
 function getRawLength(value: string): number {
-  return value.replace(/\D/g, "").length;
+  return value.replace(/[^a-zA-Z0-9]/g, "").length;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps & { 
@@ -93,10 +97,28 @@ export const RegisterForm: React.FC<RegisterFormProps & {
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
+  const { isValid } = useFormState({ control });
+
+  const hasFieldError = (field: FieldName) =>
+    !!errors[field] || !!(verificationResults?.[field]?.error);
+
+  const hasVerificationError = Object.values(verificationResults ?? {}).some(
+    (result) => !!(result as any)?.error,
+  );
+
+  const isButtonDisabled = !isValid || isSubmitting || hasVerificationError;
+
   const getIconColor = (field: FieldName) => {
-    if (errors[field]) return theme.colors.status.error;
+    if (hasFieldError(field)) return theme.colors.status.error;
     if (focusedField === field) return theme.colors.primary.DEFAULT;
     return theme.palette.neutral[400];
+  };
+
+  const getErrorMessage = (message?: string) => {
+    if (!message) return "";
+    if (message === "passwordMismatch") return auth.registerPasswordMismatch;
+    const translated = (auth as Record<string, string>)[message];
+    return translated || message;
   };
 
   const renderField = (
@@ -114,6 +136,8 @@ export const RegisterForm: React.FC<RegisterFormProps & {
       onSubmitEditing?: () => void;
       inputRef?: React.RefObject<TextInput | null>;
       maxLength?: number;
+      textContentType?: "none" | "givenName" | "familyName" | "emailAddress" | "telephoneNumber" | "oneTimeCode";
+      fieldKey?: string;
       formatter?: (value: string) => string;
       onChangeFormatter?: (value: string) => string;
       nextRef?: React.RefObject<TextInput | null>;
@@ -141,7 +165,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
               style={[
                 styles.inputRow,
                 focusedField === name && styles.inputRowFocused,
-                errors[name] && styles.inputRowError,
+                hasFieldError(name) && styles.inputRowError,
               ]}
             >
               <Ionicons
@@ -151,6 +175,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 style={styles.inputIcon}
               />
               <TextInput
+                key={config?.fieldKey ?? name}
                 ref={config?.inputRef}
                 style={styles.inputText}
                 placeholder={placeholder}
@@ -161,6 +186,13 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 onBlur={() => {
                   setFocusedField(null);
                   onBlur();
+                  // Dispara verificação ao terminar digitação (sair do campo)
+                  if (onFieldChange && ['email', 'phone', 'document'].includes(name)) {
+                    const currentValue = config?.formatter && typeof value === "string" 
+                      ? value 
+                      : (value as string) ?? "";
+                    onFieldChange(name, currentValue);
+                  }
                 }}
                 secureTextEntry={config?.secureTextEntry && !config?.showPassword}
                 keyboardType={config?.keyboardType ?? "default"}
@@ -169,8 +201,9 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 onSubmitEditing={config?.onSubmitEditing}
                 maxLength={config?.maxLength}
                 autoComplete={config?.secureTextEntry ? "off" : undefined}
-                textContentType={config?.secureTextEntry ? "none" : undefined}
+                textContentType={config?.secureTextEntry ? "oneTimeCode" : config?.textContentType}
                 importantForAutofill={config?.secureTextEntry ? "no" : undefined}
+                passwordRules=""
                 autoCorrect={false}
                 spellCheck={false}
               />
@@ -190,9 +223,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
             </View>
             {errors[name] && (
               <Text style={styles.fieldError}>
-                {errors[name]?.message === "passwordMismatch"
-                  ? auth.registerPasswordMismatch
-                  : errors[name]?.message}
+                {getErrorMessage(errors[name]?.message)}
               </Text>
             )}
             {/* Mostra erro de verificação em tempo real */}
@@ -218,12 +249,14 @@ export const RegisterForm: React.FC<RegisterFormProps & {
           returnKeyType: "next",
           onSubmitEditing: () => lastNameRef.current?.focus(),
           inputRef: firstNameRef,
+          textContentType: "givenName",
         })}
 
         {renderField("lastName", auth.registerLastNamePlaceholder, "person-outline", {
           returnKeyType: "next",
           onSubmitEditing: () => emailRef.current?.focus(),
           inputRef: lastNameRef,
+          textContentType: "familyName",
         })}
 
         {renderField("email", auth.registerEmailPlaceholder, "mail-outline", {
@@ -232,6 +265,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
           returnKeyType: "next",
           onSubmitEditing: () => phoneRef.current?.focus(),
           inputRef: emailRef,
+          textContentType: "emailAddress",
         })}
         
         {/* Indicador de verificação de email */}
@@ -270,6 +304,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
           maxLength: 15,
           formatter: formatPhone,
           onChangeFormatter: (text) => text.replace(/\D/g, "").slice(0, 11),
+          textContentType: "telephoneNumber",
         })}
         
         {/* Indicador de verificação de telefone */}
@@ -322,6 +357,8 @@ export const RegisterForm: React.FC<RegisterFormProps & {
           inputRef: documentRef,
           nextRef: passwordRef,
           maxLength: getDocumentMaxLength(documentType),
+          textContentType: "none",
+          fieldKey: `document-${documentType}`,
           formatter: (text) => formatDocument(text, documentType),
           onChangeFormatter: (text) => {
             if (documentType === "passport") {
@@ -366,9 +403,9 @@ export const RegisterForm: React.FC<RegisterFormProps & {
       </View>
 
       <TouchableOpacity
-        style={[styles.advanceButton, isSubmitting && styles.advanceButtonDisabled]}
+        style={[styles.advanceButton, isButtonDisabled && styles.advanceButtonDisabled]}
         onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
+        disabled={isButtonDisabled}
         activeOpacity={0.85}
       >
         {isSubmitting ? (

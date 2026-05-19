@@ -60,6 +60,21 @@ export const styles = StyleSheet.create({
     marginLeft: moderateScale(6, 0.3),
     fontWeight: theme.typography.fontWeight.medium,
   },
+  genericErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: theme.radii.sm,
+    padding: moderateScale(10, 0.5),
+    marginBottom: verticalScale(12),
+    gap: moderateScale(8, 0.5),
+  },
+  genericErrorMessage: {
+    flex: 1,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.status.error,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
   termsCard: {
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.radii.lg,

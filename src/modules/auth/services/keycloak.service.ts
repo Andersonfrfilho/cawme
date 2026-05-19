@@ -10,6 +10,8 @@ import type {
   ForgotPasswordServiceParams,
   RegisterServiceParams,
   RegisterServiceResult,
+  SaveAddressParams,
+  SaveAddressResult,
 } from "./types";
 
 
@@ -91,13 +93,23 @@ export const KeycloakService = {
   },
 
   async forgotPassword({ email }: ForgotPasswordServiceParams): Promise<void> {
-    await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
+    await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email }, { _skipGlobalError: true });
   },
 
   async register(params: RegisterServiceParams): Promise<RegisterServiceResult> {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.REGISTER,
       params,
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async saveAddress(params: SaveAddressParams): Promise<SaveAddressResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.ADDRESS_SAVE,
+      params,
+      { _skipGlobalError: true },
     );
     return response.data;
   },
@@ -106,7 +118,7 @@ export const KeycloakService = {
     type: "email" | "sms";
     destination: string;
   }): Promise<void> {
-    await apiClient.post(AUTH_ENDPOINTS.VERIFICATION_SEND, params);
+    await apiClient.post(AUTH_ENDPOINTS.VERIFICATION_SEND, params, { _skipGlobalError: true });
   },
 
   async verifyCode(params: {
@@ -117,6 +129,7 @@ export const KeycloakService = {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.VERIFICATION_VERIFY,
       params,
+      { _skipGlobalError: true },
     );
     return response.data;
   },

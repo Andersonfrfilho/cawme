@@ -8,8 +8,14 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isSignedIn: false,
+      verificationStatus: { emailVerified: false, phoneVerified: false },
       setUser: (user) => set({ user, isSignedIn: !!user }),
-      logout: () => set({ user: null, isSignedIn: false }),
+      setVerificationStatus: (status) =>
+        set((state) => ({
+          verificationStatus: { ...state.verificationStatus, ...status },
+        })),
+      logout: () =>
+        set({ user: null, isSignedIn: false, verificationStatus: { emailVerified: false, phoneVerified: false } }),
     }),
     {
       name: "auth-store",

@@ -28,14 +28,47 @@ const COMPONENT_MAP: Record<ComponentType, React.ComponentType<SduiComponentProp
   empty_state: EmptyState,
 };
 
-export function SduiRenderer({ layout }: { layout: ScreenComponentData[] }) {
+interface SduiRendererProps {
+  layout: ScreenComponentData[];
+  activeFilter?: string | null;
+  searchTerm?: string;
+  onFilterChange?: (filterId: string | null) => void;
+}
+
+export function SduiRenderer({ layout, activeFilter, searchTerm, onFilterChange }: SduiRendererProps) {
   return (
-    <ScrollView style={styles.scrollView}>
+    <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
       {layout
         .sort((a, b) => a.order - b.order)
         .map((component) => {
           const Component = COMPONENT_MAP[component.type];
           if (!Component) return null;
+
+          if (component.type === 'search_filters') {
+            return (
+              <Component
+                key={component.id}
+                data={component.data}
+                config={{ ...component.config, activeFilter }}
+                onItemPress={(item) => {
+                  const filterId = item?.filterId as string | undefined;
+                  onFilterChange?.(filterId === activeFilter ? null : (filterId ?? null));
+                }}
+              />
+            );
+          }
+
+          if (component.type === 'provider_list' || component.type === 'provider_grid') {
+            return (
+              <Component
+                key={component.id}
+                data={component.data}
+                config={{ ...component.config, activeFilter, searchTerm }}
+                onItemPress={(item) => resolveSduiAction(component.action, item)}
+              />
+            );
+          }
+
           return (
             <Component
               key={component.id}

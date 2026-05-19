@@ -367,6 +367,8 @@ Paleta principal:
 
 ## Escala Responsiva (Scale)
 
+**Regra absoluta:** NUNCA soltar números literais em `StyleSheet`. Todo valor numérico — sem exceção — deve passar por uma das funções de scale. Violações devem ser corrigidas imediatamente, inclusive em revisão de código.
+
 Toda medida numérica em `StyleSheet` deve usar as funções de `@/shared/utils/scale`:
 
 ```typescript

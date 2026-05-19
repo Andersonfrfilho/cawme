@@ -13,7 +13,11 @@
       "Bash(git remote *)",
       "Bash(ssh *)",
       "Bash(xxd /Users/anderson.filho/Documents/personal/domestic/cawme/.claude/AuthFlow.md)",
-      "Bash(lsof -iTCP -sTCP:LISTEN -n -P)"
+      "Bash(lsof -iTCP -sTCP:LISTEN -n -P)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(kubectl config current-context *)",
+      "Bash(kubectl cluster-info *)",
+      "Bash(xargs cat)"
     ]
   }
 }

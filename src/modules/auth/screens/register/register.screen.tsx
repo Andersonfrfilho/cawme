@@ -19,8 +19,8 @@ export default function RegisterScreen() {
   const { auth } = useLocale<LocaleKeys>();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ 
-    fieldError?: string; 
+  const params = useLocalSearchParams<{
+    fieldError?: string;
     errorMessage?: string;
     firstName?: string;
     lastName?: string;
@@ -28,6 +28,7 @@ export default function RegisterScreen() {
     phone?: string;
     document?: string;
     documentType?: string;
+    userType?: string;
   }>();
   
   const {
@@ -61,6 +62,7 @@ export default function RegisterScreen() {
     setValue,
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema) as any,
+    mode: 'onChange',
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -121,6 +123,12 @@ export default function RegisterScreen() {
   const showForgotPasswordButton =
     serverError?.field === 'email' ||
     verificationResults.email?.isAvailable === false;
+
+  const toTitleCase = (value: string): string =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
 
   const onSubmit = async (values: RegisterFormValues) => {
     // 🚀 INÍCIO DO FLUXO: Submissão do formulário
@@ -189,16 +197,24 @@ export default function RegisterScreen() {
       phone: values.phone,
     });
 
+    const documentValue =
+        values.documentType === "cpf" ? values.document :
+        values.documentType === "cnpj" ? values.document :
+        values.documentType === "rg" ? values.document :
+        values.documentType === "passport" ? values.document :
+        values.document;
+
     router.push({
       pathname: "/terms" as any,
       params: {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
+        firstName: toTitleCase(values.firstName),
+        lastName: toTitleCase(values.lastName),
+        email: values.email.trim().toLowerCase(),
         phone: values.phone,
-        document: values.document,
+        document: documentValue,
         documentType: values.documentType,
         password: values.password,
+        userType: params.userType ?? "contractor",
       },
     });
   };

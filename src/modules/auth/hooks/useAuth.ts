@@ -10,19 +10,22 @@ export function useAuth() {
   const { showLoading, hideLoading } = useLoading();
 
   async function checkVerificationStatusAndRedirect(userId: string, name: string, email: string) {
+    const { setVerificationStatus } = useAuthStore.getState();
     try {
       const status = await KeycloakService.getVerificationStatus();
-      
+
       if (!status.emailVerified || !status.phoneVerified) {
-        userAction('login.verification.pending', 'User has pending verification', { 
-          emailVerified: status.emailVerified, 
-          phoneVerified: status.phoneVerified 
+        userAction('login.verification.pending', 'User has pending verification', {
+          emailVerified: status.emailVerified,
+          phoneVerified: status.phoneVerified
         });
+        setVerificationStatus({ emailVerified: status.emailVerified, phoneVerified: status.phoneVerified });
+        const storedPhone = useAuthStore.getState().user?.phone ?? "";
         router.replace({
-          pathname: "/verification" as any,
+          pathname: "/(auth)/verification" as any,
           params: {
             email,
-            phone: "", // Will be fetched by the verification screen or passed if available
+            phone: storedPhone,
             mode: "post-login",
             emailVerified: status.emailVerified ? "true" : "false",
             phoneVerified: status.phoneVerified ? "true" : "false",
@@ -30,8 +33,10 @@ export function useAuth() {
         });
         return;
       }
-      
-      setUser({ id: userId, name, email, type: "contractor" });
+
+      setVerificationStatus({ emailVerified: true, phoneVerified: true });
+      const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
+      setUser({ id: userId, name, email, type: "contractor", phone: storedPhone });
       router.replace("/(app)/home");
     } catch (error) {
       // If verification status check fails, still allow login but default to home

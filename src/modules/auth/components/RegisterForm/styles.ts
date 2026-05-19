@@ -143,7 +143,9 @@ export const styles = StyleSheet.create({
     elevation: 6,
   },
   advanceButtonDisabled: {
-    opacity: 0.6,
+    backgroundColor: theme.palette.neutral[300],
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: theme.palette.neutral[0],

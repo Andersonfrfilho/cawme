@@ -128,6 +128,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   secureTextEntry={!showPassword}
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit(onSubmit)}
+                  autoComplete="off"
+                  textContentType="oneTimeCode"
+                  importantForAutofill="no"
+                  passwordRules=""
                 />
                 <TouchableOpacity
                   style={styles.eyeButton}

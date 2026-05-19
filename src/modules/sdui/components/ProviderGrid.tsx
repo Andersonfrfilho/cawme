@@ -40,12 +40,34 @@ interface ProviderGridConfig {
   title?: string;
   showRating?: boolean;
   showLocation?: boolean;
+  searchTerm?: string;
+  activeFilter?: string | null;
 }
 
 export default function ProviderGrid({ data, config, onItemPress }: SduiComponentProps) {
-  const providers: Provider[] = data || [];
   const gridConfig: ProviderGridConfig = config || {};
   const numColumns = gridConfig.columns || 2;
+
+  const term = gridConfig.searchTerm?.trim().toLowerCase() ?? '';
+
+  const filtered: Provider[] = (data || []).filter((item: Provider) => {
+    if (!term) return true;
+    const name = (item.name || item.businessName || item.title || item.displayName || '').toLowerCase();
+    const service = (item.services?.[0]?.name || item.primaryService || item.serviceCategory || '').toLowerCase();
+    const location = (item.city || '').toLowerCase();
+    return name.includes(term) || service.includes(term) || location.includes(term);
+  });
+
+  const providers: Provider[] = (() => {
+    const list = [...filtered];
+    if (gridConfig.activeFilter === 'top_rated') {
+      return list.sort((a, b) => (b.averageRating ?? b.rating ?? 0) - (a.averageRating ?? a.rating ?? 0));
+    }
+    if (gridConfig.activeFilter === 'location') {
+      return list.sort((a, b) => (a.distanceKm ?? a.distance ?? Infinity) - (b.distanceKm ?? b.distance ?? Infinity));
+    }
+    return list;
+  })();
 
   // Debug log (opcional - remova em produção)
   // if (__DEV__ && providers.length > 0) {

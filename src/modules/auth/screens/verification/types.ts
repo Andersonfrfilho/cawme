@@ -9,6 +9,7 @@ export type VerificationScreenParams = {
   mode?: "post-register" | "post-login";
   emailVerified?: string;
   phoneVerified?: string;
+  documentUploadChoice?: "now";
 };
 
 export type VerificationTarget = "email" | "phone";
