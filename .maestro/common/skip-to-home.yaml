@@ -1,0 +1,23 @@
+id: skip_to_home
+name: Skip to Home
+description: Pula verificação e documento para chegar na home (usado ao fim de flows)
+---
+# Se estiver na tela de verificação, pula
+- runFlow:
+    when:
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    commands:
+      - tapOn: "Verificar depois"
+    continueOnFailure: true
+
+# Se estiver na tela de documento, pula
+- runFlow:
+    when:
+      visible: ".*Verificação de Documento.*|.*Enviar depois.*"
+    commands:
+      - tapOn: "Enviar depois"
+    continueOnFailure: true
+
+- assertVisible:
+    text: ".*Home.*|.*Dashboard.*|.*Início.*"
+    timeout: 5000

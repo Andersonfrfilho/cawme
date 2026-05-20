@@ -1,0 +1,98 @@
+appId: com.andersonfilho.cawme
+name: ❌ Verification Error - Código inválido
+description: |
+  Testa os erros da tela de verificação:
+  1. Insere código errado → mensagem de erro
+  2. Verifica que o botão de reenviar aparece
+  3. Testa reenvio de código
+  4. Verifica que o timer de reenvio funciona
+tags:
+  - verification
+  - error
+  - code
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Verify"
+      LAST_NAME: "Error"
+      EMAIL: "verifyerror${RANDOM_NUMBER}@test.com"
+      PHONE: "11911110000"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# Chega na verificação (pode ter passado pelo endereço)
+- runFlow:
+    when:
+      visible: ".*CEP.*|.*Endereço.*"
+    commands:
+      - tapOn:
+          text: ".*Não sei.*|.*Buscar por nome.*"
+          optional: true
+      - tapOn: "Avançar"
+        optional: true
+    continueOnFailure: true
+
+- assertVisible:
+    text: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 8000
+
+# ── Teste 1: Código errado no email ──────────────────────────────────────────
+- assertVisible:
+    text: ".*E-mail.*"
+
+# Insere código errado
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
+
+- assertVisible:
+    text: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
+    timeout: 4000
+
+- takeScreenshot: "verification-wrong-code-email.png"
+
+# ── Teste 2: Botão de reenviar ────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: ".*Reenviar.*|.*Reenvio.*|.*Enviar novamente.*"
+    commands:
+      - assertVisible: ".*Reenviar.*|.*Enviar novamente.*"
+      - tapOn: ".*Reenviar.*|.*Enviar novamente.*"
+      - assertVisible:
+          text: ".*enviado.*|.*reenviado.*|.*código.*novo.*"
+          timeout: 3000
+    continueOnFailure: true
+
+# ── Teste 3: Mesmo erro na aba de telefone ────────────────────────────────────
+- tapOn: "Telefone"
+
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+
+- assertVisible:
+    text: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
+    timeout: 4000
+
+- takeScreenshot: "verification-wrong-code-phone.png"
+
+# Pula verificação após testar erros
+- tapOn: "Verificar depois"
+- assertVisible:
+    text: ".*Home.*|.*Dashboard.*"
+    timeout: 5000

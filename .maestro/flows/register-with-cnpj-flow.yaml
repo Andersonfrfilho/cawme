@@ -1,0 +1,42 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Flow - CNPJ
+description: Cadastro completo com documento CNPJ (pessoa jurídica)
+tags:
+  - register
+  - cnpj
+  - document-type
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+# Contratante
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# Preenche com CNPJ
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CNPJ"
+      FIRST_NAME: "Empresa"
+      LAST_NAME: "Teste"
+      EMAIL: "cnpj${RANDOM_NUMBER}@empresa.com"
+      PHONE: "1134567890"
+      DOCUMENT: "11222333000181"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# Vai para endereço ou verificação
+- assertVisible:
+    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 6000
+
+- runFlow: ../common/skip-to-home.yaml

@@ -1,0 +1,75 @@
+appId: com.andersonfilho.cawme
+name: ❌ Register Error - Email já cadastrado
+description: |
+  Testa o fluxo quando o email já existe no sistema:
+  1. Preenche formulário com email existente
+  2. Submit → backend rejeita com 409
+  3. App volta para o formulário com erro no campo email
+  4. Mostra botão "Esqueci minha senha"
+  5. Usuário pode corrigir o email e tentar novamente
+  Nota: use um email que já existe no banco de dados de testes
+tags:
+  - register
+  - error
+  - duplicate
+  - email
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# Usa email que já existe no sistema (seed de testes)
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Duplicate"
+      LAST_NAME: "Email"
+      EMAIL: "existing@test.com"
+      PHONE: "11933332222"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# App deve voltar para o formulário com erro no campo email
+- assertVisible:
+    text: ".*já cadastrado.*|.*já existe.*|.*e-mail.*uso.*|.*email.*uso.*"
+    timeout: 6000
+
+# Botão "Esqueci minha senha" deve aparecer (pois email já existe)
+- assertVisible:
+    text: ".*Esqueci.*senha.*|.*Recuperar.*|.*Senha.*"
+    timeout: 3000
+
+# Tira screenshot do estado de erro
+- takeScreenshot: "register-duplicate-email-error.png"
+
+# Testa o botão de recuperar senha (apenas verifica que navega)
+- runFlow:
+    when:
+      visible: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
+    commands:
+      - tapOn: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
+      - assertVisible:
+          text: ".*Recuperar.*|.*E-mail.*|.*redefinir.*|.*nova senha.*"
+          timeout: 4000
+      - tapOn: ".*Voltar.*|.*chevron.*"
+        optional: true
+    continueOnFailure: true
+
+# Testa correção do email e nova tentativa
+- runFlow:
+    when:
+      visible: "Crie sua conta"
+    commands:
+      - clearText:
+          optional: true
+      - inputText: "newemail${RANDOM_NUMBER}@test.com"
+      - tapOn: "Avançar"
+    continueOnFailure: true

@@ -1,0 +1,39 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Flow - RG
+description: Cadastro completo com documento RG
+tags:
+  - register
+  - rg
+  - document-type
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "RG"
+      FIRST_NAME: "Carlos"
+      LAST_NAME: "Teste"
+      EMAIL: "rg${RANDOM_NUMBER}@test.com"
+      PHONE: "11988887777"
+      DOCUMENT: "123456789"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+- assertVisible:
+    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 6000
+
+- runFlow: ../common/skip-to-home.yaml

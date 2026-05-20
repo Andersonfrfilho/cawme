@@ -1,0 +1,43 @@
+appId: com.andersonfilho.cawme
+name: ❌ Register Error - Telefone já cadastrado
+description: |
+  Testa o fluxo quando o telefone já existe no sistema:
+  1. Preenche formulário com telefone existente
+  2. Submit → backend rejeita
+  3. App volta para o formulário com erro no campo telefone
+  Nota: use um telefone que já existe no banco de dados de testes
+tags:
+  - register
+  - error
+  - duplicate
+  - phone
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# Usa telefone que já existe no sistema (seed de testes)
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Duplicate"
+      LAST_NAME: "Phone"
+      EMAIL: "phone${RANDOM_NUMBER}@test.com"
+      PHONE: "11900000001"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# App deve voltar para o formulário com erro no campo telefone
+- assertVisible:
+    text: ".*telefone.*já.*|.*celular.*uso.*|.*já cadastrado.*"
+    timeout: 6000
+
+- takeScreenshot: "register-duplicate-phone-error.png"

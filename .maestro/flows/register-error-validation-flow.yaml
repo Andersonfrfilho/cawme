@@ -1,0 +1,96 @@
+appId: com.andersonfilho.cawme
+name: ❌ Register Error - Validação de Campos
+description: |
+  Testa todos os erros de validação do formulário de cadastro:
+  1. Envio com campos vazios → erros "obrigatório"
+  2. Email inválido (sem @)
+  3. Senha curta (< 8 chars)
+  4. Senhas diferentes
+  5. CPF inválido (sequência)
+  6. CPF com dígitos incorretos
+tags:
+  - register
+  - error
+  - validation
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# ── Teste 1: Submit vazio → erros de campo obrigatório ────────────────────────
+- tapOn: "CPF"
+- tapOn: "Avançar"
+
+# Deve mostrar erros de campo obrigatório
+- assertVisible:
+    text: ".*obrigatório.*|.*campo.*|.*mínimo.*|.*preencha.*"
+    timeout: 3000
+
+# ── Teste 2: Email inválido ───────────────────────────────────────────────────
+- inputText: "João"
+- inputText: "Teste"
+- inputText: "emailinvalido"
+
+- tapOn: "Avançar"
+- assertVisible:
+    text: ".*e-mail.*inválido.*|.*email.*inválido.*|.*formato.*"
+    timeout: 3000
+
+# Limpa o campo de email e coloca email válido para próximo teste
+- clearText:
+    optional: true
+- inputText: "joao${RANDOM_NUMBER}@test.com"
+
+# ── Teste 3: Telefone inválido (curto) ────────────────────────────────────────
+- inputText: "9999"
+
+- tapOn: "Avançar"
+- assertVisible:
+    text: ".*telefone.*|.*celular.*|.*mínimo.*"
+    timeout: 3000
+
+# Preenche telefone válido
+- clearText:
+    optional: true
+- inputText: "11944443333"
+
+# ── Teste 4: CPF inválido (sequência 111...1) ─────────────────────────────────
+- inputText: "11111111111"
+
+- tapOn: "Avançar"
+- assertVisible:
+    text: ".*CPF.*inválido.*|.*documento.*inválido.*"
+    timeout: 3000
+
+# Corrige CPF
+- clearText:
+    optional: true
+- inputText: "12345678909"
+
+# ── Teste 5: Senha curta ──────────────────────────────────────────────────────
+- inputText: "123"
+- inputText: "123"
+
+- tapOn: "Avançar"
+- assertVisible:
+    text: ".*senha.*mínimo.*|.*senha.*curta.*|.*caracteres.*"
+    timeout: 3000
+
+# ── Teste 6: Senhas diferentes ────────────────────────────────────────────────
+- clearText:
+    optional: true
+- inputText: "Senha@123"
+- clearText:
+    optional: true
+- inputText: "SenhaDiferente@456"
+
+- tapOn: "Avançar"
+- assertVisible:
+    text: ".*senhas.*|.*confirmação.*|.*coincidir.*|.*iguais.*"
+    timeout: 3000
+
+# Tira screenshot do estado de erro
+- takeScreenshot: "register-validation-errors.png"

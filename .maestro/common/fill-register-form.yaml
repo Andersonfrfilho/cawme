@@ -1,0 +1,16 @@
+id: fill_register_form
+name: Fill Register Form
+description: |
+  Preenche o formulário de cadastro com dados configuráveis via env.
+  Variáveis obrigatórias:
+    FIRST_NAME, LAST_NAME, EMAIL, PHONE, DOCUMENT_TYPE, DOCUMENT, PASSWORD
+  DOCUMENT_TYPE: CPF | CNPJ | RG | PASSAPORTE
+---
+- tapOn: "${DOCUMENT_TYPE}"
+- inputText: "${FIRST_NAME}"
+- inputText: "${LAST_NAME}"
+- inputText: "${EMAIL}"
+- inputText: "${PHONE}"
+- inputText: "${DOCUMENT}"
+- inputText: "${PASSWORD}"
+- inputText: "${PASSWORD}"

@@ -1,0 +1,73 @@
+appId: com.andersonfilho.cawme
+name: ❌ Address Error - CEP não encontrado
+description: |
+  Testa o fluxo de erro quando o CEP não é encontrado:
+  1. Chega na tela de endereço
+  2. Digita CEP inválido/inexistente
+  3. Verifica mensagem de erro "CEP não encontrado"
+  4. Testa o caminho alternativo: "Não sei meu CEP" ou mapa
+tags:
+  - address
+  - error
+  - cep
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Cep"
+      LAST_NAME: "Error"
+      EMAIL: "ceperror${RANDOM_NUMBER}@test.com"
+      PHONE: "11922221111"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+- assertVisible:
+    text: ".*CEP.*|.*Endereço.*"
+    timeout: 6000
+
+# ── Teste 1: CEP inexistente (00000000) ───────────────────────────────────────
+- tapOn:
+    text: ".*CEP.*|.*Digite.*CEP.*"
+    optional: true
+- inputText: "00000000"
+
+- tapOn: "Avançar"
+
+- assertVisible:
+    text: ".*não encontrado.*|.*CEP.*inválido.*|.*tente.*|.*não localizado.*"
+    timeout: 5000
+
+- takeScreenshot: "cep-not-found-error.png"
+
+# ── Teste 2: CEP com formato errado (só 5 dígitos) ───────────────────────────
+- clearText:
+    optional: true
+- inputText: "01310"
+
+- tapOn: "Avançar"
+
+- assertVisible:
+    text: ".*inválido.*|.*completo.*|.*8 dígitos.*|.*formato.*"
+    timeout: 3000
+
+# ── Fallback: usa o botão "Não sei meu CEP" ──────────────────────────────────
+- tapOn:
+    text: ".*Não sei.*|.*Buscar por nome.*"
+
+- assertVisible:
+    text: ".*Buscar.*|.*Digite.*rua.*|.*logradouro.*"
+    timeout: 3000
+
+- takeScreenshot: "cep-fallback-to-autocomplete.png"

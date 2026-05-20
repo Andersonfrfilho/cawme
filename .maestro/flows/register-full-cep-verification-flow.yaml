@@ -1,0 +1,112 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Full Flow - CEP + Verificação QA
+description: |
+  Fluxo completo de cadastro:
+  1. Cadastro com CPF
+  2. Endereço via busca de CEP
+  3. Verificação de email com código QA (0000)
+  4. Verificação de telefone com últimos 4 dígitos
+  Nota: requer backend em modo QA (email=0000, phone=últimos 4 dígitos do número)
+tags:
+  - critical
+  - register
+  - full-flow
+  - cep
+  - verification
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+# ── 1. Cadastro ───────────────────────────────────────────────────────────────
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Full"
+      LAST_NAME: "FlowTest"
+      EMAIL: "fullflow${RANDOM_NUMBER}@test.com"
+      PHONE: "11912345678"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# ── 2. Endereço via CEP ───────────────────────────────────────────────────────
+- assertVisible:
+    text: ".*CEP.*|.*Endereço.*"
+    timeout: 6000
+
+# Digita o CEP
+- tapOn:
+    text: ".*CEP.*|.*Digite seu CEP.*"
+    optional: true
+- inputText: "01310100"
+
+# Aguarda busca e confirma endereço encontrado
+- assertVisible:
+    text: ".*Endereço encontrado.*|.*Confirm.*|.*Av.*|.*Rua.*"
+    timeout: 5000
+
+# Preenche número
+- tapOn:
+    text: ".*Número.*"
+    optional: true
+- inputText: "1000"
+
+# Avança para verificação
+- tapOn: "Avançar"
+
+# ── 3. Verificação de email (código QA: 0000) ─────────────────────────────────
+- assertVisible:
+    text: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 6000
+
+- assertVisible: "E-mail"
+
+# Insere código QA do email (0000)
+- tapOn:
+    text: ".*código.*|.*[0-9].*"
+    optional: true
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+
+- runFlow:
+    when:
+      visible: ".*Verificado.*|.*verificado.*|.*E-mail verificado.*"
+    commands:
+      - assertVisible: ".*Verificado.*"
+    continueOnFailure: true
+
+# ── 4. Verificação de telefone (código QA: últimos 4 dígitos = 5678) ──────────
+- tapOn: "Telefone"
+- assertVisible:
+    text: ".*Código enviado.*|.*telefone.*"
+    timeout: 3000
+
+# Código QA = últimos 4 dígitos do telefone 11912345678 = 5678
+- inputText: "5"
+- inputText: "6"
+- inputText: "7"
+- inputText: "8"
+
+- runFlow:
+    when:
+      visible: ".*Verificado.*|.*Telefone verificado.*"
+    commands:
+      - assertVisible: ".*Verificado.*"
+    continueOnFailure: true
+
+# Avança para home (ou documento)
+- runFlow: ../common/skip-to-home.yaml

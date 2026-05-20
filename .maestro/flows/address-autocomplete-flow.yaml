@@ -1,0 +1,74 @@
+appId: com.andersonfilho.cawme
+name: ✅ Address Flow - Autocomplete por nome de rua
+description: |
+  Testa o caminho de endereço via busca por texto (autocomplete):
+  1. Toca em "Não sei meu CEP"
+  2. Digita nome de rua na busca
+  3. Seleciona sugestão
+  4. Confirma endereço com número
+tags:
+  - address
+  - autocomplete
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+# Cadastro rápido para chegar na tela de endereço
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Auto"
+      LAST_NAME: "Complete"
+      EMAIL: "autocomplete${RANDOM_NUMBER}@test.com"
+      PHONE: "11955554444"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# Tela de endereço - step CEP
+- assertVisible:
+    text: ".*CEP.*|.*Endereço.*"
+    timeout: 6000
+
+# Toca em "Não sei meu CEP" para abrir o autocomplete
+- tapOn:
+    text: ".*Não sei.*|.*Não conheço.*|.*Buscar por nome.*"
+- assertVisible:
+    text: ".*Buscar.*|.*Digite.*|.*rua.*|.*logradouro.*"
+    timeout: 3000
+
+# Digita na busca
+- inputText: "Avenida Paulista"
+
+# Aguarda sugestões aparecerem
+- assertVisible:
+    text: ".*Paulista.*|.*São Paulo.*"
+    timeout: 5000
+
+# Seleciona a primeira sugestão
+- tapOn:
+    text: ".*Paulista.*"
+    index: 0
+
+# Deve voltar para confirmação de endereço
+- assertVisible:
+    text: ".*Número.*|.*Complemento.*|.*Confirmar.*"
+    timeout: 4000
+
+# Preenche número
+- tapOn:
+    text: ".*Número.*"
+    optional: true
+- inputText: "1578"
+
+- tapOn: "Avançar"
+
+- runFlow: ../common/skip-to-home.yaml

@@ -1,0 +1,39 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Flow - Passaporte
+description: Cadastro completo com Passaporte (fluxo de estrangeiro)
+tags:
+  - register
+  - passport
+  - document-type
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "PASSAPORTE"
+      FIRST_NAME: "John"
+      LAST_NAME: "Smith"
+      EMAIL: "passport${RANDOM_NUMBER}@test.com"
+      PHONE: "11977776666"
+      DOCUMENT: "AB123456"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+- assertVisible:
+    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 6000
+
+- runFlow: ../common/skip-to-home.yaml

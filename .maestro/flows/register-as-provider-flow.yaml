@@ -1,0 +1,39 @@
+appId: com.andersonfilho.cawme
+name: ✅ Register Flow - Prestador de Serviço
+description: Cadastro pelo caminho "Oferecer serviço" (provider)
+tags:
+  - register
+  - provider
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+# Caminho de provider (diferente de contractor)
+- tapOn: "Oferecer serviço"
+- assertVisible: "Crie sua conta"
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Prestador"
+      LAST_NAME: "Teste"
+      EMAIL: "provider${RANDOM_NUMBER}@test.com"
+      PHONE: "11966665555"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+- assertVisible:
+    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 6000
+
+- runFlow: ../common/skip-to-home.yaml

@@ -1,0 +1,44 @@
+appId: com.andersonfilho.cawme
+name: ❌ Register Error - CPF/Documento já cadastrado
+description: |
+  Testa o fluxo quando o CPF já existe no sistema:
+  1. Preenche formulário com CPF existente
+  2. Submit → backend rejeita
+  3. App volta para o formulário com erro no campo documento
+  Nota: use um CPF que já existe no banco de dados de testes
+tags:
+  - register
+  - error
+  - duplicate
+  - document
+  - cpf
+  - e2e
+---
+- launchApp:
+    clearState: true
+
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# Usa CPF que já existe no sistema
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "CPF"
+      FIRST_NAME: "Duplicate"
+      LAST_NAME: "Document"
+      EMAIL: "doc${RANDOM_NUMBER}@test.com"
+      PHONE: "11${RANDOM_NUMBER}"
+      DOCUMENT: "00000000000"
+      PASSWORD: "Senha@123"
+
+- tapOn: "Avançar"
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# App deve mostrar erro no campo documento
+- assertVisible:
+    text: ".*CPF.*já.*|.*documento.*uso.*|.*já cadastrado.*"
+    timeout: 6000
+
+- takeScreenshot: "register-duplicate-document-error.png"
