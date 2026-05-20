@@ -1,0 +1,75 @@
+appId: com.andersonfilho.cawme
+name: 🔄 Registration Resume Flow
+description: |
+  Testa o checkpoint de cadastro:
+  1. Inicia o registro até a tela de endereço
+  2. Fecha o app (simula abandono no meio do fluxo)
+  3. Reabre sem limpar estado
+  4. Verifica que o app detecta o cadastro pendente e redireciona automaticamente
+tags:
+  - critical
+  - register
+  - resume
+  - e2e
+---
+
+# ── PARTE 1: Cadastro até a tela de endereço ─────────────────────────────────
+- launchApp:
+    clearState: true
+
+- assertVisible: "Cawme"
+
+# Vai para cadastro
+- tapOn: "Contratar serviço"
+- assertVisible: "Crie sua conta"
+
+# Seleciona CPF
+- tapOn: "CPF"
+
+# Preenche dados pessoais
+- tapOn:
+    id: "input-firstName"
+  optional: true
+- inputText: "Anderson"
+- tapOn:
+    id: "input-lastName"
+  optional: true
+- inputText: "Teste"
+
+# Usa índice para navegar nos campos caso não tenha testIDs
+- inputText: "resumetest${RANDOM_NUMBER}@cawme.com"
+- inputText: "11988880000"
+- inputText: "12345678909"
+- inputText: "Senha@123"
+- inputText: "Senha@123"
+
+# Avança para termos
+- tapOn: "Avançar"
+- assertVisible: "Termos de Uso"
+
+# Aceita termos e cria conta
+- tapOn: "Eu li e concordo"
+- tapOn: "Finalizar cadastro"
+
+# O app vai para a tela de endereço (sem endereço no momento do registro)
+- assertVisible:
+    text: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
+    enabled: true
+
+# ── PARTE 2: Fecha o app sem completar o endereço ────────────────────────────
+- stopApp
+
+# ── PARTE 3: Reabre e verifica o auto-resume ─────────────────────────────────
+# Abre sem limpar estado — pendingRegistration permanece no MMKV
+- launchApp:
+    clearState: false
+
+# O app deve logar automaticamente e redirecionar para o endereço
+# Aguarda o loading sumir e a tela aparecer
+- assertVisible:
+    text: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
+    timeout: 8000
+
+# Confirma que não voltou para a home ou welcome screen
+- assertNotVisible: "Contratar serviço"
+- assertNotVisible: "Entrar"

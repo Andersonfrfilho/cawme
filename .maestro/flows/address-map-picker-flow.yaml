@@ -1,0 +1,83 @@
+appId: com.andersonfilho.cawme
+name: 🗺️ Address Map Picker Flow
+description: |
+  Testa o fluxo de endereço com seleção via mapa:
+  1. Chega na tela de endereço via login com conta que não tem endereço
+  2. Toca em "Selecionar no mapa"
+  3. Confirma localização no mapa
+  4. Verifica que voltou para endereço com dados preenchidos
+  5. Visualiza o mapa estático na etapa de confirmação
+tags:
+  - address
+  - map
+  - e2e
+---
+
+# Precisa de uma conta sem endereço cadastrado
+# Roda depois de registration-resume-flow para reaproveitar o estado
+- launchApp:
+    clearState: false
+
+# Deve estar na tela de endereço pelo resume, ou navegar manualmente
+- runFlow:
+    when:
+      visible: ".*Endereço.*|.*CEP.*"
+    commands:
+      - assertVisible:
+          text: ".*CEP.*"
+          enabled: true
+
+# Caso não esteja, vai para login com conta sem endereço
+- runFlow:
+    when:
+      visible: "Entrar"
+    commands:
+      - tapOn: "Entrar"
+      - inputText: "sem-endereco@cawme.com"
+      - inputText: "Senha@123"
+      - tapOn: "Entrar"
+      - assertVisible:
+          text: ".*Endereço.*|.*CEP.*"
+          timeout: 6000
+
+# ── Seleciona pelo mapa ───────────────────────────────────────────────────────
+- assertVisible: ".*mapa.*|.*Selecionar no mapa.*"
+- tapOn:
+    text: ".*mapa.*|.*Selecionar no mapa.*"
+
+# Tela do map picker
+- assertVisible:
+    text: ".*Confirmar.*|.*Usar este local.*|.*Selecionar.*"
+    timeout: 5000
+
+# Toca no botão de localização atual
+- runFlow:
+    when:
+      visible: ".*minha localização.*|.*atual.*"
+    commands:
+      - tapOn: ".*minha localização.*|.*atual.*"
+    continueOnFailure: true
+
+# Confirma o local selecionado
+- tapOn:
+    text: ".*Confirmar.*|.*Usar este local.*"
+
+# ── Volta para endereço com dados preenchidos ─────────────────────────────────
+- assertVisible:
+    text: ".*Endereço.*|.*CEP.*"
+    timeout: 4000
+
+# O mapa estático deve aparecer na etapa de confirmação
+- assertVisible:
+    text: ".*Ajustar no mapa.*|.*Número.*|.*Complemento.*"
+    timeout: 3000
+
+# Confirma que o mapa está presente (renderizado como View nativa)
+- assertVisible: ".*Ajustar no mapa.*"
+
+# Preenche número e avança
+- tapOn:
+    text: ".*Número.*"
+    optional: true
+- inputText: "100"
+- tapOn: "Avançar"
