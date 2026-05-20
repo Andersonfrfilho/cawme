@@ -8,6 +8,7 @@ import type {
   LoginServiceParams,
   LoginServiceResult,
   ForgotPasswordServiceParams,
+  OnboardingStatusResult,
   RegisterServiceParams,
   RegisterServiceResult,
   SaveAddressParams,
@@ -150,6 +151,11 @@ export const KeycloakService = {
     };
   }> {
     const response = await apiClient.get(AUTH_ENDPOINTS.APP_CONFIG);
+    return response.data;
+  },
+
+  async getOnboardingStatus(): Promise<OnboardingStatusResult> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.ONBOARDING_STATUS);
     return response.data;
   },
 

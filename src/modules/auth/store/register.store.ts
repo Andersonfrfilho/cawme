@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { mmkvStorage } from "@/shared/providers/cache";
 
 export type StoredAddress = {
   cep: string;
@@ -12,26 +14,51 @@ export type StoredAddress = {
   longitude?: string;
 };
 
+export type PendingRegistration = {
+  keycloakId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  document: string;
+  documentType: string;
+  password: string;
+};
+
 interface RegisterStore {
   tempCredentials: { email: string; password: string } | null;
   address: StoredAddress | null;
   keycloakId: string | null;
+  pendingRegistration: PendingRegistration | null;
   setTempCredentials: (credentials: { email: string; password: string }) => void;
   clearTempCredentials: () => void;
   setAddress: (address: StoredAddress) => void;
   clearAddress: () => void;
   setKeycloakId: (keycloakId: string) => void;
   clearKeycloakId: () => void;
+  setPendingRegistration: (registration: PendingRegistration) => void;
+  clearPendingRegistration: () => void;
 }
 
-export const useRegisterStore = create<RegisterStore>((set) => ({
-  tempCredentials: null,
-  address: null,
-  keycloakId: null,
-  setTempCredentials: (tempCredentials) => set({ tempCredentials }),
-  clearTempCredentials: () => set({ tempCredentials: null }),
-  setAddress: (address) => set({ address }),
-  clearAddress: () => set({ address: null }),
-  setKeycloakId: (keycloakId) => set({ keycloakId }),
-  clearKeycloakId: () => set({ keycloakId: null }),
-}));
+export const useRegisterStore = create<RegisterStore>()(
+  persist(
+    (set) => ({
+      tempCredentials: null,
+      address: null,
+      keycloakId: null,
+      pendingRegistration: null,
+      setTempCredentials: (tempCredentials) => set({ tempCredentials }),
+      clearTempCredentials: () => set({ tempCredentials: null }),
+      setAddress: (address) => set({ address }),
+      clearAddress: () => set({ address: null }),
+      setKeycloakId: (keycloakId) => set({ keycloakId }),
+      clearKeycloakId: () => set({ keycloakId: null }),
+      setPendingRegistration: (pendingRegistration) => set({ pendingRegistration }),
+      clearPendingRegistration: () => set({ pendingRegistration: null }),
+    }),
+    {
+      name: "register-store",
+      storage: createJSONStorage(() => mmkvStorage.asStateStorage()),
+    },
+  ),
+);

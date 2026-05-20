@@ -64,3 +64,13 @@ export type VerifyCodeParams = {
 export type VerifyCodeResult = {
   verified: boolean;
 };
+
+export type OnboardingStep = "address" | "verification" | "document" | "complete";
+
+export type OnboardingStatusResult = {
+  step: OnboardingStep;
+  hasAddress: boolean;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  hasDocument: boolean;
+};

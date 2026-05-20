@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResume";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { router } from "expo-router";
 import { userAction } from "@/shared/utils/logger";
@@ -8,6 +9,7 @@ import type { LoginServiceParams } from "../services/types";
 export function useAuth() {
   const { setUser, logout: clearUser } = useAuthStore();
   const { showLoading, hideLoading } = useLoading();
+  const { checkAndResume } = useRegistrationResume();
 
   async function checkVerificationStatusAndRedirect(userId: string, name: string, email: string) {
     try {
@@ -65,10 +67,19 @@ export function useAuth() {
   async function login(params: LoginServiceParams): Promise<void> {
     userAction('login.submit', 'User submitted login form', { username: params.username });
     showLoading();
-    
+
     try {
       const { id, name, email } = await KeycloakService.login(params);
       userAction('login.success', 'User logged in successfully', { userId: id });
+
+      const resumeResult = await checkAndResume();
+      if (resumeResult.resumed) {
+        userAction('login.registration-resume', 'Resuming pending registration', {
+          step: resumeResult.step,
+        });
+        return;
+      }
+
       await checkVerificationStatusAndRedirect(id, name, email);
     } catch (error) {
       userAction('login.error', 'Login failed');

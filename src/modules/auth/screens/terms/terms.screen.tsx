@@ -133,12 +133,22 @@ export default function TermsScreen() {
         } : {}),
       });
 
-      // 2. Salva credenciais temporárias e keycloakId para o fluxo pós-verificação
+      // 2. Salva credenciais temporárias, keycloakId e dados do registro pendente
       useRegisterStore.getState().setTempCredentials({
         email: params.email,
         password: params.password,
       });
       useRegisterStore.getState().setKeycloakId(keycloakId);
+      useRegisterStore.getState().setPendingRegistration({
+        keycloakId,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        email: params.email,
+        phone: params.phone,
+        document: params.document,
+        documentType: params.documentType,
+        password: params.password,
+      });
 
       // 3. Navega para tela de endereço se não tiver endereço
       const hasAddress = !!(params.cep && params.street);

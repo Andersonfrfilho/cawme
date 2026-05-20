@@ -37,6 +37,7 @@ export const AUTH_ENDPOINTS = {
   TERMS_CHECK_PENDING: "/bff/auth/terms/check-pending",
   TERMS_ACCEPT: "/bff/auth/terms/accept",
   ADDRESS_SAVE: "/bff/onboarding/address",
+  ONBOARDING_STATUS: "/bff/onboarding/status",
 };
 
 export const HERO_OVERLAY = {
