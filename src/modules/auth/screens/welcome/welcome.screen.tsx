@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StatusBar } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -10,11 +10,47 @@ import { scale, moderateScale, verticalScale } from "@/shared/utils/scale";
 import { WelcomeSlides, WelcomeActions } from "../../components";
 import type { SlideData } from "../../components/WelcomeSlides/types";
 import { styles } from "./styles";
+import { useRegisterStore } from "@/modules/auth/store/register.store";
+import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResume";
+import { useLoading } from "@/shared/hooks/useLoading";
 
 export default function WelcomeScreen() {
   const { auth } = useLocale<LocaleKeys>();
   const [activeIndex, setActiveIndex] = useState(0);
   const insets = useSafeAreaInsets();
+  const { checkAndResume } = useRegistrationResume();
+  const { showLoading, hideLoading } = useLoading();
+
+  useEffect(() => {
+    const pendingRegistration = useRegisterStore.getState().pendingRegistration;
+    const tempCredentials = useRegisterStore.getState().tempCredentials;
+
+    if (!pendingRegistration || !tempCredentials) return;
+
+    let cancelled = false;
+
+    async function autoResume() {
+      showLoading();
+      try {
+        await KeycloakService.login({
+          username: tempCredentials!.email,
+          password: tempCredentials!.password,
+        });
+        if (cancelled) return;
+        await checkAndResume();
+      } catch {
+        // Credenciais inválidas ou conta bloqueada — não redireciona, deixa o usuário logar manualmente
+      } finally {
+        if (!cancelled) hideLoading();
+      }
+    }
+
+    autoResume();
+    return () => { cancelled = true; };
+  // Só executa na montagem
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const slides: SlideData[] = [
     {
