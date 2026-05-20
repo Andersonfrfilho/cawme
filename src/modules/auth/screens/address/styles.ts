@@ -84,6 +84,23 @@ export const styles = StyleSheet.create({
     color: theme.colors.primary.DEFAULT,
     fontWeight: theme.typography.fontWeight.semibold,
   },
+  orDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(12, 0.5),
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(16),
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.palette.neutral[200],
+  },
+  orDividerText: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.palette.neutral[400],
+    fontWeight: theme.typography.fontWeight.medium,
+  },
 
   // ── Step: Autocomplete ───────────────────────────────────────────────────────
   searchHeader: {
@@ -176,6 +193,37 @@ export const styles = StyleSheet.create({
   },
 
   // ── Step: Confirm ────────────────────────────────────────────────────────────
+  confirmMapContainer: {
+    height: verticalScale(220),
+    overflow: "hidden",
+  },
+  confirmMap: {
+    flex: 1,
+  },
+  confirmMapTouchable: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    padding: moderateScale(12, 0.5),
+  },
+  confirmMapAdjustBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(6, 0.5),
+    backgroundColor: theme.colors.primary.DEFAULT,
+    borderRadius: theme.radii.full,
+    paddingVertical: verticalScale(8),
+    paddingHorizontal: moderateScale(14, 0.5),
+  },
+  confirmMapAdjustText: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.palette.neutral[0],
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
   confirmSection: {
     marginBottom: verticalScale(28),
   },
@@ -236,6 +284,23 @@ export const styles = StyleSheet.create({
   },
   changeButtonText: {
     fontSize: moderateScale(13, 0.3),
+    color: theme.colors.primary.DEFAULT,
+    fontWeight: theme.typography.fontWeight.semibold,
+  },
+  mapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: moderateScale(8, 0.5),
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary.DEFAULT,
+    borderRadius: theme.radii.lg,
+    paddingVertical: verticalScale(14),
+    marginBottom: verticalScale(28),
+    backgroundColor: theme.colors.primary.DEFAULT + "08",
+  },
+  mapButtonText: {
+    fontSize: moderateScale(14, 0.3),
     color: theme.colors.primary.DEFAULT,
     fontWeight: theme.typography.fontWeight.semibold,
   },

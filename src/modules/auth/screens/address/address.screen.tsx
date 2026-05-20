@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useLayoutEffect } from "react";
+import React, { useState, useRef, useCallback, useLayoutEffect, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
@@ -19,8 +20,12 @@ import { AddressService } from "@/modules/auth/services/address.service";
 import type { AddressSuggestion } from "@/modules/auth/services/address.service";
 import { logger } from "@/shared/utils/logger";
 import { useRegisterStore } from "@/modules/auth/store/register.store";
+import type { MapPickerResult } from "@/modules/auth/screens/map-picker/types";
 import { styles } from "./styles";
 import type { AddressScreenParams, AddressFormValues } from "./types";
+
+const DEFAULT_LATITUDE = -23.5505;
+const DEFAULT_LONGITUDE = -46.6333;
 
 type ScreenStep = "cep" | "autocomplete" | "confirm";
 
@@ -92,6 +97,24 @@ export default function AddressScreen() {
   const numberRef = useRef<TextInput>(null);
   const complementRef = useRef<TextInput>(null);
   const searchRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (!params.mapPickerResult) return;
+    try {
+      const result = JSON.parse(params.mapPickerResult) as MapPickerResult;
+      setFoundAddress({
+        street: result.street,
+        neighborhood: result.neighborhood,
+        city: result.city,
+        state: result.state,
+        postcode: result.cep,
+        latitude: String(result.latitude),
+        longitude: String(result.longitude),
+      });
+      if (result.cep) setCep(formatCep(result.cep));
+      setStep("confirm");
+    } catch {}
+  }, [params.mapPickerResult]);
 
   const handleCepChange = useCallback((text: string) => {
     const formatted = formatCep(text);
@@ -183,6 +206,24 @@ export default function AddressScreen() {
     setSearchQuery("");
     setTimeout(() => searchRef.current?.focus(), 300);
   }, []);
+
+  const handleOpenMapPicker = useCallback(() => {
+    const lat = foundAddress?.latitude ? parseFloat(foundAddress.latitude) : DEFAULT_LATITUDE;
+    const lng = foundAddress?.longitude ? parseFloat(foundAddress.longitude) : DEFAULT_LONGITUDE;
+    const addressLabel = foundAddress
+      ? [foundAddress.street, foundAddress.city, foundAddress.state].filter(Boolean).join(", ")
+      : "";
+    router.push({
+      pathname: "/(auth)/map-picker" as any,
+      params: {
+        ...params,
+        initialLatitude: String(lat),
+        initialLongitude: String(lng),
+        initialAddress: addressLabel,
+        returnTo: "/(auth)/address",
+      },
+    });
+  }, [foundAddress, params]);
 
   const handleAdvance = useCallback(async () => {
     if (!number.trim()) {
@@ -317,8 +358,34 @@ export default function AddressScreen() {
   }
 
   if (step === "confirm" && foundAddress) {
+    const hasCoordinates = !!foundAddress.latitude && !!foundAddress.longitude;
+    const mapLat = hasCoordinates ? parseFloat(foundAddress.latitude!) : DEFAULT_LATITUDE;
+    const mapLng = hasCoordinates ? parseFloat(foundAddress.longitude!) : DEFAULT_LONGITUDE;
+
     return (
       <View style={styles.root}>
+        <View style={styles.confirmMapContainer}>
+          <MapView
+            style={styles.confirmMap}
+            region={{ latitude: mapLat, longitude: mapLng, latitudeDelta: 0.005, longitudeDelta: 0.005 }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            pitchEnabled={false}
+            rotateEnabled={false}
+            showsUserLocation={false}
+          >
+            {hasCoordinates && (
+              <Marker coordinate={{ latitude: mapLat, longitude: mapLng }} pinColor={theme.colors.primary.DEFAULT} />
+            )}
+          </MapView>
+          <TouchableOpacity style={styles.confirmMapTouchable} onPress={handleOpenMapPicker} activeOpacity={0.85}>
+            <View style={styles.confirmMapAdjustBadge}>
+              <Ionicons name="pencil-outline" size={moderateScale(12, 0.3)} color={theme.palette.neutral[0]} />
+              <Text style={styles.confirmMapAdjustText}>{auth.addressUseMap}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
           <ScrollView
             style={styles.scrollView}
@@ -464,6 +531,17 @@ export default function AddressScreen() {
           <TouchableOpacity style={styles.dontKnowCepButton} onPress={handleGoToSearch} activeOpacity={0.7}>
             <Text style={styles.dontKnowCepText}>{auth.addressDontKnowCep}</Text>
             <Ionicons name="chevron-forward" size={moderateScale(14, 0.3)} color={theme.colors.primary.DEFAULT} />
+          </TouchableOpacity>
+
+          <View style={styles.orDivider}>
+            <View style={styles.orDividerLine} />
+            <Text style={styles.orDividerText}>{auth.addressOr}</Text>
+            <View style={styles.orDividerLine} />
+          </View>
+
+          <TouchableOpacity style={styles.mapButton} onPress={handleOpenMapPicker} activeOpacity={0.8}>
+            <Ionicons name="map-outline" size={moderateScale(18, 0.3)} color={theme.colors.primary.DEFAULT} />
+            <Text style={styles.mapButtonText}>{auth.addressUseMap}</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>

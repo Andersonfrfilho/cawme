@@ -7,6 +7,7 @@ export type AddressScreenParams = {
   documentType: string;
   password: string;
   keycloakId: string;
+  mapPickerResult?: string;
 };
 
 export type AddressFormValues = {
