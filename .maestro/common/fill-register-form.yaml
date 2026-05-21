@@ -10,6 +10,17 @@ appId: com.andersonfilho.cawme
 # Campos com teclado numérico (phone-pad / number-pad) ficam atrás do teclado
 # quando teclado está aberto — tapOn nesses campos acertaria uma tecla do teclado.
 # Solução: usar pressKey: Enter para acionar onSubmitEditing → próximo campo via ref.
+#
+# hideKeyboard após pressKey: Enter no documento funciona para todos os tipos porque
+# há mudança de tipo de teclado em todos os casos:
+#   - CPF/CNPJ/RG: number-pad → default (campo senha)
+#   - Passport: ascii-capable → default (campo senha)
+#
+# PROBLEMA: após hideKeyboard, a árvore de acessibilidade reporta coordenadas desatualizadas
+# (a animação de fechamento do teclado ainda não atualizou as posições dos elementos).
+# Ambos os toggles reportam a mesma coordenada Y, indicando cache stale.
+# SOLUÇÃO: aguardar "Avançar" ficar visível — o botão só aparece na tela quando o teclado
+# está completamente fechado e o layout foi atualizado, forçando re-sync da árvore.
 
 # Seleciona o tipo de documento ANTES de tocar nos campos (sem teclado)
 - tapOn:
@@ -49,12 +60,16 @@ appId: com.andersonfilho.cawme
 - eraseText: 20
 - inputText: "${DOCUMENT}"
 - pressKey: Enter
-# Dismiss teclado numérico e ativa ambos os toggles SEM teclado visível.
-# iOS/XCUITest não digita em secureTextEntry=true; os toggles precisam ser tocados
-# com o teclado fechado (toggle da confirmação fica atrás da toolbar do teclado quando visível).
 - hideKeyboard
 
-# Ativar visibilidade de senha e confirmação com teclado fechado
+# Aguarda o botão "Avançar" ficar visível: indica que o teclado está completamente fechado
+# e a árvore de acessibilidade foi atualizada com as posições corretas dos elementos.
+- extendedWaitUntil:
+    visible: "Avançar"
+    timeout: 5000
+
+# iOS/XCUITest não digita em secureTextEntry=true; ativar os toggles com teclado fechado.
+# Coordenadas corretas após a árvore de acessibilidade ser atualizada.
 - tapOn:
     id: "register-password-toggle"
 - tapOn:

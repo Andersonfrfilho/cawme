@@ -358,7 +358,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
         />
 
         {renderField("document", auth.registerDocumentPlaceholder, "card-outline", {
-          keyboardType: documentType === "passport" ? "default" : "number-pad",
+          keyboardType: documentType === "passport" ? "ascii-capable" : "number-pad",
           returnKeyType: "next",
           onSubmitEditing: () => passwordRef.current?.focus(),
           inputRef: documentRef,

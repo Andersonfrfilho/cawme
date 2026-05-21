@@ -7,7 +7,8 @@ tags:
   - document-type
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+# Gera RG e telefone únicos por execução (RG é 9 dígitos baseado em timestamp)
+- evalScript: ${output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; output.RG='1'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -38,16 +39,18 @@ tags:
       FIRST_NAME: "Carlos"
       LAST_NAME: "Teste"
       EMAIL: "rg${output.TS}@test.com"
-      PHONE: "11988887777"
-      DOCUMENT: "123456789"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.RG}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
 - extendedWaitUntil:
     visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"

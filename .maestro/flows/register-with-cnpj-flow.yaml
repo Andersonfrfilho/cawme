@@ -7,7 +7,8 @@ tags:
   - document-type
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+# Gera CNPJ válido aleatório e telefone único por execução
+- evalScript: ${var b=[]; for(var i=0;i<12;i++) b.push(Math.floor(Math.random()*9+1)); var t1=[5,4,3,2,9,8,7,6,5,4,3,2]; var s=0; for(var i=0;i<12;i++) s+=b[i]*t1[i]; var r=s%11; r=r<2?0:11-r; b.push(r); var t2=[6,5,4,3,2,9,8,7,6,5,4,3,2]; s=0; for(var i=0;i<13;i++) s+=b[i]*t2[i]; r=s%11; r=r<2?0:11-r; b.push(r); output.CNPJ=b.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -38,16 +39,18 @@ tags:
       FIRST_NAME: "Empresa"
       LAST_NAME: "Teste"
       EMAIL: "cnpj${output.TS}@empresa.com"
-      PHONE: "1134567890"
-      DOCUMENT: "11222333000181"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CNPJ}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
 - extendedWaitUntil:
     visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"

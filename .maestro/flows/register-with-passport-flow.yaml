@@ -7,7 +7,10 @@ tags:
   - document-type
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+# Gera passaporte e telefone únicos por execução.
+# Passaporte: "AB" + 6 dígitos aleatórios (formato padrão de passaporte brasileiro: 2 letras + 6 dígitos).
+# Phone usa timestamp para unicidade; passaporte usa random para evitar colisão com runs anteriores.
+- evalScript: ${output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; output.PASSPORT='AB'+(Math.floor(Math.random()*900000)+100000).toString();}
 
 - launchApp:
     clearState: true
@@ -38,16 +41,18 @@ tags:
       FIRST_NAME: "John"
       LAST_NAME: "Smith"
       EMAIL: "passport${output.TS}@test.com"
-      PHONE: "11977776666"
-      DOCUMENT: "AB123456"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.PASSPORT}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
 - extendedWaitUntil:
     visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
