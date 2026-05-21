@@ -5,48 +5,79 @@ tags:
   - verification
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-# Navega para cadastro
-- tapOn: "Criar conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Preenche formulário completo
-- tapOn: "CPF"
-- inputText: "Verify"
-- inputText: "Test"
-- inputText: "verify${RANDOM_NUMBER}@test.com"
-- inputText: "11977776666"
-- inputText: "12345678909"
-- inputText: "password123"
-- inputText: "password123"
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
-# Avança para termos
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Verify"
+      LAST_NAME: "Test"
+      EMAIL: "verify${output.TS}@test.com"
+      PHONE: "11977776666"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
 # Aceita termos
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
+# Pula endereço se aparecer
+- runFlow:
+    when:
+      visible: ".*CEP.*|.*Endereço.*"
+    commands:
+      - tapOn:
+    id: "register-submit"
+        optional: true
+
 # Tela de verificação
-- assertVisible: "Verificação"
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 8000
+
 - assertVisible: "E-mail"
 
 # Código enviado
 - assertVisible: "Código enviado para"
 
-# Tenta inserir código (vai falhar pois é mock)
-- tapOn: ".*[0-9].*"
-  optional: true
-  repeat: 4
-
 # Verifica aba de telefone
 - tapOn: "Telefone"
-- assertVisible: "Código enviado para"
+
+- extendedWaitUntil:
+    visible: "Código enviado para"
+    timeout: 5000
 
 # Pular verificação
 - tapOn: "Verificar depois"
 
 # Verifica se home carregou
-- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*"
+    timeout: 8000

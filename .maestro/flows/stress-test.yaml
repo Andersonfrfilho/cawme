@@ -45,7 +45,8 @@ tags:
       - scroll
 
 # Fase 4: Avança e clica rápido nos termos
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"
 - assertVisible: "Termos de Uso"
 
 - repeat:
@@ -68,7 +69,6 @@ tags:
             - tapOn: "Telefone"
             - inputText: "1"
       - tapOn: "Verificar depois"
-    continueOnFailure: true
 
 # Verifica que app não crashou
 - assertNoCrash: true

@@ -21,6 +21,8 @@ export const WelcomeActions: React.FC<WelcomeActionsProps> = ({
           style={styles.primaryButton}
           onPress={onHireService}
           activeOpacity={0.85}
+          testID="welcome-hire-button"
+          accessibilityLabel={auth.welcomeHireService}
         >
           <Ionicons
             name="search-outline"
@@ -39,6 +41,8 @@ export const WelcomeActions: React.FC<WelcomeActionsProps> = ({
           style={styles.outlineButton}
           onPress={onOfferService}
           activeOpacity={0.85}
+          testID="welcome-offer-button"
+          accessibilityLabel={auth.welcomeOfferService}
         >
           <Ionicons
             name="briefcase-outline"
@@ -57,7 +61,11 @@ export const WelcomeActions: React.FC<WelcomeActionsProps> = ({
           <Text style={styles.loginText}>
             {auth.welcomeAlreadyHaveAccount}{" "}
           </Text>
-          <TouchableOpacity onPress={onAlreadyHaveAccount} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={onAlreadyHaveAccount}
+            activeOpacity={0.7}
+            testID="welcome-login-button"
+          >
             <Text style={styles.loginLink}>{auth.welcomeLoginLink}</Text>
           </TouchableOpacity>
         </View>

@@ -6,6 +6,8 @@ tags:
   - upload
   - feature-flag
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
@@ -19,14 +21,15 @@ tags:
 # Preenche formulário
 - inputText: "Test"
 - inputText: "Document"
-- inputText: "doc${RANDOM_NUMBER}@test.com"
+- inputText: "doc${output.TS}@test.com"
 - inputText: "11988887777"
 - inputText: "12345678909"
 - inputText: "password123"
 - inputText: "password123"
 
 # Avança
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"
 - assertVisible: "Termos de Uso"
 
 # Aceita termos
@@ -57,7 +60,6 @@ tags:
       
       # Vai para verificação
       - assertVisible: "Verificação"
-    continueOnFailure: true
 
 # Se feature flag desativa, vai direto para verificação
 - runFlow:
@@ -66,7 +68,6 @@ tags:
     commands:
       - assertVisible: "Confirme seu e-mail e telefone"
       - tapOn: "Verificar depois"
-    continueOnFailure: true
 
 # Home
 - assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"

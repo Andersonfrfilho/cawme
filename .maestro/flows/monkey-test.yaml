@@ -6,6 +6,8 @@ tags:
   - stress
   - exploration
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: false
 - repeat:
@@ -21,14 +23,13 @@ tags:
           file: "random-swipe.yaml"
       
       # Input de texto aleatório em campos
-      - inputText: "monkey${RANDOM_NUMBER}"
+      - inputText: "monkey${output.TS}"
       
       # Tenta navegar para registro se disponível
       - runFlow:
           when:
             visible: "Criar conta|Quero cadastrar"
           file: "navigate-to-register.yaml"
-          continueOnFailure: true
       
       # Tenta interagir com termos se visível
       - runFlow:
@@ -37,7 +38,6 @@ tags:
           commands:
             - tapOn: "random"
             - scroll
-          continueOnFailure: true
       
       # Tenta interagir com verificação se visível
       - runFlow:
@@ -46,7 +46,6 @@ tags:
           commands:
             - tapOn: "random"
             - inputText: "1"
-          continueOnFailure: true
       
       # Tenta interagir com upload de documento se visível
       - runFlow:
@@ -55,7 +54,6 @@ tags:
           commands:
             - tapOn: "random"
             - scroll
-          continueOnFailure: true
       
       # Tenta interagir com conta bloqueada se visível
       - runFlow:
@@ -63,7 +61,6 @@ tags:
             visible: "Bloqueada|Suporte"
           commands:
             - tapOn: "random"
-          continueOnFailure: true
       
       # Tenta fazer logout se em área logada
       - runFlow:
@@ -71,7 +68,6 @@ tags:
             visible: "Sair|Logout"
           commands:
             - tapOn: "random"
-          continueOnFailure: true
       
       # Assert que app ainda responde
       - assertVisible: ".*"

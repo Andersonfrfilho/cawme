@@ -431,6 +431,7 @@ export default function AddressScreen() {
                 <View style={styles.numberField}>
                   <Text style={styles.fieldLabel}>{auth.addressNumberLabel}</Text>
                   <TextInput
+                    testID="address-number-input"
                     ref={numberRef}
                     style={[styles.fieldInput, numberError ? styles.fieldInputError : null]}
                     placeholder={auth.addressNumberPlaceholder}
@@ -465,6 +466,7 @@ export default function AddressScreen() {
 
           <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
             <TouchableOpacity
+              testID="address-advance-button"
               style={[styles.advanceButton, isSubmitting && styles.advanceButtonDisabled]}
               onPress={handleAdvance}
               disabled={isSubmitting}
@@ -505,6 +507,7 @@ export default function AddressScreen() {
               style={styles.cepIcon}
             />
             <TextInput
+              testID="address-cep-input"
               style={styles.cepInput}
               placeholder={auth.addressCepPlaceholder}
               placeholderTextColor={theme.palette.neutral[400]}

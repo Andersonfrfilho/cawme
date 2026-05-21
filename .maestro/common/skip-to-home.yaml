@@ -1,14 +1,34 @@
-id: skip_to_home
-name: Skip to Home
-description: Pula verificação e documento para chegar na home (usado ao fim de flows)
+appId: com.andersonfilho.cawme
 ---
+# Pula verificação e documento para chegar na home (usado ao fim de flows)
+
+# Se estiver na tela de endereço/CEP → entra CEP, preenche número, avança para verificação
+- runFlow:
+    when:
+      visible: "Onde você mora?"
+    commands:
+      - tapOn:
+          id: "address-cep-input"
+      - inputText: "01310100"
+      # Aguarda ViaCEP retornar o endereço (badge "ENDEREÇO ENCONTRADO" aparece)
+      - extendedWaitUntil:
+          visible: ".*[Ee]ndere.*encontrado.*|.*Avançar.*"
+          timeout: 15000
+      - tapOn:
+          id: "address-number-input"
+      - inputText: "100"
+      # Não usar tapOn no botão Avançar pois keyboard numérico está aberto e cobre o botão.
+      # pressKey: Enter no campo número → foco vai para complemento (text keyboard)
+      # pressKey: Enter no complemento (returnKeyType="done") → handleAdvance()
+      - pressKey: Enter
+      - pressKey: Enter
+
 # Se estiver na tela de verificação, pula
 - runFlow:
     when:
       visible: ".*Verificação.*|.*Confirme seu e-mail.*"
     commands:
       - tapOn: "Verificar depois"
-    continueOnFailure: true
 
 # Se estiver na tela de documento, pula
 - runFlow:
@@ -16,8 +36,7 @@ description: Pula verificação e documento para chegar na home (usado ao fim de
       visible: ".*Verificação de Documento.*|.*Enviar depois.*"
     commands:
       - tapOn: "Enviar depois"
-    continueOnFailure: true
 
-- assertVisible:
-    text: ".*Home.*|.*Dashboard.*|.*Início.*"
-    timeout: 5000
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 8000

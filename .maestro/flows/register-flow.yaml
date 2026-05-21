@@ -1,59 +1,59 @@
 appId: com.andersonfilho.cawme
-name: ✅ Register Flow - Complete (New Flow)
-description: Testa fluxo completo de cadastro com verificação pós-registro
+name: ✅ Register Flow - Complete (CPF)
+description: Cadastro completo com CPF via caminho "Quero contratar"
 tags:
   - critical
   - register
   - e2e
 ---
+# Gera CPF válido aleatório e telefone único por execução
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS;}
+
 - launchApp:
     clearState: true
-- assertVisible: "Cawme"
-- assertVisible: ".*Bem-vindo.*"
 
-# Navega para cadastro
-- tapOn: "Criar conta"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Seleciona tipo de documento (CPF)
-- tapOn: "CPF"
-
-# Preenche formulário
-- inputText: "Monkey"
-- inputText: "Test"
-- inputText: "monkey${RANDOM_NUMBER}@test.com"
-- inputText: "11999999999"
-- inputText: "12345678909"
-- inputText: "password123"
-- inputText: "password123"
-
-# Avança para termos
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
-
-# Aceita termos
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
-
-# Agora vai para verificação (novo fluxo)
-- assertVisible: "Verificação"
-- assertVisible: "Confirme seu e-mail e telefone"
-
-# Verifica que código foi enviado para email
-- assertVisible: "Código enviado para"
-
-# Pular verificação (testa o fluxo alternativo)
-- tapOn: "Verificar depois"
-
-# Deve ir para home
-- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
-
-# Cleanup: faz logout
 - runFlow:
-    when:
-      visible: ".*menu.*|.*perfil.*|.*profile.*"
-    commands:
-      - tapOn: ".*menu.*|.*perfil.*|.*profile.*"
-      - tapOn: "Sair"
-      - assertVisible: "Cawme"
-    continueOnFailure: true
+    file: ../common/logout-if-needed.yaml
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Anderson"
+      LAST_NAME: "Teste"
+      EMAIL: "cpf${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 12000
+
+- runFlow:
+    file: ../common/skip-to-home.yaml

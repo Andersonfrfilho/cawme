@@ -309,6 +309,7 @@ export default function TermsScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
           <TouchableOpacity
+            testID="terms-accept-checkbox"
             style={[styles.checkboxRow]}
             onPress={() => setAccepted((prev) => !prev)}
             activeOpacity={0.7}
@@ -329,6 +330,7 @@ export default function TermsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            testID="terms-submit-button"
             style={[
               styles.submitButton,
               (!accepted || loading || screenState === "error") && styles.submitButtonDisabled,

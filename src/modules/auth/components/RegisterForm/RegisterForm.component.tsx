@@ -176,20 +176,25 @@ export const RegisterForm: React.FC<RegisterFormProps & {
               />
               <TextInput
                 key={config?.fieldKey ?? name}
+                testID={`register-${name}`}
                 ref={config?.inputRef}
                 style={styles.inputText}
                 placeholder={placeholder}
                 placeholderTextColor={theme.palette.neutral[400]}
-                value={config?.formatter && typeof value === "string" ? config.formatter(value) : (value as string) ?? ""}
+                value={config?.formatter || config?.secureTextEntry ? undefined : (value as string) ?? ""}
                 onChangeText={handleChangeText}
                 onFocus={() => setFocusedField(name)}
                 onBlur={() => {
                   setFocusedField(null);
                   onBlur();
+                  // Aplica formatação ao sair do campo (campos não-controlados com formatter)
+                  if (config?.formatter && config?.inputRef?.current && typeof value === "string") {
+                    config.inputRef.current.setNativeProps({ text: config.formatter(value) });
+                  }
                   // Dispara verificação ao terminar digitação (sair do campo)
                   if (onFieldChange && ['email', 'phone', 'document'].includes(name)) {
-                    const currentValue = config?.formatter && typeof value === "string" 
-                      ? value 
+                    const currentValue = config?.formatter && typeof value === "string"
+                      ? value
                       : (value as string) ?? "";
                     onFieldChange(name, currentValue);
                   }
@@ -201,7 +206,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 onSubmitEditing={config?.onSubmitEditing}
                 maxLength={config?.maxLength}
                 autoComplete={config?.secureTextEntry ? "off" : undefined}
-                textContentType={config?.secureTextEntry ? "oneTimeCode" : config?.textContentType}
+                textContentType={config?.secureTextEntry ? "none" : config?.textContentType}
                 importantForAutofill={config?.secureTextEntry ? "no" : undefined}
                 passwordRules=""
                 autoCorrect={false}
@@ -209,6 +214,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
               />
               {config?.showToggle && (
                 <TouchableOpacity
+                  testID={`register-${name}-toggle`}
                   style={styles.eyeButton}
                   onPress={config.onToggle}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -325,6 +331,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
                 {(["cpf", "cnpj", "rg", "passport"] as DocumentType[]).map((type) => (
                   <TouchableOpacity
                     key={type}
+                    testID={`register-docType-${type}`}
                     style={[
                       styles.documentTypeChip,
                       value === type && styles.documentTypeChipSelected,
@@ -351,7 +358,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
         />
 
         {renderField("document", auth.registerDocumentPlaceholder, "card-outline", {
-          keyboardType: documentType === "passport" ? "default" : "numeric",
+          keyboardType: documentType === "passport" ? "default" : "number-pad",
           returnKeyType: "next",
           onSubmitEditing: () => passwordRef.current?.focus(),
           inputRef: documentRef,
@@ -407,6 +414,7 @@ export const RegisterForm: React.FC<RegisterFormProps & {
         onPress={handleSubmit(onSubmit)}
         disabled={isButtonDisabled}
         activeOpacity={0.85}
+        testID="register-submit"
       >
         {isSubmitting ? (
           <ActivityIndicator color={theme.palette.neutral[0]} size="small" />

@@ -56,7 +56,6 @@ tags:
       visible: ".*minha localização.*|.*atual.*"
     commands:
       - tapOn: ".*minha localização.*|.*atual.*"
-    continueOnFailure: true
 
 # Confirma o local selecionado
 - tapOn:
@@ -80,4 +79,5 @@ tags:
     text: ".*Número.*"
     optional: true
 - inputText: "100"
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"

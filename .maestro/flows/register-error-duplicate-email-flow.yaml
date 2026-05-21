@@ -15,17 +15,35 @@ tags:
   - email
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 # Usa email que já existe no sistema (seed de testes)
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Duplicate"
       LAST_NAME: "Email"
       EMAIL: "existing@test.com"
@@ -33,19 +51,18 @@ tags:
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # App deve voltar para o formulário com erro no campo email
-- assertVisible:
-    text: ".*já cadastrado.*|.*já existe.*|.*e-mail.*uso.*|.*email.*uso.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*já cadastrado.*|.*já existe.*|.*e-mail.*uso.*|.*email.*uso.*"
+    timeout: 8000
 
 # Botão "Esqueci minha senha" deve aparecer (pois email já existe)
-- assertVisible:
-    text: ".*Esqueci.*senha.*|.*Recuperar.*|.*Senha.*"
-    timeout: 3000
+- extendedWaitUntil:
+    visible: ".*Esqueci.*senha.*|.*Recuperar.*|.*Senha.*"
+    timeout: 5000
 
 # Tira screenshot do estado de erro
 - takeScreenshot: "register-duplicate-email-error.png"
@@ -56,12 +73,11 @@ tags:
       visible: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
     commands:
       - tapOn: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
-      - assertVisible:
-          text: ".*Recuperar.*|.*E-mail.*|.*redefinir.*|.*nova senha.*"
-          timeout: 4000
+      - extendedWaitUntil:
+          visible: ".*Recuperar.*|.*E-mail.*|.*redefinir.*|.*nova senha.*"
+          timeout: 5000
       - tapOn: ".*Voltar.*|.*chevron.*"
         optional: true
-    continueOnFailure: true
 
 # Testa correção do email e nova tentativa
 - runFlow:
@@ -70,6 +86,6 @@ tags:
     commands:
       - clearText:
           optional: true
-      - inputText: "newemail${RANDOM_NUMBER}@test.com"
-      - tapOn: "Avançar"
-    continueOnFailure: true
+      - inputText: "newemail${output.TS}@test.com"
+      - tapOn:
+    id: "register-submit"

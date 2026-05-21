@@ -14,43 +14,66 @@ tags:
   - validation
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 # ── Teste 1: Submit vazio → erros de campo obrigatório ────────────────────────
 - tapOn: "CPF"
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"
 
 # Deve mostrar erros de campo obrigatório
-- assertVisible:
-    text: ".*obrigatório.*|.*campo.*|.*mínimo.*|.*preencha.*"
-    timeout: 3000
+- extendedWaitUntil:
+    visible: ".*obrigatório.*|.*campo.*|.*mínimo.*|.*preencha.*"
+    timeout: 5000
 
 # ── Teste 2: Email inválido ───────────────────────────────────────────────────
 - inputText: "João"
 - inputText: "Teste"
 - inputText: "emailinvalido"
 
-- tapOn: "Avançar"
-- assertVisible:
-    text: ".*e-mail.*inválido.*|.*email.*inválido.*|.*formato.*"
-    timeout: 3000
+- tapOn:
+    id: "register-submit"
+
+- extendedWaitUntil:
+    visible: ".*e-mail.*inválido.*|.*email.*inválido.*|.*formato.*"
+    timeout: 5000
 
 # Limpa o campo de email e coloca email válido para próximo teste
 - clearText:
     optional: true
-- inputText: "joao${RANDOM_NUMBER}@test.com"
+- inputText: "joao${output.TS}@test.com"
 
 # ── Teste 3: Telefone inválido (curto) ────────────────────────────────────────
 - inputText: "9999"
 
-- tapOn: "Avançar"
-- assertVisible:
-    text: ".*telefone.*|.*celular.*|.*mínimo.*"
-    timeout: 3000
+- tapOn:
+    id: "register-submit"
+
+- extendedWaitUntil:
+    visible: ".*telefone.*|.*celular.*|.*mínimo.*"
+    timeout: 5000
 
 # Preenche telefone válido
 - clearText:
@@ -60,10 +83,12 @@ tags:
 # ── Teste 4: CPF inválido (sequência 111...1) ─────────────────────────────────
 - inputText: "11111111111"
 
-- tapOn: "Avançar"
-- assertVisible:
-    text: ".*CPF.*inválido.*|.*documento.*inválido.*"
-    timeout: 3000
+- tapOn:
+    id: "register-submit"
+
+- extendedWaitUntil:
+    visible: ".*CPF.*inválido.*|.*documento.*inválido.*"
+    timeout: 5000
 
 # Corrige CPF
 - clearText:
@@ -74,10 +99,12 @@ tags:
 - inputText: "123"
 - inputText: "123"
 
-- tapOn: "Avançar"
-- assertVisible:
-    text: ".*senha.*mínimo.*|.*senha.*curta.*|.*caracteres.*"
-    timeout: 3000
+- tapOn:
+    id: "register-submit"
+
+- extendedWaitUntil:
+    visible: ".*senha.*mínimo.*|.*senha.*curta.*|.*caracteres.*"
+    timeout: 5000
 
 # ── Teste 6: Senhas diferentes ────────────────────────────────────────────────
 - clearText:
@@ -87,10 +114,12 @@ tags:
     optional: true
 - inputText: "SenhaDiferente@456"
 
-- tapOn: "Avançar"
-- assertVisible:
-    text: ".*senhas.*|.*confirmação.*|.*coincidir.*|.*iguais.*"
-    timeout: 3000
+- tapOn:
+    id: "register-submit"
+
+- extendedWaitUntil:
+    visible: ".*senhas.*|.*confirmação.*|.*coincidir.*|.*iguais.*"
+    timeout: 5000
 
 # Tira screenshot do estado de erro
 - takeScreenshot: "register-validation-errors.png"

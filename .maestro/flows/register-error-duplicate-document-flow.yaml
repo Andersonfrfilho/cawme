@@ -14,31 +14,48 @@ tags:
   - cpf
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 # Usa CPF que já existe no sistema
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Duplicate"
       LAST_NAME: "Document"
-      EMAIL: "doc${RANDOM_NUMBER}@test.com"
-      PHONE: "11${RANDOM_NUMBER}"
+      EMAIL: "doc${output.TS}@test.com"
+      PHONE: "119${output.TS}"
       DOCUMENT: "00000000000"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # App deve mostrar erro no campo documento
-- assertVisible:
-    text: ".*CPF.*já.*|.*documento.*uso.*|.*já cadastrado.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*CPF.*já.*|.*documento.*uso.*|.*já cadastrado.*"
+    timeout: 8000
 
 - takeScreenshot: "register-duplicate-document-error.png"

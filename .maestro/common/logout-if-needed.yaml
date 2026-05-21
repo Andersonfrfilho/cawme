@@ -1,0 +1,23 @@
+appId: com.andersonfilho.cawme
+---
+# Garante que o app está deslogado antes de iniciar um flow de cadastro/login.
+# Se estiver na home (logado) → faz logout via botão no canto superior direito.
+# Se já estiver na welcome screen → não faz nada.
+# IMPORTANTE: Após incluir este flow, adicionar no flow pai:
+#   - extendedWaitUntil:
+#       visible: "Encontre profissionais"
+#       timeout: 15000
+
+# Aguarda o app estabilizar em qualquer tela conhecida antes de verificar o estado.
+# Timeout alto pois a primeira execução pode baixar o bundle JS do Metro (30-60s).
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Encontre profissionais.*"
+    timeout: 60000
+
+- runFlow:
+    when:
+      visible: "Início"
+    commands:
+      # Botão de logout está no header direito: ~94% x, ~9% y (iPhone 16 Plus)
+      - tapOn:
+          point: "94%, 9%"

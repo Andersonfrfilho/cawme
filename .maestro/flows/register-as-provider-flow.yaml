@@ -1,39 +1,52 @@
 appId: com.andersonfilho.cawme
 name: ✅ Register Flow - Prestador de Serviço
-description: Cadastro pelo caminho "Oferecer serviço" (provider)
+description: Cadastro pelo caminho "Quero cadastrar meu serviço" (provider)
 tags:
   - register
   - provider
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- assertVisible: "Cawme"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
 # Caminho de provider (diferente de contractor)
-- tapOn: "Oferecer serviço"
-- assertVisible: "Crie sua conta"
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Prestador"
       LAST_NAME: "Teste"
-      EMAIL: "provider${RANDOM_NUMBER}@test.com"
+      EMAIL: "provider${output.TS}@test.com"
       PHONE: "11966665555"
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
-- assertVisible:
-    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 12000
 
-- runFlow: ../common/skip-to-home.yaml
+- runFlow:
+    file: ../common/skip-to-home.yaml

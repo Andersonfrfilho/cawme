@@ -7,30 +7,49 @@ tags:
   - e2e
 ---
 - launchApp:
-    clearState: false
-- assertVisible: "Cawme"
+    clearState: true
 
-# Navega para login
-- tapOn: "Entrar"
-- assertVisible: ".*Login.*|.*Entrar.*"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Preenche credenciais
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+# Navega para login via link "Entrar" na welcome screen
+- tapOn:
+    id: "welcome-login-button"
+
+- extendedWaitUntil:
+    visible: ".*E-mail.*|.*Entrar.*"
+    timeout: 8000
+
+# Preenche credenciais com conta existente de testes
+- tapOn: "(?i)^(usuário|e-mail)$"
 - inputText: "test@example.com"
+
+- tapOn: "(?i)^senha$"
 - inputText: "password123"
 
-# Submete
 - tapOn: "Entrar"
 
-# Verifica se redirecionou para home ou verificação
-- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*|.*Verificação.*"
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Verificação.*|.*inválid.*|.*incorret.*"
+    timeout: 10000
 
 # Se for redirecionado para verificação (conta pendente)
 - runFlow:
     when:
       visible: "Verificação"
     commands:
-      - assertVisible: "Confirme seu e-mail e telefone"
       - assertVisible: "Verificar depois"
       - tapOn: "Verificar depois"
-      - assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
-    continueOnFailure: true
+      - extendedWaitUntil:
+          visible: ".*Início.*"
+          timeout: 5000

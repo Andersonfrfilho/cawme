@@ -15,36 +15,48 @@ tags:
   - verification
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- assertVisible: "Cawme"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
 # ── 1. Cadastro ───────────────────────────────────────────────────────────────
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Full"
       LAST_NAME: "FlowTest"
-      EMAIL: "fullflow${RANDOM_NUMBER}@test.com"
+      EMAIL: "fullflow${output.TS}@test.com"
       PHONE: "11912345678"
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # ── 2. Endereço via CEP ───────────────────────────────────────────────────────
-- assertVisible:
-    text: ".*CEP.*|.*Endereço.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*CEP.*|.*Endereço.*"
+    timeout: 10000
 
 # Digita o CEP
 - tapOn:
@@ -53,9 +65,9 @@ tags:
 - inputText: "01310100"
 
 # Aguarda busca e confirma endereço encontrado
-- assertVisible:
-    text: ".*Endereço encontrado.*|.*Confirm.*|.*Av.*|.*Rua.*"
-    timeout: 5000
+- extendedWaitUntil:
+    visible: ".*Endereço encontrado.*|.*Confirm.*|.*Av.*|.*Rua.*"
+    timeout: 8000
 
 # Preenche número
 - tapOn:
@@ -64,19 +76,17 @@ tags:
 - inputText: "1000"
 
 # Avança para verificação
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"
 
 # ── 3. Verificação de email (código QA: 0000) ─────────────────────────────────
-- assertVisible:
-    text: ".*Verificação.*|.*Confirme seu e-mail.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 8000
 
 - assertVisible: "E-mail"
 
 # Insere código QA do email (0000)
-- tapOn:
-    text: ".*código.*|.*[0-9].*"
-    optional: true
 - inputText: "0"
 - inputText: "0"
 - inputText: "0"
@@ -87,13 +97,13 @@ tags:
       visible: ".*Verificado.*|.*verificado.*|.*E-mail verificado.*"
     commands:
       - assertVisible: ".*Verificado.*"
-    continueOnFailure: true
 
 # ── 4. Verificação de telefone (código QA: últimos 4 dígitos = 5678) ──────────
 - tapOn: "Telefone"
-- assertVisible:
-    text: ".*Código enviado.*|.*telefone.*"
-    timeout: 3000
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*|.*telefone.*"
+    timeout: 5000
 
 # Código QA = últimos 4 dígitos do telefone 11912345678 = 5678
 - inputText: "5"
@@ -106,7 +116,7 @@ tags:
       visible: ".*Verificado.*|.*Telefone verificado.*"
     commands:
       - assertVisible: ".*Verificado.*"
-    continueOnFailure: true
 
 # Avança para home (ou documento)
-- runFlow: ../common/skip-to-home.yaml
+- runFlow:
+    file: ../common/skip-to-home.yaml

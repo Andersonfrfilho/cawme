@@ -13,31 +13,48 @@ tags:
   - phone
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 # Usa telefone que já existe no sistema (seed de testes)
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Duplicate"
       LAST_NAME: "Phone"
-      EMAIL: "phone${RANDOM_NUMBER}@test.com"
+      EMAIL: "phone${output.TS}@test.com"
       PHONE: "11900000001"
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # App deve voltar para o formulário com erro no campo telefone
-- assertVisible:
-    text: ".*telefone.*já.*|.*celular.*uso.*|.*já cadastrado.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*telefone.*já.*|.*celular.*uso.*|.*já cadastrado.*"
+    timeout: 8000
 
 - takeScreenshot: "register-duplicate-phone-error.png"

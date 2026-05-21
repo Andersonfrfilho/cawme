@@ -12,24 +12,45 @@ tags:
   - code
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Verify"
       LAST_NAME: "Error"
-      EMAIL: "verifyerror${RANDOM_NUMBER}@test.com"
+      EMAIL: "verifyerror${output.TS}@test.com"
       PHONE: "11911110000"
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
@@ -41,17 +62,16 @@ tags:
       - tapOn:
           text: ".*Não sei.*|.*Buscar por nome.*"
           optional: true
-      - tapOn: "Avançar"
+      - tapOn:
+    id: "register-submit"
         optional: true
-    continueOnFailure: true
 
-- assertVisible:
-    text: ".*Verificação.*|.*Confirme seu e-mail.*"
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
     timeout: 8000
 
 # ── Teste 1: Código errado no email ──────────────────────────────────────────
-- assertVisible:
-    text: ".*E-mail.*"
+- assertVisible: "E-mail"
 
 # Insere código errado
 - inputText: "9"
@@ -59,9 +79,9 @@ tags:
 - inputText: "9"
 - inputText: "9"
 
-- assertVisible:
-    text: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
-    timeout: 4000
+- extendedWaitUntil:
+    visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
+    timeout: 6000
 
 - takeScreenshot: "verification-wrong-code-email.png"
 
@@ -70,12 +90,10 @@ tags:
     when:
       visible: ".*Reenviar.*|.*Reenvio.*|.*Enviar novamente.*"
     commands:
-      - assertVisible: ".*Reenviar.*|.*Enviar novamente.*"
       - tapOn: ".*Reenviar.*|.*Enviar novamente.*"
-      - assertVisible:
-          text: ".*enviado.*|.*reenviado.*|.*código.*novo.*"
-          timeout: 3000
-    continueOnFailure: true
+      - extendedWaitUntil:
+          visible: ".*enviado.*|.*reenviado.*|.*código.*novo.*"
+          timeout: 5000
 
 # ── Teste 3: Mesmo erro na aba de telefone ────────────────────────────────────
 - tapOn: "Telefone"
@@ -85,14 +103,15 @@ tags:
 - inputText: "0"
 - inputText: "0"
 
-- assertVisible:
-    text: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
-    timeout: 4000
+- extendedWaitUntil:
+    visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
+    timeout: 6000
 
 - takeScreenshot: "verification-wrong-code-phone.png"
 
 # Pula verificação após testar erros
 - tapOn: "Verificar depois"
-- assertVisible:
-    text: ".*Home.*|.*Dashboard.*"
-    timeout: 5000
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*"
+    timeout: 8000

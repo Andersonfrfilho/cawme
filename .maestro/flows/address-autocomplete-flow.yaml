@@ -11,47 +11,64 @@ tags:
   - autocomplete
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
 # Cadastro rápido para chegar na tela de endereço
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "CPF"
+      DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Auto"
       LAST_NAME: "Complete"
-      EMAIL: "autocomplete${RANDOM_NUMBER}@test.com"
+      EMAIL: "autocomplete${output.TS}@test.com"
       PHONE: "11955554444"
       DOCUMENT: "12345678909"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # Tela de endereço - step CEP
-- assertVisible:
-    text: ".*CEP.*|.*Endereço.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*CEP.*|.*Endereço.*"
+    timeout: 10000
 
 # Toca em "Não sei meu CEP" para abrir o autocomplete
 - tapOn:
     text: ".*Não sei.*|.*Não conheço.*|.*Buscar por nome.*"
-- assertVisible:
-    text: ".*Buscar.*|.*Digite.*|.*rua.*|.*logradouro.*"
-    timeout: 3000
+
+- extendedWaitUntil:
+    visible: ".*Buscar.*|.*Digite.*|.*rua.*|.*logradouro.*"
+    timeout: 5000
 
 # Digita na busca
 - inputText: "Avenida Paulista"
 
 # Aguarda sugestões aparecerem
-- assertVisible:
-    text: ".*Paulista.*|.*São Paulo.*"
-    timeout: 5000
+- extendedWaitUntil:
+    visible: ".*Paulista.*|.*São Paulo.*"
+    timeout: 8000
 
 # Seleciona a primeira sugestão
 - tapOn:
@@ -59,9 +76,9 @@ tags:
     index: 0
 
 # Deve voltar para confirmação de endereço
-- assertVisible:
-    text: ".*Número.*|.*Complemento.*|.*Confirmar.*"
-    timeout: 4000
+- extendedWaitUntil:
+    visible: ".*Número.*|.*Complemento.*|.*Confirmar.*"
+    timeout: 5000
 
 # Preenche número
 - tapOn:
@@ -69,6 +86,8 @@ tags:
     optional: true
 - inputText: "1578"
 
-- tapOn: "Avançar"
+- tapOn:
+    id: "register-submit"
 
-- runFlow: ../common/skip-to-home.yaml
+- runFlow:
+    file: ../common/skip-to-home.yaml

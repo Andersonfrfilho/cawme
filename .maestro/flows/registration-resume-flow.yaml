@@ -12,49 +12,53 @@ tags:
   - resume
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 
 # ── PARTE 1: Cadastro até a tela de endereço ─────────────────────────────────
 - launchApp:
     clearState: true
 
-- assertVisible: "Cawme"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
 # Vai para cadastro
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
-
-# Seleciona CPF
-- tapOn: "CPF"
-
-# Preenche dados pessoais
 - tapOn:
-    id: "input-firstName"
-  optional: true
-- inputText: "Anderson"
-- tapOn:
-    id: "input-lastName"
-  optional: true
-- inputText: "Teste"
+    id: "welcome-hire-button"
 
-# Usa índice para navegar nos campos caso não tenha testIDs
-- inputText: "resumetest${RANDOM_NUMBER}@cawme.com"
-- inputText: "11988880000"
-- inputText: "12345678909"
-- inputText: "Senha@123"
-- inputText: "Senha@123"
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
-# Avança para termos
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
+# Preenche dados pessoais com CPF
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Anderson"
+      LAST_NAME: "Teste"
+      EMAIL: "resumetest${output.TS}@cawme.com"
+      PHONE: "11988880000"
+      DOCUMENT: "12345678909"
+      PASSWORD: "Senha@123"
+
+# fill-register-form já submete via pressKey: Enter no confirmPassword
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
 # Aceita termos e cria conta
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
 # O app vai para a tela de endereço (sem endereço no momento do registro)
-- assertVisible:
-    text: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
-    enabled: true
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
+    timeout: 12000
 
 # ── PARTE 2: Fecha o app sem completar o endereço ────────────────────────────
 - stopApp
@@ -65,11 +69,10 @@ tags:
     clearState: false
 
 # O app deve logar automaticamente e redirecionar para o endereço
-# Aguarda o loading sumir e a tela aparecer
-- assertVisible:
-    text: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
-    timeout: 8000
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Onde você mora.*|.*CEP.*"
+    timeout: 15000
 
 # Confirma que não voltou para a home ou welcome screen
-- assertNotVisible: "Contratar serviço"
+- assertNotVisible: "Quero contratar"
 - assertNotVisible: "Entrar"

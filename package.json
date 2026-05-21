@@ -88,6 +88,7 @@
     "react-test-renderer": "19.2.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.2.10",
     "axios-mock-adapter": "^2.1.0",

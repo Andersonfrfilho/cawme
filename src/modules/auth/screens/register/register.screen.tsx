@@ -243,6 +243,7 @@ export default function RegisterScreen() {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             bounces={false}
             showsVerticalScrollIndicator={false}
           >

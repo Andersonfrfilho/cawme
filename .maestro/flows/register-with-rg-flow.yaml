@@ -7,33 +7,51 @@ tags:
   - document-type
   - e2e
 ---
+- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+
 - launchApp:
     clearState: true
 
-- assertVisible: "Cawme"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-- tapOn: "Contratar serviço"
-- assertVisible: "Crie sua conta"
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+
+# Aguarda welcome screen (após logout ou se já estava lá)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
-      DOCUMENT_TYPE: "RG"
+      DOCUMENT_TYPE: "rg"
       FIRST_NAME: "Carlos"
       LAST_NAME: "Teste"
-      EMAIL: "rg${RANDOM_NUMBER}@test.com"
+      EMAIL: "rg${output.TS}@test.com"
       PHONE: "11988887777"
       DOCUMENT: "123456789"
       PASSWORD: "Senha@123"
 
-- tapOn: "Avançar"
-- assertVisible: "Termos de Uso"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
 - tapOn: "Eu li e concordo"
 - tapOn: "Finalizar cadastro"
 
-- assertVisible:
-    text: ".*Endereço.*|.*Verificação.*|.*CEP.*"
-    timeout: 6000
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 12000
 
-- runFlow: ../common/skip-to-home.yaml
+- runFlow:
+    file: ../common/skip-to-home.yaml
