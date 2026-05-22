@@ -54,58 +54,111 @@ Features:
 - `.maestro/flows/register-verification-flow.yaml` - Full registration flow
 - `.maestro/flows/stress-verification-test.yaml` - Rate limit testing
 
-## 📋 API Endpoints
+## 📋 API Endpoints (BFF → API)
 
-| Field | Endpoint                      | Method |
-| ----- | ----------------------------- | ------ |
-| Email | `/onboarding/verify/email`    | POST   |
-| Phone | `/onboarding/verify/phone`    | POST   |
-| CPF   | `/onboarding/verify/document` | POST   |
+| Field | Endpoint | Body | API Target |
+|-------|----------|------|------------|
+| Email | `POST /bff/onboarding/verify/email` | `{ email }` | `POST /v1/auth/verify/email` |
+| Phone | `POST /bff/onboarding/verify/phone` | `{ phone }` | `POST /v1/auth/verify/phone` |
+| Document | `POST /bff/onboarding/verify/document` | `{ document }` | `POST /v1/auth/verify/document` |
 
-### Request Format
+### Field Mapping (useFieldVerification.ts)
+
+```typescript
+const apiFieldMap: Record<string, string> = {
+  email: 'email',
+  phone: 'phone',
+  document: 'document',  // CPF, CNPJ, RG, Passport
+};
+```
+
+O mobile envia `document` (não `cpf`). A API infere o tipo pelo número de dígitos (11=CPF, 14=CNPJ).
+
+### Registration
 
 ```json
-POST /onboarding/verify/email
+POST /bff/onboarding/register
 {
-  "email": "test@example.com"
+  "email": "user@example.com",
+  "firstName": "João",
+  "lastName": "Silva",
+  "phone": "16999999999",
+  "password": "***",
+  "cpf": "12345678900"    // ← usar "cpf" ou "cnpj"
 }
 ```
+
+O CPF/CNPJ é automaticamente salvo como `UserDocument` com `status: "PENDING"`.
+
+### Document Verification (Photo Upload)
+
+> ⚙️ **Feature flag:** `documentPhotoVerification` (desabilitada por padrão)
+
+Quando ativa, o usuário deve enviar foto do documento após o cadastro:
+
+| Método | Path | Descrição |
+|--------|------|-----------|
+| POST | `/bff/onboarding/documents/upload` | Upload de foto (multipart) |
+| GET | `/v1/users/me/documents` | Listar documentos do usuário |
+| PUT | `/v1/documents/:id/approve` | Admin aprova |
+| PUT | `/v1/documents/:id/reject` | Admin rejeita |
+
+### Document Status
+
+| Status | Significado |
+|--------|-------------|
+| `PENDING` | Documento cadastrado, aguardando foto |
+| `VERIFIED` | Documento verificado (aprovado) |
+| `REJECTED` | Documento rejeitado |
 
 ### Response Format
 
 ```json
-{
-  "valid": true,
-  "available": true
-}
-```
+// 200 - Available
+{ "valid": true, "available": true }
 
-### Error Responses
-
-```json
 // 409 - Already Registered
-{
-  "message": "Email already registered"
-}
+{ "message": "Email already registered" }
 
 // 429 - Rate Limit
-{
-  "message": "Too many requests"
-}
+{ "message": "Too many requests" }
 
 // 400 - Invalid Format
-{
-  "message": "Invalid email format"
+{ "message": "Invalid email format" }
+```
+
+### Feature Flags
+
+```json
+GET /bff/app-config → {
+  "features": {
+    "chatEnabled": true,
+    "notificationsEnabled": true,
+    "reviewsEnabled": true,
+    "providerSearchEnabled": true,
+    "documentPhotoVerification": false   // ← toggle quando implementar upload
+  }
 }
 ```
 
 ## 🎯 User Flow
 
-1. User types email → 500ms debounce → API verifies
-2. If available → No error shown, user can continue
-3. If exists (409) → Shows inline error + "Esqueci minha senha" button
-4. If rate limited (429) → Silently stops, no error shown
-5. User cannot advance to `/terms` if field unavailable
+1. User types email → 500ms debounce → API verifica (Keycloak + DB)
+2. User types phone → 500ms debounce → API verifica (DB)
+3. User types document → 500ms debounce → API verifica (DB)
+4. If available → No error shown, user can continue
+5. If exists (409) → Shows inline error + "Esqueci minha senha" button
+6. If rate limited (429) → Silently stops, no error shown
+7. User cannot advance to `/terms` if field unavailable
+8. **Registration**: CPF/CNPJ saved as UserDocument (status: PENDING)
+9. **After registration**: User can upload document photo (if feature flag enabled)
+
+### Verification After Registration
+
+Se usuário optar por "Verificar depois":
+- Conta criada com status `PENDING`
+- Login verifica `GET /v1/users/me/documents` + status
+- Redireciona para verificação se email/phone não verificados
 
 ## 🔒 Rate Limiting
 
