@@ -1,73 +1,102 @@
 appId: com.andersonfilho.cawme
-name: 📄 Document Upload Flow (Feature Flag)
-description: Testa fluxo de upload de documento quando feature flag está ativa
+name: 📄 Document Upload Flow
+description: |
+  Testa o fluxo de upload de documento:
+  1. Cadastra usuário único e completa verificação
+  2. Verifica se a sheet de upload de documento aparece
+  3. Se aparecer: valida elementos e toca em "Depois"
+  4. Chega na home
+  Nota: a sheet aparece após o auto-login bem-sucedido pós-verificação.
+  Sem email verificado pelo Keycloak, o auto-login falha e a sheet não aparece.
+  O teste valida o caminho feliz quando o servidor está em QA mode.
 tags:
   - document
   - upload
-  - feature-flag
+  - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='107'+output.TS;}
 
 - launchApp:
     clearState: true
 
-# Navega para cadastro
-- tapOn: "Criar conta"
-- assertVisible: "Crie sua conta"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Seleciona tipo de documento
-- tapOn: "CPF"
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
-# Preenche formulário
-- inputText: "Test"
-- inputText: "Document"
-- inputText: "doc${output.TS}@test.com"
-- inputText: "11988887777"
-- inputText: "12345678909"
-- inputText: "password123"
-- inputText: "password123"
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
 
-# Avança
 - tapOn:
-    id: "register-submit"
-- assertVisible: "Termos de Uso"
+    id: "welcome-hire-button"
 
-# Aceita termos
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
-# Se feature flag ativa, vai para upload de documento
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Document"
+      LAST_NAME: "Upload"
+      EMAIL: "docupload${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Pula endereço se aparecer
 - runFlow:
     when:
-      visible: "Verificação de Documento"
+      visible: "Onde você mora?"
     commands:
-      # Seleciona tipo de documento
-      - assertVisible: "Tipo de documento"
-      - tapOn: "RG"
-      
-      # Área de upload
-      - assertVisible: "Tirar foto ou escolher da galeria"
-      
-      # Verifica diretrizes
-      - assertVisible: "Dicas para uma boa foto"
-      - assertVisible: "Esteja em um local bem iluminado"
-      
-      # Botão de skip deve existir
-      - assertVisible: "Enviar depois"
-      
-      # Pula upload (não podemos selecionar imagem no teste)
-      - tapOn: "Enviar depois"
-      
-      # Vai para verificação
-      - assertVisible: "Verificação"
+      - tapOn:
+          id: "address-cep-input"
+      - inputText: "01310100"
+      - extendedWaitUntil:
+          visible: "Endereço encontrado"
+          timeout: 15000
+      - tapOn:
+          id: "address-number-input"
+      - inputText: "100"
+      - pressKey: Enter
+      - pressKey: Enter
 
-# Se feature flag desativa, vai direto para verificação
+# Na verificação: pula para acionar auto-login
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*|.*Início.*|.*Home.*"
+    timeout: 12000
+
+# Pula verificação se ainda na tela de verificação
 - runFlow:
     when:
-      visible: "Verificação"
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
     commands:
-      - assertVisible: "Confirme seu e-mail e telefone"
-      - tapOn: "Verificar depois"
+      - tapOn:
+          id: "verification-skip-button"
 
-# Home
-- assertVisible: ".*Home.*|.*Dashboard.*|.*Início.*"
+# Se a sheet de documento aparecer, interage com ela
+- runFlow:
+    when:
+      visible: ".*documento.*|.*Verificação de Documento.*|.*Enviar depois.*"
+    commands:
+      - assertVisible: ".*Enviar depois.*|.*Depois.*"
+      - tapOn:
+          text: ".*Enviar depois.*|.*Depois.*"
+
+# Aguarda home
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 8000

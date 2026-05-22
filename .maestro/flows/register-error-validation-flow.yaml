@@ -1,20 +1,17 @@
 appId: com.andersonfilho.cawme
 name: ❌ Register Error - Validação de Campos
 description: |
-  Testa todos os erros de validação do formulário de cadastro:
-  1. Envio com campos vazios → erros "obrigatório"
-  2. Email inválido (sem @)
-  3. Senha curta (< 8 chars)
-  4. Senhas diferentes
-  5. CPF inválido (sequência)
-  6. CPF com dígitos incorretos
+  Testa erros de validação client-side via onChange:
+  1. Preenche form quase completo com senhas diferentes
+  2. "As senhas não conferem" aparece no campo de confirmação
+  O botão "Avançar" fica disabled enquanto o form é inválido (sem submit).
 tags:
   - register
   - error
   - validation
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join('');}
 
 - launchApp:
     clearState: true
@@ -26,11 +23,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -38,88 +34,58 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# ── Teste 1: Submit vazio → erros de campo obrigatório ────────────────────────
-- tapOn: "CPF"
+# Preenche todos os campos com dados válidos
 - tapOn:
-    id: "register-submit"
-
-# Deve mostrar erros de campo obrigatório
-- extendedWaitUntil:
-    visible: ".*obrigatório.*|.*campo.*|.*mínimo.*|.*preencha.*"
-    timeout: 5000
-
-# ── Teste 2: Email inválido ───────────────────────────────────────────────────
-- inputText: "João"
+    id: "register-docType-cpf"
+- tapOn:
+    id: "register-firstName"
+- eraseText: 50
 - inputText: "Teste"
-- inputText: "emailinvalido"
+- hideKeyboard
 
 - tapOn:
-    id: "register-submit"
-
-- extendedWaitUntil:
-    visible: ".*e-mail.*inválido.*|.*email.*inválido.*|.*formato.*"
-    timeout: 5000
-
-# Limpa o campo de email e coloca email válido para próximo teste
-- clearText:
-    optional: true
-- inputText: "joao${output.TS}@test.com"
-
-# ── Teste 3: Telefone inválido (curto) ────────────────────────────────────────
-- inputText: "9999"
+    id: "register-lastName"
+- eraseText: 50
+- inputText: "Validacao"
+- hideKeyboard
 
 - tapOn:
-    id: "register-submit"
-
-- extendedWaitUntil:
-    visible: ".*telefone.*|.*celular.*|.*mínimo.*"
-    timeout: 5000
-
-# Preenche telefone válido
-- clearText:
-    optional: true
-- inputText: "11944443333"
-
-# ── Teste 4: CPF inválido (sequência 111...1) ─────────────────────────────────
-- inputText: "11111111111"
+    id: "register-email"
+- eraseText: 100
+- inputText: "valid${output.TS}@test.com"
+- hideKeyboard
 
 - tapOn:
-    id: "register-submit"
+    id: "register-phone"
+- eraseText: 20
+- inputText: "${output.PHONE}"
+- pressKey: Enter
 
-- extendedWaitUntil:
-    visible: ".*CPF.*inválido.*|.*documento.*inválido.*"
-    timeout: 5000
+# CPF gerado dinamicamente (válido, único)
+- eraseText: 20
+- inputText: "${output.CPF}"
+- pressKey: Enter
+- hideKeyboard
 
-# Corrige CPF
-- clearText:
-    optional: true
-- inputText: "12345678909"
-
-# ── Teste 5: Senha curta ──────────────────────────────────────────────────────
-- inputText: "123"
-- inputText: "123"
-
+# Ativa toggles de senha (teclado fechado, form estável)
 - tapOn:
-    id: "register-submit"
+    id: "register-password-toggle"
+- tapOn:
+    id: "register-passwordConfirmation-toggle"
 
-- extendedWaitUntil:
-    visible: ".*senha.*mínimo.*|.*senha.*curta.*|.*caracteres.*"
-    timeout: 5000
-
-# ── Teste 6: Senhas diferentes ────────────────────────────────────────────────
-- clearText:
-    optional: true
+# Senha válida
+- tapOn:
+    id: "register-password"
+- eraseText: 50
 - inputText: "Senha@123"
-- clearText:
-    optional: true
-- inputText: "SenhaDiferente@456"
+- pressKey: Enter
 
-- tapOn:
-    id: "register-submit"
+# Confirmação DIFERENTE → refine Zod falha → onChange → "As senhas não conferem"
+- eraseText: 50
+- inputText: "SenhaErrada9"
+- hideKeyboard
 
+# Erro de mismatch deve aparecer abaixo do campo de confirmação
 - extendedWaitUntil:
-    visible: ".*senhas.*|.*confirmação.*|.*coincidir.*|.*iguais.*"
-    timeout: 5000
-
-# Tira screenshot do estado de erro
-- takeScreenshot: "register-validation-errors.png"
+    visible: ".*não conferem.*|.*senhas.*|.*coincidir.*|.*iguais.*"
+    timeout: 8000

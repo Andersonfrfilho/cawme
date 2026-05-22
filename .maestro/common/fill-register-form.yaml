@@ -62,11 +62,12 @@ appId: com.andersonfilho.cawme
 - pressKey: Enter
 - hideKeyboard
 
-# Aguarda o botão "Avançar" ficar visível: indica que o teclado está completamente fechado
-# e a árvore de acessibilidade foi atualizada com as posições corretas dos elementos.
+# Aguarda "Confirmar senha" ficar visível — indica que o teclado fechou e o form rolou
+# para a área de senha. Mais confiável do que "Avançar" pois não sai da tela quando
+# há mensagens de erro inline (duplicatas) que empurram o botão para baixo do viewport.
 - extendedWaitUntil:
-    visible: "Avançar"
-    timeout: 5000
+    visible: "Confirmar senha"
+    timeout: 8000
 
 # iOS/XCUITest não digita em secureTextEntry=true; ativar os toggles com teclado fechado.
 # Coordenadas corretas após a árvore de acessibilidade ser atualizada.

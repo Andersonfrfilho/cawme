@@ -1,0 +1,216 @@
+appId: com.andersonfilho.cawme
+name: 🔄 Registration Resume - Retomada no Envio de Documento
+description: |
+  Testa o checkpoint de cadastro quando interrompido na tela de envio de documento:
+  1. Cadastra usuário, preenche endereço, pula verificação e chega no envio de documento
+  2. Fecha o app (simula abandono durante o upload)
+  3. Reabre sem limpar estado
+  4. Modo padrão: login falha (Keycloak exige e-mail verificado) → volta para welcome sem crash
+  5. Modo QA: auto-login → checkAndResume → redireciona para /document-upload automaticamente
+  Nota: o redirecionamento automático para /document-upload só funciona em servidor QA mode.
+  O step "document" é salvo em pendingRegistration quando o usuário chega nessa tela
+  via post-register (após verificação bem sucedida ou skip+isSignedIn).
+tags:
+  - register
+  - resume
+  - document
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='120'+output.TS;}
+
+# ── PARTE 1: Cadastro completo até a tela de documento ────────────────────────
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Resume"
+      LAST_NAME: "Document"
+      EMAIL: "resumedoc${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Preenche endereço
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# Verifica se caiu na tela de verificação → tenta código QA ou pula
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*|.*Verificação de Documento.*"
+    timeout: 12000
+
+# Tenta verificação com código QA (0000) para chegar no documento
+- runFlow:
+    when:
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    commands:
+      - tapOn:
+          id: "verification-code-0"
+      - inputText: "0"
+      - inputText: "0"
+      - inputText: "0"
+      - inputText: "0"
+      - tapOn:
+          id: "verification-verify-button"
+      # Se QA falhou → código inválido → pula verificação (não teremos o step "document")
+      - runFlow:
+          when:
+            visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
+          commands:
+            - tapOn:
+                id: "verification-skip-button"
+      # QA verificou email → tenta telefone
+      - runFlow:
+          when:
+            visible: "Telefone"
+          commands:
+            - tapOn:
+                id: "verification-tab-phone"
+            - extendedWaitUntil:
+                visible: ".*Código enviado.*"
+                timeout: 8000
+            - tapOn:
+                id: "verification-code-0"
+            - inputText: "0"
+            - inputText: "0"
+            - inputText: "0"
+            - inputText: "0"
+            - tapOn:
+                id: "verification-verify-button"
+            - runFlow:
+                when:
+                  visible: ".*inválido.*|.*incorreto.*"
+                commands:
+                  - tapOn:
+                      id: "verification-skip-button"
+
+# Se chegou no DocumentUploadSheet (após auto-login QA) → clica "Fazer depois"
+- runFlow:
+    when:
+      visible: ".*Verificação de Documento.*|.*Enviar depois.*"
+    commands:
+      - tapOn:
+          text: ".*Fazer depois.*|.*Enviar depois.*"
+
+# Aguarda tela de envio de documento (post-register via document-upload screen direta)
+- runFlow:
+    when:
+      visible: "Verificação de Documento"
+    commands:
+      - assertVisible: "Enviar depois"
+
+# ── Ponto de interrupção: fecha o app na tela de documento ────────────────────
+- runFlow:
+    when:
+      visible: "Verificação de Documento"
+    commands:
+      - stopApp
+
+      # ── PARTE 2: Reabre sem limpar estado ──────────────────────────────────
+      - launchApp:
+          clearState: false
+
+      # Auto-resume: login falha em modo padrão, ou redireciona para /document-upload em QA
+      - extendedWaitUntil:
+          visible: ".*Cawme.*|.*Encontre profissionais.*|.*Verificação de Documento.*"
+          timeout: 20000
+
+      # Modo QA: auto-login bem sucedido → redireciona para envio de documento
+      - runFlow:
+          when:
+            visible: "Verificação de Documento"
+          commands:
+            - assertVisible: "Verificação de Documento"
+            - assertVisible: "Enviar depois"
+            - assertNotVisible: "Encontre profissionais"
+
+      # Modo padrão: login falhou → welcome sem crash
+      - runFlow:
+          when:
+            visible: "Encontre profissionais"
+          commands:
+            - assertVisible: "Encontre profissionais"
+            - assertNotVisible: "Verificação de Documento"
+
+# Se o servidor não é QA e o usuário ficou preso na verificação, garante home
+- runFlow:
+    when:
+      visible: ".*Verificar depois.*"
+    commands:
+      - tapOn:
+          id: "verification-skip-button"
+
+- runFlow:
+    when:
+      visible: ".*Enviar depois.*"
+    commands:
+      - tapOn:
+          text: "Enviar depois"
+
+- runFlow:
+    when:
+      visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    commands:
+      - assertVisible: ".*Início.*|.*Home.*|.*Dashboard.*"
+      # ── Badge de ativação pendente ──
+      # Modo padrão (skip sem login): isSignedIn=false → badge NÃO aparece
+      # Modo QA (auto-login após resume): isSignedIn=true → badge aparece com pendências restantes
+      - runFlow:
+          when:
+            visible: "Verificação Pendente"
+          commands:
+            - assertVisible:
+                id: "pending-verification-banner"
+            - assertVisible: "Verificação Pendente"
+      - runFlow:
+          when:
+            notVisible: "Verificação Pendente"
+          commands:
+            - assertNotVisible:
+                id: "pending-verification-banner"

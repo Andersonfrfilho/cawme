@@ -2,16 +2,18 @@ appId: com.andersonfilho.cawme
 name: ✅ Address Flow - Autocomplete por nome de rua
 description: |
   Testa o caminho de endereço via busca por texto (autocomplete):
-  1. Toca em "Não sei meu CEP"
-  2. Digita nome de rua na busca
-  3. Seleciona sugestão
-  4. Confirma endereço com número
+  1. Cadastra usuário único
+  2. Toca em "Não sei meu CEP"
+  3. Digita nome de rua na busca
+  4. Seleciona sugestão
+  5. Confirma endereço com número
+  6. Pula verificação → home
 tags:
   - address
   - autocomplete
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='112'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -23,7 +25,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-# Cadastro rápido para chegar na tela de endereço
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -38,25 +43,27 @@ tags:
       FIRST_NAME: "Auto"
       LAST_NAME: "Complete"
       EMAIL: "autocomplete${output.TS}@test.com"
-      PHONE: "11955554444"
-      DOCUMENT: "12345678909"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
-# Tela de endereço - step CEP
+# Aguarda chegar na tela de endereço (CEP step)
 - extendedWaitUntil:
-    visible: ".*CEP.*|.*Endereço.*"
-    timeout: 10000
+    visible: "Onde você mora?"
+    timeout: 12000
 
 # Toca em "Não sei meu CEP" para abrir o autocomplete
 - tapOn:
-    text: ".*Não sei.*|.*Não conheço.*|.*Buscar por nome.*"
+    text: ".*sei meu CEP.*"
 
 - extendedWaitUntil:
     visible: ".*Buscar.*|.*Digite.*|.*rua.*|.*logradouro.*"
@@ -67,27 +74,26 @@ tags:
 
 # Aguarda sugestões aparecerem
 - extendedWaitUntil:
-    visible: ".*Paulista.*|.*São Paulo.*"
+    visible: ".*Consolação.*|.*Paulista.*|.*São Paulo.*"
     timeout: 8000
 
-# Seleciona a primeira sugestão
+# keyboardShouldPersistTaps="handled" permite tap na sugestão com teclado aberto.
+# Usa texto da cidade (único na lista de sugestões, não aparece no input).
 - tapOn:
-    text: ".*Paulista.*"
-    index: 0
+    text: ".*Consolação.*"
 
-# Deve voltar para confirmação de endereço
+# Deve ir para confirmação de endereço (confirm step)
 - extendedWaitUntil:
-    visible: ".*Número.*|.*Complemento.*|.*Confirmar.*"
+    visible: "Endereço encontrado"
     timeout: 5000
 
 # Preenche número
 - tapOn:
-    text: ".*Número.*"
-    optional: true
+    id: "address-number-input"
 - inputText: "1578"
+- pressKey: Enter
+- pressKey: Enter
 
-- tapOn:
-    id: "register-submit"
-
+# Avança → verificação → home
 - runFlow:
     file: ../common/skip-to-home.yaml

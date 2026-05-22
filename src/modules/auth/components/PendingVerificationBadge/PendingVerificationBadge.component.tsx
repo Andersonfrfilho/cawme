@@ -87,7 +87,7 @@ export const PendingVerificationBadge: React.FC<PendingVerificationBadgeProps> =
 
   // Banner (default)
   return (
-    <TouchableOpacity onPress={handlePress} style={styles.bannerContainer} activeOpacity={0.9}>
+    <TouchableOpacity testID="pending-verification-banner" onPress={handlePress} style={styles.bannerContainer} activeOpacity={0.9}>
       <View style={styles.bannerIconContainer}>
         <Ionicons name="shield-half-outline" size={moderateScale(24, 0.3)} color={theme.colors.status.warning} />
       </View>

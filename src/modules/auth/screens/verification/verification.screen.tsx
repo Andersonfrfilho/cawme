@@ -274,6 +274,7 @@ export default function VerificationScreen() {
 
           <View style={styles.tabContainer}>
             <TouchableOpacity
+              testID="verification-tab-email"
               style={[
                 styles.tab,
                 target === "email" && !emailVerified && styles.tabActive,
@@ -303,6 +304,7 @@ export default function VerificationScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID="verification-tab-phone"
               style={[
                 styles.tab,
                 target === "phone" && !phoneVerified && styles.tabActive,
@@ -360,6 +362,7 @@ export default function VerificationScreen() {
                   .map((_, index) => (
                     <TextInput
                       key={index}
+                      testID={`verification-code-${index}`}
                       ref={(ref) => {
                         inputRefs.current[index] = ref;
                       }}
@@ -376,6 +379,7 @@ export default function VerificationScreen() {
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
               <TouchableOpacity
+                testID="verification-verify-button"
                 style={[
                   styles.verifyButton,
                   (!isCodeComplete || loading) && styles.verifyButtonDisabled,
@@ -417,6 +421,7 @@ export default function VerificationScreen() {
 
           {!bothVerified && (
             <TouchableOpacity
+              testID="verification-skip-button"
               style={styles.skipButton}
               onPress={handleSkipVerification}
               activeOpacity={0.7}

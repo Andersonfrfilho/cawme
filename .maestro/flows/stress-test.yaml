@@ -1,75 +1,133 @@
 appId: com.andersonfilho.cawme
-name: 💥 Stress Test - Rapid Clicks & New Screens
-description: Testa cliques rápidos e múltiplos nas novas telas
+name: 💥 Stress Test - Rapid Interactions on Register Flow
+description: |
+  Testa estabilidade sob cliques rápidos e interações intensas:
+  1. Toca rapidamente nos seletores de tipo de documento (CPF/CNPJ/RG/Passaporte)
+  2. Preenche e limpa campos do formulário repetidamente
+  3. Toca no checkbox de termos várias vezes
+  4. Verifica que o app não trava ou crasha
 tags:
   - stress
   - performance
-  - clicks
+  - e2e
 ---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='105'+output.TS;}
+
 - launchApp:
-    clearState: false
-- assertVisible: ".*"
+    clearState: true
 
-# Fase 1: Cliques rápidos no welcome
-- repeat:
-    times: 20
-    commands:
-      - tapOn: "random"
-      - tapOn: "random"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Fase 2: Navega para registro e clica rápido
-- tapOn: "Criar conta"
-- assertVisible: "Crie sua conta"
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
-# Cliques rápidos nos campos
-- repeat:
-    times: 30
-    commands:
-      - tapOn: "random"
-      - inputText: "stress"
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
 
-# Seleciona tipo de documento várias vezes
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+# Fase 1: Cliques rápidos nos seletores de tipo de documento
 - repeat:
     times: 10
     commands:
-      - tapOn: "CPF"
-      - tapOn: "CNPJ"
-      - tapOn: "RG"
-      - tapOn: "PASSAPORTE"
+      - tapOn:
+          id: "register-docType-cpf"
+      - tapOn:
+          id: "register-docType-cnpj"
+      - tapOn:
+          id: "register-docType-rg"
+      - tapOn:
+          id: "register-docType-passport"
 
-# Fase 3: Scroll rápido
-- repeat:
-    times: 20
-    commands:
-      - scroll
-      - scroll
-
-# Fase 4: Avança e clica rápido nos termos
+# Volta para CPF para preencher o form
 - tapOn:
-    id: "register-submit"
-- assertVisible: "Termos de Uso"
+    id: "register-docType-cpf"
 
+# Fase 2: Preenche campos rapidamente
+- tapOn:
+    id: "register-firstName"
+- eraseText: 50
+- inputText: "StressTest"
+- hideKeyboard
+
+- tapOn:
+    id: "register-lastName"
+- eraseText: 50
+- inputText: "Rapido"
+- hideKeyboard
+
+- tapOn:
+    id: "register-email"
+- eraseText: 100
+- inputText: "stress${output.TS}@test.com"
+- hideKeyboard
+
+- tapOn:
+    id: "register-phone"
+- eraseText: 20
+- inputText: "${output.PHONE}"
+- pressKey: Enter
+
+- eraseText: 20
+- inputText: "${output.CPF}"
+- pressKey: Enter
+- hideKeyboard
+
+- extendedWaitUntil:
+    visible: "Confirmar senha"
+    timeout: 8000
+
+# Fase 3: Toggles de senha rápidos (par de iterações = volta ao estado original)
 - repeat:
-    times: 15
+    times: 6
     commands:
-      - tapOn: "random"
-      - tapOn: "Eu li e concordo"
+      - tapOn:
+          id: "register-password-toggle"
+      - tapOn:
+          id: "register-passwordConfirmation-toggle"
 
-# Fase 5: Stress na tela de verificação
-- tapOn: "Finalizar cadastro"
-- runFlow:
-    when:
-      visible: "Verificação"
+# 1 tap extra por campo = total ímpar = secureTextEntry=false → pode digitar
+- tapOn:
+    id: "register-password-toggle"
+- tapOn:
+    id: "register-passwordConfirmation-toggle"
+
+- tapOn:
+    id: "register-password"
+- eraseText: 50
+- inputText: "Senha@123"
+- pressKey: Enter
+- eraseText: 50
+- inputText: "Senha@123"
+- pressKey: Enter
+
+# Chega nos termos
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+# Fase 4: Checkbox rápido (toggle várias vezes)
+- repeat:
+    times: 10
     commands:
-      - repeat:
-          times: 20
-          commands:
-            - tapOn: "random"
-            - tapOn: "E-mail"
-            - tapOn: "Telefone"
-            - inputText: "1"
-      - tapOn: "Verificar depois"
+      - tapOn:
+          id: "terms-accept-checkbox"
 
-# Verifica que app não crashou
-- assertNoCrash: true
-- takeScreenshot: "stress-test-result.png"
+# Garante que está marcado
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-accept-checkbox"
+
+# Verifica que app está respondendo normalmente
+- assertVisible: "Termos de Uso"
+- assertVisible:
+    id: "terms-accept-checkbox"

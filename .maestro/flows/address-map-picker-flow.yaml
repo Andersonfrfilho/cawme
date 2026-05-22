@@ -2,82 +2,105 @@ appId: com.andersonfilho.cawme
 name: 🗺️ Address Map Picker Flow
 description: |
   Testa o fluxo de endereço com seleção via mapa:
-  1. Chega na tela de endereço via login com conta que não tem endereço
-  2. Toca em "Selecionar no mapa"
-  3. Confirma localização no mapa
-  4. Verifica que voltou para endereço com dados preenchidos
-  5. Visualiza o mapa estático na etapa de confirmação
+  1. Cadastra usuário único e chega na tela de endereço
+  2. Toca em "Usar localização no mapa"
+  3. No map picker, toca em "Usar minha localização"
+  4. Confirma no header do map picker
+  5. Volta para confirm step do endereço com dados preenchidos
+  6. Preenche número e avança → verificação → home
 tags:
   - address
   - map
   - e2e
 ---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='111'+output.TS;}
 
-# Precisa de uma conta sem endereço cadastrado
-# Roda depois de registration-resume-flow para reaproveitar o estado
 - launchApp:
-    clearState: false
+    clearState: true
 
-# Deve estar na tela de endereço pelo resume, ou navegar manualmente
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
 - runFlow:
-    when:
-      visible: ".*Endereço.*|.*CEP.*"
-    commands:
-      - assertVisible:
-          text: ".*CEP.*"
-          enabled: true
+    file: ../common/logout-if-needed.yaml
 
-# Caso não esteja, vai para login com conta sem endereço
-- runFlow:
-    when:
-      visible: "Entrar"
-    commands:
-      - tapOn: "Entrar"
-      - inputText: "sem-endereco@cawme.com"
-      - inputText: "Senha@123"
-      - tapOn: "Entrar"
-      - assertVisible:
-          text: ".*Endereço.*|.*CEP.*"
-          timeout: 6000
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
 
-# ── Seleciona pelo mapa ───────────────────────────────────────────────────────
-- assertVisible: ".*mapa.*|.*Selecionar no mapa.*"
 - tapOn:
-    text: ".*mapa.*|.*Selecionar no mapa.*"
+    id: "welcome-hire-button"
 
-# Tela do map picker
-- assertVisible:
-    text: ".*Confirmar.*|.*Usar este local.*|.*Selecionar.*"
-    timeout: 5000
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
-# Toca no botão de localização atual
 - runFlow:
-    when:
-      visible: ".*minha localização.*|.*atual.*"
-    commands:
-      - tapOn: ".*minha localização.*|.*atual.*"
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Mapa"
+      LAST_NAME: "Picker"
+      EMAIL: "mappicker${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
 
-# Confirma o local selecionado
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
 - tapOn:
-    text: ".*Confirmar.*|.*Usar este local.*"
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
-# ── Volta para endereço com dados preenchidos ─────────────────────────────────
-- assertVisible:
-    text: ".*Endereço.*|.*CEP.*"
-    timeout: 4000
+# Aguarda chegar na tela de endereço (CEP step)
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
 
-# O mapa estático deve aparecer na etapa de confirmação
-- assertVisible:
-    text: ".*Ajustar no mapa.*|.*Número.*|.*Complemento.*"
-    timeout: 3000
+# CEP input tem autoFocus — fecha teclado antes de tocar no botão do mapa
+- pressKey: Enter
 
-# Confirma que o mapa está presente (renderizado como View nativa)
-- assertVisible: ".*Ajustar no mapa.*"
+# Toca em "Usar localização no mapa" (evita ã usando regex parcial)
+- tapOn:
+    text: ".*localiza.*mapa.*"
+
+# Aguarda o map picker abrir (título no header)
+- extendedWaitUntil:
+    visible: "Selecionar localização"
+    timeout: 8000
+
+# Usa localização atual para definir o ponto no mapa (evita ã usando regex)
+- tapOn:
+    text: ".*minha localiza.*"
+
+# Aguarda o geocode reverso retornar e o endereço aparecer no card
+- extendedWaitUntil:
+    visible: "Confirmar"
+    timeout: 12000
+
+# Confirma a localização selecionada (botão no header)
+- tapOn:
+    text: "Confirmar"
+
+# Volta para confirm step do endereço com dados preenchidos
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 8000
+
+# O mapa estático deve aparecer na etapa de confirmação (badge "Ajustar no mapa")
+- assertVisible: ".*localiza.*mapa.*"
 
 # Preenche número e avança
 - tapOn:
-    text: ".*Número.*"
-    optional: true
+    id: "address-number-input"
 - inputText: "100"
-- tapOn:
-    id: "register-submit"
+- pressKey: Enter
+- pressKey: Enter
+
+# Avança → verificação → home
+- runFlow:
+    file: ../common/skip-to-home.yaml

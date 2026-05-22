@@ -70,6 +70,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   style={styles.inputIcon}
                 />
                 <TextInput
+                  testID="login-username"
                   style={styles.inputText}
                   placeholder={t("auth.usernamePlaceholder")}
                   placeholderTextColor={theme.palette.neutral[400]}
@@ -114,11 +115,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   style={styles.inputIcon}
                 />
                 <TextInput
+                  testID="login-password"
                   ref={passwordRef}
                   style={styles.inputText}
                   placeholder={t("auth.passwordPlaceholder")}
                   placeholderTextColor={theme.palette.neutral[400]}
-                  value={value}
+                  value={!showPassword ? undefined : value}
                   onChangeText={onChange}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => {
@@ -129,11 +131,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit(onSubmit)}
                   autoComplete="off"
-                  textContentType="oneTimeCode"
+                  textContentType="none"
                   importantForAutofill="no"
                   passwordRules=""
+                  autoCorrect={false}
+                  spellCheck={false}
                 />
                 <TouchableOpacity
+                  testID="login-password-toggle"
                   style={styles.eyeButton}
                   onPress={() => setShowPassword((p) => !p)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -195,6 +200,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       </View>
 
       <TouchableOpacity
+        testID="login-submit"
         style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
         onPress={handleSubmit(onSubmit)}
         disabled={isSubmitting}

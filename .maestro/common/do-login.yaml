@@ -1,0 +1,32 @@
+appId: com.andersonfilho.cawme
+---
+# Realiza login com credenciais configuráveis.
+# Variáveis: EMAIL, PASSWORD
+#
+# Usa o mesmo padrão do fill-register-form:
+# 1. Toggle para desativar secureTextEntry (XCUITest não digita em campos seguros)
+# 2. extendedWaitUntil: "Entrar" para aguardar layout estável após toggle
+# 3. inputText no campo senha com secureTextEntry=false
+
+- tapOn:
+    id: "login-username"
+- eraseText: 100
+- inputText: "${EMAIL}"
+- pressKey: Enter
+
+# Toggle senha antes de digitar (XCUITest não digita em secureTextEntry=true)
+- tapOn:
+    id: "login-password-toggle"
+
+# Aguarda layout estabilizar após toggle (evita stale na árvore de acessibilidade)
+- extendedWaitUntil:
+    visible: "Entrar"
+    timeout: 3000
+
+- tapOn:
+    id: "login-password"
+- eraseText: 50
+- inputText: "${PASSWORD}"
+
+- tapOn:
+    id: "login-submit"

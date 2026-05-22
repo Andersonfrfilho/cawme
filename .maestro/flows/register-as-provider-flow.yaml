@@ -6,7 +6,7 @@ tags:
   - provider
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -19,6 +19,10 @@ tags:
     file: ../common/logout-if-needed.yaml
 
 # Caminho de provider (diferente de contractor)
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
 - tapOn:
     id: "welcome-offer-button"
 
@@ -33,16 +37,18 @@ tags:
       FIRST_NAME: "Prestador"
       LAST_NAME: "Teste"
       EMAIL: "provider${output.TS}@test.com"
-      PHONE: "11966665555"
-      DOCUMENT: "12345678909"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
 - extendedWaitUntil:
     visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"

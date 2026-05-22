@@ -1,11 +1,9 @@
 appId: com.andersonfilho.cawme
 name: ❌ Register Error - Telefone já cadastrado
 description: |
-  Testa o fluxo quando o telefone já existe no sistema:
-  1. Preenche formulário com telefone existente
-  2. Submit → backend rejeita
-  3. App volta para o formulário com erro no campo telefone
-  Nota: use um telefone que já existe no banco de dados de testes
+  1. Registra User A com telefone único
+  2. clearState (server mantém User A)
+  3. Tenta registrar User B com o mesmo telefone → erro de duplicata
 tags:
   - register
   - error
@@ -13,7 +11,8 @@ tags:
   - phone
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+# ── FASE 1: registrar User A ─────────────────────────────────────────────────
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.DUP_PHONE='119'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -25,11 +24,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -37,24 +35,67 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# Usa telefone que já existe no sistema (seed de testes)
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
       DOCUMENT_TYPE: "cpf"
-      FIRST_NAME: "Duplicate"
-      LAST_NAME: "Phone"
-      EMAIL: "phone${output.TS}@test.com"
-      PHONE: "11900000001"
-      DOCUMENT: "12345678909"
+      FIRST_NAME: "Dup"
+      LAST_NAME: "PhoneA"
+      EMAIL: "phA${output.TS}@test.com"
+      PHONE: "${output.DUP_PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
-
-# App deve voltar para o formulário com erro no campo telefone
 - extendedWaitUntil:
-    visible: ".*telefone.*já.*|.*celular.*uso.*|.*já cadastrado.*"
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 12000
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── FASE 2: User B com mesmo telefone ────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
     timeout: 8000
 
-- takeScreenshot: "register-duplicate-phone-error.png"
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF2=d.join(''); output.TS2=Date.now().toString().slice(-8);}
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Dup"
+      LAST_NAME: "PhoneB"
+      EMAIL: "phB${output.TS2}@test.com"
+      PHONE: "${output.DUP_PHONE}"
+      DOCUMENT: "${output.CPF2}"
+      PASSWORD: "Senha@123"
+
+# onSubmit verifica no servidor; telefone duplicado bloqueia navegação para Termos.
+# Erro aparece no formulário de registro. Mensagem do servidor: "Telefone já está cadastrado"
+- extendedWaitUntil:
+    visible: ".*[Tt]elefone.*cadastrado.*|.*[Tt]elefone.*uso.*|.*já cadastrado.*|.*já.*uso.*"
+    timeout: 20000

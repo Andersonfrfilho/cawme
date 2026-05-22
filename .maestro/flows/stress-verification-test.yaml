@@ -1,46 +1,109 @@
-id: stress_verification_api
-name: Stress Test - Verification API
-description: Tests rate limiting on verification endpoints
-
+appId: com.andersonfilho.cawme
+name: 💥 Stress Test - Verificação (entradas rápidas)
+description: |
+  Testa estabilidade da tela de verificação com entradas rápidas:
+  1. Cadastra usuário e chega na verificação
+  2. Digita e apaga código rapidamente várias vezes
+  3. Troca de aba email/telefone repetidamente
+  4. Verifica que o app não trava
+tags:
+  - stress
+  - verification
+  - e2e
 ---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='104'+output.TS;}
 
-- runFlow: ../common/open-app.yaml
-  env:
-    APP_STATE: fresh
+- launchApp:
+    clearState: true
 
-# Navigate to register screen
-- tapOn: "Criar conta"
-  id: "createAccountButton"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Rapid email changes to trigger rate limit
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
 - tapOn:
-    id: "emailInput"
+    id: "welcome-hire-button"
 
-# Enter multiple emails quickly
-- inputText: "test1@example.com"
-- wait: 100ms
-- inputText: "test2@example.com"
-- wait: 100ms
-- inputText: "test3@example.com"
-- wait: 100ms
-- inputText: "test4@example.com"
-- wait: 100ms
-- inputText: "test5@example.com"
-- wait: 100ms
-- inputText: "test6@example.com"
-- wait: 100ms
-- inputText: "test7@example.com"
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
 
-# Wait for verifications
-- wait: 3000ms
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Stress"
+      LAST_NAME: "Verif"
+      EMAIL: "stressverif${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
 
-# Should handle rate limit gracefully (no crash)
-- assertVisible: "Cawme"
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
 
-# Continue with registration
-- inputText: "valid@example.com"
-- wait: 2000ms
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
-# Should verify successfully
-- assertVisible: "Anderson"
-  optional: true
+# Pula endereço se aparecer
+- runFlow:
+    when:
+      visible: "Onde você mora?"
+    commands:
+      - tapOn:
+          id: "address-cep-input"
+      - inputText: "01310100"
+      - extendedWaitUntil:
+          visible: "Endereço encontrado"
+          timeout: 15000
+      - tapOn:
+          id: "address-number-input"
+      - inputText: "100"
+      - pressKey: Enter
+      - pressKey: Enter
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# Fase 1: Entradas rápidas no campo de código
+- tapOn:
+    id: "verification-code-0"
+
+- repeat:
+    times: 8
+    commands:
+      - inputText: "1"
+      - inputText: "2"
+      - inputText: "3"
+      - inputText: "4"
+
+# Fase 2: Troca de aba rápida
+- repeat:
+    times: 5
+    commands:
+      - tapOn:
+          id: "verification-tab-phone"
+      - tapOn:
+          id: "verification-tab-email"
+
+# Verifica que tela ainda responde
+- assertVisible:
+    id: "verification-skip-button"
+
+# Pula verificação → home
+- tapOn:
+    id: "verification-skip-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 8000

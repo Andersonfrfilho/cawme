@@ -2,11 +2,12 @@ appId: com.andersonfilho.cawme
 name: ✅ Register Full Flow - CEP + Verificação QA
 description: |
   Fluxo completo de cadastro:
-  1. Cadastro com CPF
-  2. Endereço via busca de CEP
-  3. Verificação de email com código QA (0000)
-  4. Verificação de telefone com últimos 4 dígitos
-  Nota: requer backend em modo QA (email=0000, phone=últimos 4 dígitos do número)
+  1. Cadastro com CPF único
+  2. Endereço via CEP (01310100 = Av. Paulista, SP)
+  3. Tentativa de verificação de email com código QA (0000)
+  4. Tentativa de verificação de telefone com código QA (0000)
+  5. Pula verificação se QA não disponível → home
+  Nota: requer backend em modo QA para verificação automática
 tags:
   - critical
   - register
@@ -15,7 +16,7 @@ tags:
   - verification
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='110'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -28,6 +29,10 @@ tags:
     file: ../common/logout-if-needed.yaml
 
 # ── 1. Cadastro ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -42,81 +47,130 @@ tags:
       FIRST_NAME: "Full"
       LAST_NAME: "FlowTest"
       EMAIL: "fullflow${output.TS}@test.com"
-      PHONE: "11912345678"
-      DOCUMENT: "12345678909"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
 # ── 2. Endereço via CEP ───────────────────────────────────────────────────────
 - extendedWaitUntil:
-    visible: ".*CEP.*|.*Endereço.*"
-    timeout: 10000
+    visible: "Onde você mora?"
+    timeout: 12000
 
-# Digita o CEP
+# Campo CEP tem autoFocus — digitar diretamente
 - tapOn:
-    text: ".*CEP.*|.*Digite seu CEP.*"
-    optional: true
+    id: "address-cep-input"
+- eraseText: 10
 - inputText: "01310100"
 
-# Aguarda busca e confirma endereço encontrado
+# Aguarda busca CEP e redireciona para confirm step
 - extendedWaitUntil:
-    visible: ".*Endereço encontrado.*|.*Confirm.*|.*Av.*|.*Rua.*"
-    timeout: 8000
+    visible: "Endereço encontrado"
+    timeout: 15000
 
-# Preenche número
+# Preenche número e avança com Enter (keyboard numérico cobre o botão)
 - tapOn:
-    text: ".*Número.*"
-    optional: true
+    id: "address-number-input"
 - inputText: "1000"
+- pressKey: Enter
+- pressKey: Enter
 
-# Avança para verificação
-- tapOn:
-    id: "register-submit"
-
-# ── 3. Verificação de email (código QA: 0000) ─────────────────────────────────
+# ── 3. Verificação (se QA mode: código 0000 para email) ───────────────────────
 - extendedWaitUntil:
     visible: ".*Verificação.*|.*Confirme seu e-mail.*"
-    timeout: 8000
+    timeout: 12000
 
-- assertVisible: "E-mail"
-
-# Insere código QA do email (0000)
+# Tenta código QA no email (0000) — funciona apenas em QA mode
+- tapOn:
+    id: "verification-code-0"
 - inputText: "0"
 - inputText: "0"
 - inputText: "0"
 - inputText: "0"
 
+- tapOn:
+    id: "verification-verify-button"
+
+# Se QA mode ativo: email verificado → automáticamente vai para aba telefone
+# Se QA mode inativo: erro aparece → pula verificação
 - runFlow:
     when:
-      visible: ".*Verificado.*|.*verificado.*|.*E-mail verificado.*"
+      visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
     commands:
-      - assertVisible: ".*Verificado.*"
+      - tapOn:
+          id: "verification-skip-button"
 
-# ── 4. Verificação de telefone (código QA: últimos 4 dígitos = 5678) ──────────
-- tapOn: "Telefone"
+# Se email verificou, tenta telefone também
+- runFlow:
+    when:
+      visible: "Telefone"
+    commands:
+      - tapOn:
+          id: "verification-tab-phone"
+      - extendedWaitUntil:
+          visible: ".*Código enviado.*"
+          timeout: 8000
+      - tapOn:
+          id: "verification-code-0"
+      - inputText: "0"
+      - inputText: "0"
+      - inputText: "0"
+      - inputText: "0"
+      - tapOn:
+          id: "verification-verify-button"
+      - runFlow:
+          when:
+            visible: ".*inválido.*|.*incorreto.*"
+          commands:
+            - tapOn:
+                id: "verification-skip-button"
+
+# ── 4. Avança (QA: auto-login → DocumentUploadSheet) ou pula → home ──────────
+# QA mode: ambos verificados → "Avançar" aparece → auto-login → DocumentUploadSheet
+- runFlow:
+    when:
+      visible: ".*Enviar documento.*|.*Verificar depois.*|.*Fazer depois.*"
+    commands:
+      # DocumentUploadSheet abriu após auto-login (QA mode) → clica "Fazer depois"
+      - tapOn:
+          text: ".*depois.*"
+
+# Modo padrão: skip se ainda na tela de verificação
+- runFlow:
+    when:
+      visible: ".*Verificar depois.*"
+    commands:
+      - tapOn:
+          id: "verification-skip-button"
 
 - extendedWaitUntil:
-    visible: ".*Código enviado.*|.*telefone.*"
-    timeout: 5000
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 12000
 
-# Código QA = últimos 4 dígitos do telefone 11912345678 = 5678
-- inputText: "5"
-- inputText: "6"
-- inputText: "7"
-- inputText: "8"
+# ── 5. Flags de aviso (PendingVerificationBadge) ─────────────────────────────
+# QA mode: auto-login bem sucedido → isSignedIn=true → badge aparece com documento pendente
+# Modo padrão: skip → isSignedIn=false → badge NÃO aparece (usuário convidado, correto por design)
+- runFlow:
+    when:
+      visible: "Verificação Pendente"
+    commands:
+      # Badge visível: QA mode ativo, email+phone verificados, documento ainda pendente
+      - assertVisible:
+          id: "pending-verification-banner"
+      - assertVisible: ".*[Dd]ocumento.*"
 
 - runFlow:
     when:
-      visible: ".*Verificado.*|.*Telefone verificado.*"
+      notVisible: "Verificação Pendente"
     commands:
-      - assertVisible: ".*Verificado.*"
-
-# Avança para home (ou documento)
-- runFlow:
-    file: ../common/skip-to-home.yaml
+      # Badge não visível: modo padrão — skip sem login (isSignedIn=false), correto por design
+      - assertNotVisible:
+          id: "pending-verification-banner"

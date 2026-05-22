@@ -1,0 +1,134 @@
+appId: com.andersonfilho.cawme
+name: 🔄 Registration Resume - Retomada na Verificação
+description: |
+  Testa o checkpoint de cadastro quando interrompido na tela de verificação:
+  1. Cadastra usuário, preenche endereço e chega na verificação
+  2. Fecha o app (simula abandono durante a verificação)
+  3. Reabre sem limpar estado
+  4. Modo padrão: login falha (Keycloak exige e-mail verificado) → volta para welcome sem crash
+  5. Modo QA: auto-login → checkAndResume → redireciona para /verification automaticamente
+  Nota: o redirecionamento automático para /verification só funciona em servidor QA mode.
+tags:
+  - critical
+  - register
+  - resume
+  - verification
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS;}
+
+# ── PARTE 1: Cadastro completo até a verificação ──────────────────────────────
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Resume"
+      LAST_NAME: "Verification"
+      EMAIL: "resumeverif${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Preenche endereço para avançar até verificação
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# Confirma que chegou na tela de verificação (pendingRegistration.step = "verification")
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- assertVisible:
+    id: "verification-tab-email"
+
+# ── PARTE 2: Fecha o app na tela de verificação ───────────────────────────────
+- stopApp
+
+# ── PARTE 3: Reabre e verifica comportamento pós-resume ──────────────────────
+# Estado MMKV preservado: pendingRegistration.step="verification" + tempCredentials
+- launchApp:
+    clearState: false
+
+# Auto-resume tenta login: falha em modo padrão (Keycloak exige e-mail verificado),
+# ou redireciona para /verification em modo QA
+- extendedWaitUntil:
+    visible: ".*Cawme.*|.*Encontre profissionais.*|.*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 20000
+
+# Modo QA: login bem sucedido → checkAndResume → redireciona para verificação
+- runFlow:
+    when:
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    commands:
+      - assertVisible:
+          id: "verification-tab-email"
+      - assertVisible:
+          id: "verification-skip-button"
+      - assertNotVisible: "Encontre profissionais"
+      # Pula verificação → home
+      - tapOn:
+          id: "verification-skip-button"
+      - extendedWaitUntil:
+          visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+          timeout: 10000
+      # ── Badge de ativação pendente ──
+      # Skip sem auto-login → isSignedIn=false → badge NÃO aparece
+      - assertNotVisible:
+          id: "pending-verification-banner"
+      - assertNotVisible: "Verificação Pendente"
+
+# Modo padrão: login falhou → volta para welcome sem crash
+- runFlow:
+    when:
+      visible: "Encontre profissionais"
+    commands:
+      - assertVisible: "Encontre profissionais"
+      - assertNotVisible: ".*Verificação.*"
+      # Badge NÃO aparece: isSignedIn=false
+      - assertNotVisible: "Verificação Pendente"

@@ -11,6 +11,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import MapView, { Marker } from "react-native-maps";
+import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
@@ -134,12 +135,31 @@ export default function AddressScreen() {
     try {
       const result = await cepProvider.search(rawCep);
       if (result && result.localidade) {
+        // ViaCEP returns only text — geocode to get coordinates for the map marker.
+        // Build query from most-specific to least: street, neighborhood, city, state + country.
+        let latitude: string | undefined;
+        let longitude: string | undefined;
+        try {
+          const geocodeQuery = [result.logradouro, result.bairro, result.localidade, result.uf, "Brasil"]
+            .filter(Boolean)
+            .join(", ");
+          const geocoded = await Location.geocodeAsync(geocodeQuery);
+          if (geocoded.length > 0) {
+            latitude = String(geocoded[0].latitude);
+            longitude = String(geocoded[0].longitude);
+          }
+        } catch {
+          // Geocoding failed — map will show at default coordinates; user can adjust with map picker
+        }
+
         setFoundAddress({
           street: result.logradouro || "",
           neighborhood: result.bairro || "",
           city: result.localidade || "",
           state: result.uf || "",
           postcode: rawCep,
+          latitude,
+          longitude,
         });
         setStep("confirm");
         logger.screenEvent("AddressScreen", "cep.found", { cep: rawCep });

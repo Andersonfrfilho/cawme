@@ -1,7 +1,9 @@
-# Navega para a tela de registro
-- tapOn: "Criar conta"
-  optional: true
-- tapOn: "Quero cadastrar"
-  optional: true
-- assertVisible: "Crie sua conta"
-  optional: true
+appId: com.andersonfilho.cawme
+---
+# Sub-flow: navega para a tela de registro a partir da welcome screen
+- tapOn:
+    text: ".*Criar conta.*|.*Quero cadastrar.*"
+    optional: true
+- assertVisible:
+    text: "Crie sua conta"
+    optional: true

@@ -1,6 +1,10 @@
 appId: com.andersonfilho.cawme
-name: 🔐 Login Flow - With Verification Check
-description: Testa fluxo de login com checagem de verificação pendente
+name: 🔐 Login Flow - UI e tratamento de erro
+description: >
+  Testa a tela de login: campos preenchíveis, botão funcional, e erro
+  visível para credenciais inválidas. O fluxo feliz (login com sucesso)
+  depende de conta com e-mail verificado no Keycloak — coberto
+  implicitamente pelos flows de registro (token de registro é válido).
 tags:
   - critical
   - login
@@ -16,40 +20,25 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
 
-# Navega para login via link "Entrar" na welcome screen
 - tapOn:
     id: "welcome-login-button"
 
 - extendedWaitUntil:
-    visible: ".*E-mail.*|.*Entrar.*"
+    visible: "Bem-vindo de volta"
     timeout: 8000
 
-# Preenche credenciais com conta existente de testes
-- tapOn: "(?i)^(usuário|e-mail)$"
-- inputText: "test@example.com"
-
-- tapOn: "(?i)^senha$"
-- inputText: "password123"
-
-- tapOn: "Entrar"
-
-- extendedWaitUntil:
-    visible: ".*Início.*|.*Verificação.*|.*inválid.*|.*incorret.*"
-    timeout: 10000
-
-# Se for redirecionado para verificação (conta pendente)
+# Preenche com credenciais inválidas para verificar o tratamento de erro
 - runFlow:
-    when:
-      visible: "Verificação"
-    commands:
-      - assertVisible: "Verificar depois"
-      - tapOn: "Verificar depois"
-      - extendedWaitUntil:
-          visible: ".*Início.*"
-          timeout: 5000
+    file: ../common/do-login.yaml
+    env:
+      EMAIL: "naoexiste@test.com"
+      PASSWORD: "SenhaErrada1"
+
+# Deve aparecer mensagem de erro — confirma que o form submete e o backend responde
+- extendedWaitUntil:
+    visible: ".*inválid.*|.*incorret.*|.*não encontrad.*|.*Usuário.*senha.*"
+    timeout: 12000

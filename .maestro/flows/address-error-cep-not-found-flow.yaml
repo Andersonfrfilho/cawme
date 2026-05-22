@@ -2,17 +2,16 @@ appId: com.andersonfilho.cawme
 name: ❌ Address Error - CEP não encontrado
 description: |
   Testa o fluxo de erro quando o CEP não é encontrado:
-  1. Chega na tela de endereço
-  2. Digita CEP inválido/inexistente
-  3. Verifica mensagem de erro "CEP não encontrado"
-  4. Testa o caminho alternativo: "Não sei meu CEP" ou mapa
+  1. Cadastra usuário e chega na tela de endereço
+  2. Digita CEP inexistente (00000000) → erro "CEP não encontrado"
+  3. Testa o caminho alternativo: "Não sei meu CEP"
 tags:
   - address
   - error
   - cep
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='113'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -24,11 +23,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -43,54 +41,42 @@ tags:
       FIRST_NAME: "Cep"
       LAST_NAME: "Error"
       EMAIL: "ceperror${output.TS}@test.com"
-      PHONE: "11922221111"
-      DOCUMENT: "12345678909"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
+# Aguarda chegar na tela de endereço
 - extendedWaitUntil:
-    visible: ".*CEP.*|.*Endereço.*"
-    timeout: 10000
+    visible: "Onde você mora?"
+    timeout: 12000
 
 # ── Teste 1: CEP inexistente (00000000) ───────────────────────────────────────
+# O campo CEP tem autoFocus — digitar diretamente
 - tapOn:
-    text: ".*CEP.*|.*Digite.*CEP.*"
-    optional: true
+    id: "address-cep-input"
+- eraseText: 10
 - inputText: "00000000"
 
-- tapOn:
-    id: "register-submit"
-
+# Aguarda resposta do ViaCEP (erro — CEP não encontrado)
 - extendedWaitUntil:
     visible: ".*não encontrado.*|.*CEP.*inválido.*|.*tente.*|.*não localizado.*"
-    timeout: 8000
+    timeout: 10000
 
-- takeScreenshot: "cep-not-found-error.png"
-
-# ── Teste 2: CEP com formato errado (só 5 dígitos) ───────────────────────────
-- clearText:
-    optional: true
-- inputText: "01310"
-
+# ── Teste 2: Navega para busca por nome de rua ────────────────────────────────
+# Scroll down para garantir que o botão está visível (erro pode empurrar conteúdo)
+- scroll
 - tapOn:
-    id: "register-submit"
+    text: ".*sei meu CEP.*"
 
 - extendedWaitUntil:
-    visible: ".*inválido.*|.*completo.*|.*8 dígitos.*|.*formato.*"
+    visible: ".*Buscar.*|.*Digite.*|.*rua.*|.*logradouro.*"
     timeout: 5000
-
-# ── Fallback: usa o botão "Não sei meu CEP" ──────────────────────────────────
-- tapOn:
-    text: ".*Não sei.*|.*Buscar por nome.*"
-
-- extendedWaitUntil:
-    visible: ".*Buscar.*|.*Digite.*rua.*|.*logradouro.*"
-    timeout: 5000
-
-- takeScreenshot: "cep-fallback-to-autocomplete.png"

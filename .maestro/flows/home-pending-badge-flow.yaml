@@ -1,0 +1,114 @@
+appId: com.andersonfilho.cawme
+name: 🔔 Home - Pending Verification Badge
+description: |
+  Verifica comportamento do PendingVerificationBadge na home após cadastro:
+
+  CAMINHO 1 — Modo padrão (servidor produção):
+  - Usuário pula verificação → handleSkipVerification() → isSignedIn=false
+  - Badge NÃO aparece (correto: Keycloak exige e-mail verificado para login)
+  - Usuário chega como convidado na home
+
+  CAMINHO 2 — Modo QA (servidor aceita códigos 0000):
+  - Códigos 0000 verificam email+telefone → handleAdvance() → auto-login
+  - isSignedIn=true → PendingVerificationBadge renderiza com documento pendente
+  - Badge exibe "Verificação Pendente" com alerta de documento
+
+  Este flow testa o Caminho 1 (padrão) e documenta o Caminho 2 (QA).
+  Para testar o Caminho 2, use register-full-cep-verification-flow.yaml.
+tags:
+  - home
+  - badge
+  - verification
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='118'+output.TS;}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Badge"
+      LAST_NAME: "Test"
+      EMAIL: "badge${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Endereço (obrigatório antes da verificação)
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# Tela de verificação
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# Pula verificação → handleSkipVerification() → isSignedIn=false
+- tapOn:
+    id: "verification-skip-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 10000
+
+# ── CAMINHO 1: Badge NÃO aparece (modo padrão — correto por design) ───────────
+# isSignedIn=false → PendingVerificationBadge não renderiza
+# O usuário precisará fazer login para ver as pendências
+- assertNotVisible:
+    id: "pending-verification-banner"
+- assertNotVisible: "Verificação Pendente"
+- assertNotVisible: "E-mail e telefone não verificados"
+- assertNotVisible: "Documento não verificado"
+
+# ── CAMINHO 2: Badge aparece (modo QA — documentado aqui) ──────────────────────
+# Requer servidor QA com códigos de verificação automáticos (0000)
+# Fluxo: email verificado + telefone verificado → handleAdvance() → auto-login
+# → isSignedIn=true → PendingVerificationBadge renderiza com documento pendente
+# → badge exibe "Verificação Pendente" + "Documento não verificado"
+# Testado automaticamente em: register-full-cep-verification-flow.yaml (caminho condicional)

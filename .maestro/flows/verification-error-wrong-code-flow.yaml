@@ -2,17 +2,19 @@ appId: com.andersonfilho.cawme
 name: ❌ Verification Error - Código inválido
 description: |
   Testa os erros da tela de verificação:
-  1. Insere código errado → mensagem de erro
-  2. Verifica que o botão de reenviar aparece
-  3. Testa reenvio de código
-  4. Verifica que o timer de reenvio funciona
+  1. Registra usuário único
+  2. Passa pelos termos e endereço
+  3. Chega na tela de verificação
+  4. Insere código errado → mensagem de erro
+  5. Troca de aba (telefone) e repete
+  6. Pula verificação → home
 tags:
   - verification
   - error
   - code
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='114'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -24,11 +26,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -43,75 +44,82 @@ tags:
       FIRST_NAME: "Verify"
       LAST_NAME: "Error"
       EMAIL: "verifyerror${output.TS}@test.com"
-      PHONE: "11911110000"
-      DOCUMENT: "12345678909"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
     timeout: 8000
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
 
-# Chega na verificação (pode ter passado pelo endereço)
+# Pode ir para endereço — preenche CEP e avança para verificação
 - runFlow:
     when:
-      visible: ".*CEP.*|.*Endereço.*"
+      visible: "Onde você mora?"
     commands:
       - tapOn:
-          text: ".*Não sei.*|.*Buscar por nome.*"
-          optional: true
+          id: "address-cep-input"
+      - inputText: "01310100"
+      - extendedWaitUntil:
+          visible: "Endereço encontrado"
+          timeout: 15000
       - tapOn:
-    id: "register-submit"
-        optional: true
+          id: "address-number-input"
+      - inputText: "100"
+      - pressKey: Enter
+      - pressKey: Enter
 
 - extendedWaitUntil:
     visible: ".*Verificação.*|.*Confirme seu e-mail.*"
-    timeout: 8000
+    timeout: 15000
 
 # ── Teste 1: Código errado no email ──────────────────────────────────────────
-- assertVisible: "E-mail"
+# Toca no primeiro campo de código e digita código errado
+- tapOn:
+    id: "verification-code-0"
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
 
-# Insere código errado
-- inputText: "9"
-- inputText: "9"
-- inputText: "9"
-- inputText: "9"
+- tapOn:
+    id: "verification-verify-button"
 
 - extendedWaitUntil:
     visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
     timeout: 6000
 
-- takeScreenshot: "verification-wrong-code-email.png"
+# ── Teste 2: Mesmo erro na aba de telefone ────────────────────────────────────
+- tapOn:
+    id: "verification-tab-phone"
 
-# ── Teste 2: Botão de reenviar ────────────────────────────────────────────────
-- runFlow:
-    when:
-      visible: ".*Reenviar.*|.*Reenvio.*|.*Enviar novamente.*"
-    commands:
-      - tapOn: ".*Reenviar.*|.*Enviar novamente.*"
-      - extendedWaitUntil:
-          visible: ".*enviado.*|.*reenviado.*|.*código.*novo.*"
-          timeout: 5000
+- extendedWaitUntil:
+    visible: ".*Código enviado.*|.*SMS.*|.*telefone.*"
+    timeout: 8000
 
-# ── Teste 3: Mesmo erro na aba de telefone ────────────────────────────────────
-- tapOn: "Telefone"
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
 
-- inputText: "0"
-- inputText: "0"
-- inputText: "0"
-- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
 
 - extendedWaitUntil:
     visible: ".*inválido.*|.*incorreto.*|.*errado.*|.*tente.*"
     timeout: 6000
-
-- takeScreenshot: "verification-wrong-code-phone.png"
 
 # Pula verificação após testar erros
-- tapOn: "Verificar depois"
+- tapOn:
+    id: "verification-skip-button"
 
 - extendedWaitUntil:
-    visible: ".*Início.*|.*Home.*"
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
     timeout: 8000

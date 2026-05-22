@@ -1,33 +1,86 @@
 appId: com.andersonfilho.cawme
 name: 🔍 Search Flow
-description: Testa busca e navegação
+description: |
+  Testa busca de profissionais na home:
+  1. Cadastra usuário e chega na home
+  2. Digita no campo de busca "eletricista"
+  3. Aguarda resultados aparecerem
+  4. Verifica que busca funciona sem crash
 tags:
   - search
   - navigation
   - e2e
 ---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='106'+output.TS;}
+
 - launchApp:
-    clearState: false
-- assertVisible: ".*Home.*"
+    clearState: true
 
-# Navega para busca
-- tapOn: "Buscar"
-- assertVisible: ".*Buscar.*"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Realiza busca
-- inputText: "eletricista"
-- assertVisible: ".*Resultados.*"
+- runFlow:
+    file: ../common/logout-if-needed.yaml
 
-# Scroll nos resultados
-- scroll
-- scroll
-- scroll
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
 
-# Tapa em resultado
-- tapOn: "random"
-- assertVisible: ".*"
-
-# Volta
 - tapOn:
-    id: "back"
-- assertVisible: ".*Buscar.*"
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Search"
+      LAST_NAME: "Flow"
+      EMAIL: "searchflow${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Pula endereço e verificação → home
+- runFlow:
+    file: ../common/skip-to-home.yaml
+
+# Aguarda home carregar
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Buscar profissionais.*"
+    timeout: 8000
+
+# Digita no campo de busca
+- tapOn:
+    text: "Buscar profissionais..."
+    optional: true
+
+- inputText: "eletricista"
+
+# Aguarda resultados ou estado vazio
+- extendedWaitUntil:
+    visible: ".*eletricista.*|.*profissional.*|.*resultado.*|.*encontrado.*|.*Nenhum.*"
+    timeout: 8000
+
+# Limpa busca e verifica estado vazio
+- tapOn:
+    text: "eletricista"
+    optional: true
+- eraseText: 20
+
+- extendedWaitUntil:
+    visible: ".*Buscar profissionais.*|.*Home.*|.*Início.*"
+    timeout: 5000

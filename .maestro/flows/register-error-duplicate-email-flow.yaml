@@ -1,13 +1,9 @@
 appId: com.andersonfilho.cawme
 name: ❌ Register Error - Email já cadastrado
 description: |
-  Testa o fluxo quando o email já existe no sistema:
-  1. Preenche formulário com email existente
-  2. Submit → backend rejeita com 409
-  3. App volta para o formulário com erro no campo email
-  4. Mostra botão "Esqueci minha senha"
-  5. Usuário pode corrigir o email e tentar novamente
-  Nota: use um email que já existe no banco de dados de testes
+  1. Registra User A com email único
+  2. clearState (server mantém User A)
+  3. Tenta registrar User B com o mesmo email → erro de duplicata
 tags:
   - register
   - error
@@ -15,7 +11,8 @@ tags:
   - email
   - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+# ── FASE 1: gerar credenciais e registrar User A ─────────────────────────────
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; output.DUP_EMAIL='dup'+output.TS+'@test.com';}
 
 - launchApp:
     clearState: true
@@ -27,11 +24,10 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-
-# Aguarda welcome screen (após logout ou se já estava lá)
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
+
 - tapOn:
     id: "welcome-hire-button"
 
@@ -39,53 +35,69 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# Usa email que já existe no sistema (seed de testes)
 - runFlow:
     file: ../common/fill-register-form.yaml
     env:
       DOCUMENT_TYPE: "cpf"
-      FIRST_NAME: "Duplicate"
-      LAST_NAME: "Email"
-      EMAIL: "existing@test.com"
-      PHONE: "11933332222"
-      DOCUMENT: "12345678909"
+      FIRST_NAME: "Dup"
+      LAST_NAME: "EmailA"
+      EMAIL: "${output.DUP_EMAIL}"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
 
-- tapOn: "Eu li e concordo"
-- tapOn: "Finalizar cadastro"
-
-# App deve voltar para o formulário com erro no campo email
 - extendedWaitUntil:
-    visible: ".*já cadastrado.*|.*já existe.*|.*e-mail.*uso.*|.*email.*uso.*"
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    timeout: 12000
+
+# User A cadastrado — clearState para simular novo usuário tentando o mesmo email
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── FASE 2: tentar registrar User B com o mesmo email ────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
     timeout: 8000
 
-# Botão "Esqueci minha senha" deve aparecer (pois email já existe)
+# Gera novo CPF para User B, mantém o mesmo DUP_EMAIL
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF2=d.join(''); output.TS2=Date.now().toString().slice(-8); output.PHONE2='118'+output.TS2;}
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Dup"
+      LAST_NAME: "EmailB"
+      EMAIL: "${output.DUP_EMAIL}"
+      PHONE: "${output.PHONE2}"
+      DOCUMENT: "${output.CPF2}"
+      PASSWORD: "Senha@123"
+
+# onSubmit faz verificação server-side e bloqueia navegação quando há duplicata.
+# O erro aparece na tela do formulário (register screen), não na tela de Termos.
 - extendedWaitUntil:
-    visible: ".*Esqueci.*senha.*|.*Recuperar.*|.*Senha.*"
-    timeout: 5000
-
-# Tira screenshot do estado de erro
-- takeScreenshot: "register-duplicate-email-error.png"
-
-# Testa o botão de recuperar senha (apenas verifica que navega)
-- runFlow:
-    when:
-      visible: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
-    commands:
-      - tapOn: ".*Esqueci.*senha.*|.*Recuperar.*senha.*"
-      - extendedWaitUntil:
-          visible: ".*Recuperar.*|.*E-mail.*|.*redefinir.*|.*nova senha.*"
-          timeout: 5000
-      - tapOn: ".*Voltar.*|.*chevron.*"
-        optional: true
-
-# Testa correção do email e nova tentativa
-- runFlow:
-    when:
-      visible: "Crie sua conta"
-    commands:
-      - clearText:
-          optional: true
-      - inputText: "newemail${output.TS}@test.com"
-      - tapOn:
-    id: "register-submit"
+    visible: ".*já.*uso.*|.*já cadastrado.*|.*já existe.*|.*e-mail.*uso.*"
+    timeout: 10000

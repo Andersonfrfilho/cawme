@@ -1,68 +1,117 @@
-id: register_verification_flow
-name: Register Verification Flow
-description: Tests real-time field verification during registration
-
+appId: com.andersonfilho.cawme
+name: ✅ Register + Verification UI Flow
+description: |
+  Testa a UI da tela de verificação:
+  1. Cadastra usuário único e chega na verificação
+  2. Verifica aba E-mail ativa e texto de destino
+  3. Troca para aba Telefone
+  4. Verifica botão "Verificar depois"
+  5. Pula verificação → home
+tags:
+  - register
+  - verification
+  - ui
+  - e2e
 ---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='109'+output.TS;}
 
-- runFlow: ../common/open-app.yaml
-  env:
-    APP_STATE: fresh
+- launchApp:
+    clearState: true
 
-# Navigate to register screen
-- tapOn: "Criar conta"
-  id: "createAccountButton"
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
 
-# Fill first name
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
 - tapOn:
-    id: "firstNameInput"
-- inputText: "Anderson"
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "VerifUI"
+      LAST_NAME: "Test"
+      EMAIL: "verifui${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
 - tapOn:
-    id: "lastNameInput"
-
-# Fill last name
-- inputText: "Filho"
+    id: "terms-accept-checkbox"
 - tapOn:
-    id: "emailInput"
+    id: "terms-submit-button"
 
-# Fill email - should trigger verification
-- inputText: "test@example.com"
-- wait: 2000ms
-- assertVisible: "Verificando e-mail..."
-  optional: true
+# Pula endereço se aparecer
+- runFlow:
+    when:
+      visible: "Onde você mora?"
+    commands:
+      - tapOn:
+          id: "address-cep-input"
+      - inputText: "01310100"
+      - extendedWaitUntil:
+          visible: "Endereço encontrado"
+          timeout: 15000
+      - tapOn:
+          id: "address-number-input"
+      - inputText: "100"
+      - pressKey: Enter
+      - pressKey: Enter
 
-# Wait for verification to complete
-- wait: 2000ms
+# Tela de verificação
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
 
-# Fill phone
+# Verifica que aba E-mail está presente
+- assertVisible:
+    id: "verification-tab-email"
+
+# Verifica que aba Telefone está presente
+- assertVisible:
+    id: "verification-tab-phone"
+
+# Verifica que campo de código existe
+- assertVisible:
+    id: "verification-code-0"
+
+# Verifica que botão "Verificar depois" existe
+- assertVisible:
+    id: "verification-skip-button"
+
+# Troca para aba Telefone
 - tapOn:
-    id: "phoneInput"
-- inputText: "11999999999"
-- wait: 2000ms
+    id: "verification-tab-phone"
 
-# Fill CPF
+- extendedWaitUntil:
+    visible: ".*Código enviado.*|.*SMS.*|.*telefone.*"
+    timeout: 8000
+
+# Pula verificação (handleSkipVerification → home sem login → isSignedIn=false)
 - tapOn:
-    id: "cpfInput"
-- inputText: "12345678901"
-- wait: 2000ms
+    id: "verification-skip-button"
 
-# Fill password
-- tapOn:
-    id: "passwordInput"
-- inputText: "SecurePass123!"
-- tapOn:
-    id: "confirmPasswordInput"
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 8000
 
-# Fill confirm password
-- inputText: "SecurePass123!"
-
-# Tap advance button
-- tapOn:
-    id: "advanceButton"
-
-# Should navigate to terms screen
-- assertVisible: "Termos de Uso"
-  optional: true
-
-# If verification fails (field already exists), should show error
-- assertVisible: "já cadastrado"
-  optional: true
+# Badge NÃO deve aparecer: isSignedIn=false após skip → PendingVerificationBadge não renderiza
+# O usuário chega como convidado — correto por design (Keycloak exige email verificado para login)
+- assertNotVisible:
+    id: "pending-verification-banner"
+- assertNotVisible: "Verificação Pendente"

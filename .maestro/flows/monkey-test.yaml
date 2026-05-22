@@ -1,76 +1,132 @@
 appId: com.andersonfilho.cawme
-name: 🐵 Monkey Test - Random Exploration (Updated)
-description: Simula usuário aleatório explorando o app incluindo novas telas
+name: 🐵 Monkey Test - Exploração do Fluxo de Cadastro
+description: |
+  Simula usuário explorando o fluxo de cadastro de forma semi-aleatória:
+  - Troca tipo de documento várias vezes
+  - Preenche e apaga campos
+  - Toca em vários elementos do formulário
+  - Verifica que o app não trava em nenhum estado
 tags:
   - monkey
   - stress
   - exploration
+  - e2e
 ---
-- evalScript: ${output.TS = Date.now().toString().slice(-8)}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='103'+output.TS;}
 
 - launchApp:
-    clearState: false
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+# Explora seletores de documento rapidamente
 - repeat:
-    times: 200
+    times: 8
     commands:
-      # Taps aleatórios em qualquer lugar
-      - tapOn: "random"
-      
-      # Swipes em direções aleatórias
-      - runFlow:
-          when:
-            visible: ".*"
-          file: "random-swipe.yaml"
-      
-      # Input de texto aleatório em campos
-      - inputText: "monkey${output.TS}"
-      
-      # Tenta navegar para registro se disponível
-      - runFlow:
-          when:
-            visible: "Criar conta|Quero cadastrar"
-          file: "navigate-to-register.yaml"
-      
-      # Tenta interagir com termos se visível
-      - runFlow:
-          when:
-            visible: "Termos de Uso|política de privacidade"
-          commands:
-            - tapOn: "random"
-            - scroll
-      
-      # Tenta interagir com verificação se visível
-      - runFlow:
-          when:
-            visible: "Verificação|Verificar depois|Reenviar"
-          commands:
-            - tapOn: "random"
-            - inputText: "1"
-      
-      # Tenta interagir com upload de documento se visível
-      - runFlow:
-          when:
-            visible: "Verificação de Documento|Enviar depois"
-          commands:
-            - tapOn: "random"
-            - scroll
-      
-      # Tenta interagir com conta bloqueada se visível
-      - runFlow:
-          when:
-            visible: "Bloqueada|Suporte"
-          commands:
-            - tapOn: "random"
-      
-      # Tenta fazer logout se em área logada
-      - runFlow:
-          when:
-            visible: "Sair|Logout"
-          commands:
-            - tapOn: "random"
-      
-      # Assert que app ainda responde
-      - assertVisible: ".*"
-      
-- takeScreenshot: "monkey-test-final.png"
-- assertNoCrash: true
+      - tapOn:
+          id: "register-docType-cpf"
+      - tapOn:
+          id: "register-docType-cnpj"
+      - tapOn:
+          id: "register-docType-rg"
+      - tapOn:
+          id: "register-docType-passport"
+      - tapOn:
+          id: "register-docType-cpf"
+
+# Preenche e apaga campos várias vezes
+- tapOn:
+    id: "register-firstName"
+- repeat:
+    times: 3
+    commands:
+      - inputText: "MonkeyTest"
+      - eraseText: 20
+
+- inputText: "Macaco"
+- hideKeyboard
+
+- tapOn:
+    id: "register-lastName"
+- inputText: "Explorador"
+- hideKeyboard
+
+- tapOn:
+    id: "register-email"
+- repeat:
+    times: 3
+    commands:
+      - inputText: "monkey@test.com"
+      - eraseText: 30
+- inputText: "monkey${output.TS}@test.com"
+- hideKeyboard
+
+- tapOn:
+    id: "register-phone"
+- eraseText: 20
+- inputText: "${output.PHONE}"
+- pressKey: Enter
+
+- eraseText: 20
+- inputText: "${output.CPF}"
+- pressKey: Enter
+- hideKeyboard
+
+- extendedWaitUntil:
+    visible: "Confirmar senha"
+    timeout: 8000
+
+# Explora toggles de senha (par + 1 = ímpar = campo visível)
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          id: "register-password-toggle"
+
+# 1 tap final = total 5 (ímpar) = campo visível
+- tapOn:
+    id: "register-password-toggle"
+- tapOn:
+    id: "register-passwordConfirmation-toggle"
+
+- tapOn:
+    id: "register-password"
+- inputText: "Senha@123"
+- pressKey: Enter
+- inputText: "Senha@123"
+- pressKey: Enter
+
+# Chega nos termos
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+# Explora scroll e checkbox
+- scroll
+- scroll
+- scroll
+- scroll
+
+- tapOn:
+    id: "terms-accept-checkbox"
+
+# Verifica que app está responsivo
+- assertVisible: "Termos de Uso"
+- assertVisible:
+    id: "terms-submit-button"
