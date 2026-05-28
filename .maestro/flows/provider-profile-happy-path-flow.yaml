@@ -3,34 +3,18 @@ name: ✅ Provider Profile Setup - Happy Path
 description: |
   Complete provider profile setup flow (categories → services → availability → review → submit).
   Provider selects 2 categories, adds 2 services, sets availability for 3 days, and submits.
+
+  ⚠️ NOTE: This flow assumes the provider is already registered and authenticated.
+  Run test:provider:all for complete flow including registration.
 tags:
   - provider
   - profile
   - e2e
 ---
-- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
-
 - launchApp:
-    clearState: true
+    clearState: false
 
-- extendedWaitUntil:
-    visible: "Cawme"
-    timeout: 30000
-
-- runFlow:
-    file: ../common/logout-if-needed.yaml
-
-# Register as provider first
-- extendedWaitUntil:
-    visible: "Encontre profissionais"
-    timeout: 15000
-
-- tapOn:
-    id: "welcome-offer-button"
-
-- runFlow:
-    file: ../common/provider-register-and-upload.yaml
-
+# Wait for app to load — assumes user is already logged in
 - extendedWaitUntil:
     visible: "Quais serviços você oferece?"
     timeout: 15000
