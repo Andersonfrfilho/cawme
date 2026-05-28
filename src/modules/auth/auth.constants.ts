@@ -38,6 +38,14 @@ export const AUTH_ENDPOINTS = {
   TERMS_ACCEPT: "/bff/auth/terms/accept",
   ADDRESS_SAVE: "/bff/onboarding/address",
   ONBOARDING_STATUS: "/bff/onboarding/status",
+  SELF_UNLOCK: (blockId: string) => `/bff/auth/account-block/${blockId}/self-unlock`,
+  SELF_UNLOCK_VERIFY: (blockId: string) => `/bff/auth/account-block/${blockId}/self-unlock/verify`,
+  CATEGORIES: "/bff/auth/categories",
+  PROVIDER_SERVICES: "/bff/auth/providers/me/services",
+  PROVIDER_SERVICE_UPDATE: (serviceId: string) => `/bff/auth/providers/me/services/${serviceId}`,
+  PROVIDER_SERVICE_DELETE: (serviceId: string) => `/bff/auth/providers/me/services/${serviceId}`,
+  PROVIDER_AVAILABILITY: "/bff/auth/providers/me/availability",
+  PROVIDER_AVAILABILITY_UPDATE: (dayOfWeek: number) => `/bff/auth/providers/me/availability/${dayOfWeek}`,
 };
 
 export const HERO_OVERLAY = {

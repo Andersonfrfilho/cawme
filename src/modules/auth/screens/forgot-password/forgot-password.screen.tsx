@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   KeyboardAvoidingView,
@@ -9,27 +9,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { t } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { ForgotPasswordForm, ForgotPasswordSuccess } from "../../components";
 import { styles } from "./styles";
-
-const forgotPasswordSchema = z.object({
-  email: z
-    .string()
-    .min(1)
-    .refine((v) => /\S+@\S+\.\S+/.test(v), { message: "Invalid email" }),
-});
-
-type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+import { forgotPasswordSchema, type ForgotPasswordFormValues } from "./types";
 
 export default function ForgotPasswordScreen() {
   const [submitted, setSubmitted] = useState(false);
+  const { forgotPassword } = useAuth();
 
   const {
     control,
@@ -43,7 +35,7 @@ export default function ForgotPasswordScreen() {
 
   const onSubmit = async ({ email }: ForgotPasswordFormValues) => {
     try {
-      await KeycloakService.forgotPassword({ email });
+      await forgotPassword({ email });
       setSubmitted(true);
     } catch (error) {
       console.error("[forgot-password] request failed", error);

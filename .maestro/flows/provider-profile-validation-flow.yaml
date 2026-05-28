@@ -1,0 +1,138 @@
+appId: com.andersonfilho.cawme
+name: ⚠️ Provider Profile Setup - Validation
+description: |
+  Test validation rules for provider profile setup.
+  - Categories: next button disabled until at least 1 selected
+  - Services: next button disabled until at least 1 service added
+  - Availability: next button disabled until at least 1 day selected
+tags:
+  - provider
+  - profile
+  - validation
+  - e2e
+---
+- launchApp:
+    clearState: false
+
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 15000
+
+# ── Categories Screen: Test disabled button ────────────────────────────────────
+- assertNotVisible: "action-bar-next-button"
+  # Button should be disabled/not visible initially
+
+- tapOn:
+    id: "category-card"
+    index: 0
+
+# Now button should be enabled
+- assertVisible: "action-bar-next-button"
+
+# Deselect
+- tapOn:
+    id: "category-card"
+    index: 0
+
+# Button should be disabled again
+- assertNotVisible: "action-bar-next-button"
+
+# Select one category to continue
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Services Screen: Test validation ───────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# Try to submit empty service form
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+# Should show validation error
+- assertVisible: "Preencha todos os campos"
+
+# Close modal and add valid service
+- tapOn:
+    id: "modal-close-button"
+
+- tapOn:
+    id: "add-service-button"
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Serviço Válido"
+
+- tapOn:
+    id: "duration-input"
+- eraseText: 10
+- inputText: "90"
+
+- tapOn:
+    id: "price-input"
+- inputText: "100.00"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- extendedWaitUntil:
+    visible: "Serviço Válido"
+    timeout: 5000
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Availability Screen: Test validation ───────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+# Try to submit without selecting any days
+- tapOn:
+    id: "action-bar-next-button"
+
+# Should show validation error
+- assertVisible: "Preencha todos os campos"
+
+# Select one day
+- tapOn:
+    id: "day-toggle-1"
+
+- tapOn:
+    id: "day-1-start-time"
+- inputText: "09:00"
+
+- tapOn:
+    id: "day-1-end-time"
+- inputText: "17:00"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Review Screen ─────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Confirmação do perfil"
+    timeout: 8000
+
+- assertVisible: "Serviço Válido"
+- assertVisible: "Segunda"
+
+- tapOn:
+    id: "action-bar-submit-button"
+
+# ── Success ────────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 10000

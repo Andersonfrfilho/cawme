@@ -11,13 +11,18 @@ export const ForgotPasswordSuccess: React.FC<ForgotPasswordSuccessProps> = ({
   onBackToLogin,
 }) => {
   return (
-    <Animated.View entering={FadeIn.duration(500)} style={styles.successContainer}>
+    <Animated.View
+      testID="forgot-password-success-message"
+      entering={FadeIn.duration(500)}
+      style={styles.successContainer}
+    >
       <View style={styles.successIconWrapper}>
         <Ionicons name="checkmark-circle" size={theme.metrics.avatarSize.lg} color={theme.colors.status.success} />
       </View>
       <Text style={styles.successTitle}>{t("auth.forgotPasswordSuccessTitle")}</Text>
       <Text style={styles.successText}>{t("auth.forgotPasswordSuccess")}</Text>
       <TouchableOpacity
+        testID="forgot-password-back-button"
         style={styles.backButton}
         onPress={onBackToLogin}
         activeOpacity={0.85}

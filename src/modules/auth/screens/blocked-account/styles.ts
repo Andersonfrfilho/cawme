@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { theme } from "@/shared/constants";
-import { moderateScale, verticalScale } from "@/shared/utils/scale";
+import { moderateScale, verticalScale, scale } from "@/shared/utils/scale";
 
 export const styles = StyleSheet.create({
   root: {
@@ -91,10 +91,10 @@ export const styles = StyleSheet.create({
   actionButtonPrimary: {
     backgroundColor: theme.colors.primary.DEFAULT,
     shadowColor: theme.colors.primary.DEFAULT,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: verticalScale(4) },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: moderateScale(12, 0.5),
+    elevation: scale(6),
   },
   actionButtonOutline: {
     backgroundColor: "transparent",
@@ -119,5 +119,75 @@ export const styles = StyleSheet.create({
   },
   actionButtonTextSecondary: {
     color: theme.colors.text.primary,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: theme.colors.background.DEFAULT,
+    borderTopLeftRadius: theme.radii.xl,
+    borderTopRightRadius: theme.radii.xl,
+    paddingHorizontal: moderateScale(24, 0.5),
+    paddingTop: verticalScale(24),
+    paddingBottom: verticalScale(32),
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    alignItems: "flex-end",
+    marginBottom: verticalScale(16),
+  },
+  modalTitle: {
+    fontSize: moderateScale(18, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: verticalScale(8),
+  },
+  modalSubtitle: {
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.secondary,
+    marginBottom: verticalScale(24),
+  },
+  codeInputsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: verticalScale(24),
+    gap: moderateScale(12, 0.5),
+  },
+  codeInput: {
+    flex: 1,
+    height: verticalScale(56),
+    borderWidth: 1.5,
+    borderColor: theme.colors.border.DEFAULT,
+    borderRadius: theme.radii.lg,
+    fontSize: moderateScale(24, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    textAlign: "center",
+    color: theme.colors.text.primary,
+  },
+  errorText: {
+    fontSize: moderateScale(13, 0.3),
+    color: theme.colors.status.error,
+    marginBottom: verticalScale(16),
+    textAlign: "center",
+  },
+  modalButton: {
+    height: verticalScale(56),
+    backgroundColor: theme.colors.primary.DEFAULT,
+    borderRadius: theme.radii.lg,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+  },
+  modalButtonDisabled: {
+    opacity: 0.65,
+  },
+  modalButtonText: {
+    color: theme.palette.neutral[0],
+    fontSize: moderateScale(16, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
   },
 });

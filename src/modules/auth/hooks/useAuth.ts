@@ -5,7 +5,14 @@ import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResum
 import { useLoading } from "@/shared/hooks/useLoading";
 import { router } from "expo-router";
 import { userAction } from "@/shared/utils/logger";
-import type { LoginServiceParams } from "../services/types";
+import type {
+  LoginServiceParams,
+  ForgotPasswordServiceParams,
+  SelfUnlockInitiateParams,
+  SelfUnlockInitiateResult,
+  SelfUnlockVerifyParams,
+  SelfUnlockVerifyResult,
+} from "../services/types";
 
 export function useAuth() {
   const { setUser, logout: clearUser } = useAuthStore();
@@ -111,5 +118,105 @@ export function useAuth() {
     }
   }
 
-  return { login, logout };
+  async function forgotPassword({ email }: ForgotPasswordServiceParams): Promise<void> {
+    showLoading();
+    try {
+      await KeycloakService.forgotPassword({ email });
+      userAction('forgotPassword.success', 'Password recovery email sent', { email });
+    } catch (error) {
+      userAction('forgotPassword.error', 'Password recovery failed', { email });
+      throw error;
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function initiateSelfUnlock(
+    { blockId }: SelfUnlockInitiateParams,
+  ): Promise<SelfUnlockInitiateResult> {
+    showLoading();
+    try {
+      const result = await KeycloakService.initiateSelfUnlock({ blockId });
+      userAction('selfUnlock.initiate.success', 'Self-unlock initiated', { blockId });
+      return result;
+    } catch (error) {
+      userAction('selfUnlock.initiate.error', 'Failed to initiate self-unlock', { blockId });
+      throw error;
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function verifySelfUnlock(
+    { blockId, code }: SelfUnlockVerifyParams,
+  ): Promise<SelfUnlockVerifyResult> {
+    showLoading();
+    try {
+      const result = await KeycloakService.verifySelfUnlock({ blockId, code });
+      userAction('selfUnlock.verify.success', 'Self-unlock verified', {
+        blockId,
+        blockResolved: result.blockResolved,
+      });
+      return result;
+    } catch (error) {
+      userAction('selfUnlock.verify.error', 'Failed to verify self-unlock code', { blockId });
+      throw error;
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function getCategories() {
+    return KeycloakService.getCategories();
+  }
+
+  async function createProviderService(params: Parameters<typeof KeycloakService.createProviderService>[0]) {
+    return KeycloakService.createProviderService(params);
+  }
+
+  async function getProviderServices() {
+    return KeycloakService.getProviderServices();
+  }
+
+  async function updateProviderService(
+    serviceId: string,
+    params: Parameters<typeof KeycloakService.updateProviderService>[1],
+  ) {
+    return KeycloakService.updateProviderService(serviceId, params);
+  }
+
+  async function deleteProviderService(serviceId: string) {
+    return KeycloakService.deleteProviderService(serviceId);
+  }
+
+  async function setProviderAvailability(params: Parameters<typeof KeycloakService.setProviderAvailability>[0]) {
+    return KeycloakService.setProviderAvailability(params);
+  }
+
+  async function getProviderAvailability() {
+    return KeycloakService.getProviderAvailability();
+  }
+
+  async function updateProviderAvailability(
+    dayOfWeek: number,
+    params: Parameters<typeof KeycloakService.updateProviderAvailability>[1],
+  ) {
+    return KeycloakService.updateProviderAvailability(dayOfWeek, params);
+  }
+
+  return {
+    login,
+    logout,
+    forgotPassword,
+    initiateSelfUnlock,
+    verifySelfUnlock,
+    getCategories,
+    createProviderService,
+    getProviderServices,
+    updateProviderService,
+    deleteProviderService,
+    setProviderAvailability,
+    getProviderAvailability,
+    updateProviderAvailability,
+  };
 }

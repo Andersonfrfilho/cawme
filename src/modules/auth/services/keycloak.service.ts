@@ -15,6 +15,21 @@ import type {
   SaveAddressResult,
   SendCodeResult,
   VerifyCodeResult,
+  SelfUnlockInitiateParams,
+  SelfUnlockInitiateResult,
+  SelfUnlockVerifyParams,
+  SelfUnlockVerifyResult,
+  GetCategoriesResult,
+  CreateProviderServiceParams,
+  CreateProviderServiceResult,
+  GetProviderServicesResult,
+  UpdateProviderServiceParams,
+  UpdateProviderServiceResult,
+  SetProviderAvailabilityParams,
+  SetProviderAvailabilityResult,
+  GetProviderAvailabilityResult,
+  UpdateProviderAvailabilityParams,
+  UpdateProviderAvailabilityResult,
 } from "./types";
 
 
@@ -195,6 +210,85 @@ export const KeycloakService = {
     canRetryAt: string | null;
   }> {
     const response = await apiClient.get(AUTH_ENDPOINTS.ACCOUNT_STATUS);
+    return response.data;
+  },
+
+  async initiateSelfUnlock({ blockId }: SelfUnlockInitiateParams): Promise<SelfUnlockInitiateResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.SELF_UNLOCK(blockId),
+      {},
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async verifySelfUnlock({ blockId, code }: SelfUnlockVerifyParams): Promise<SelfUnlockVerifyResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.SELF_UNLOCK_VERIFY(blockId),
+      { code },
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async getCategories(): Promise<GetCategoriesResult> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.CATEGORIES);
+    return response.data;
+  },
+
+  async createProviderService(params: CreateProviderServiceParams): Promise<CreateProviderServiceResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.PROVIDER_SERVICES,
+      params,
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async getProviderServices(): Promise<GetProviderServicesResult> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_SERVICES);
+    return response.data;
+  },
+
+  async updateProviderService(
+    serviceId: string,
+    params: UpdateProviderServiceParams,
+  ): Promise<UpdateProviderServiceResult> {
+    const response = await apiClient.put(
+      AUTH_ENDPOINTS.PROVIDER_SERVICE_UPDATE(serviceId),
+      params,
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async deleteProviderService(serviceId: string): Promise<void> {
+    await apiClient.delete(AUTH_ENDPOINTS.PROVIDER_SERVICE_DELETE(serviceId));
+  },
+
+  async setProviderAvailability(params: SetProviderAvailabilityParams): Promise<SetProviderAvailabilityResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY,
+      params,
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async getProviderAvailability(): Promise<GetProviderAvailabilityResult> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_AVAILABILITY);
+    return response.data;
+  },
+
+  async updateProviderAvailability(
+    dayOfWeek: number,
+    params: UpdateProviderAvailabilityParams,
+  ): Promise<UpdateProviderAvailabilityResult> {
+    const response = await apiClient.put(
+      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY_UPDATE(dayOfWeek),
+      params,
+      { _skipGlobalError: true },
+    );
     return response.data;
   },
 };

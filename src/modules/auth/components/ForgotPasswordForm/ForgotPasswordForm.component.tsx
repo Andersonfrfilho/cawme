@@ -67,6 +67,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
                   style={styles.inputIcon}
                 />
                 <TextInput
+                  testID="forgot-password-email-input"
                   style={styles.inputText}
                   placeholder={t("auth.emailPlaceholder")}
                   placeholderTextColor={theme.palette.neutral[400]}
@@ -104,12 +105,13 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       </View>
 
       <TouchableOpacity
+        testID="forgot-password-submit-button"
         style={[
           styles.submitButton,
-          isSubmitting && styles.submitButtonDisabled,
+          (isSubmitting || !!errors.email) && styles.submitButtonDisabled,
         ]}
         onPress={handleSubmit(onSubmit)}
-        disabled={isSubmitting}
+        disabled={isSubmitting || !!errors.email}
         activeOpacity={0.85}
       >
         {isSubmitting ? (

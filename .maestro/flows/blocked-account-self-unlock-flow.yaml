@@ -1,0 +1,114 @@
+appId: com.cawme.app
+tags: [blocked, recovery, e2e]
+required: false
+
+description: Blocked account self-unlock flow - tests account unlock modal and code verification
+
+# PRE-CONDITION:
+# This test requires an account with:
+# - Status: BLOCKED
+# - Action type: "retry" with blockId present
+# - Setup: Use a test account configured in the QA environment with a known account block
+# Example: In QA, create a provider account and manually block it via the admin panel with self-unlock enabled
+# The blockId will be provided by the BFF response
+
+commands:
+  # 1. Login with blocked account
+  - inputText:
+      id: login.username-input
+      text: qa-blocked-user@cawme.com
+  - delay: 300ms
+  - inputText:
+      id: login.password-input
+      text: TestPassword123
+  - delay: 300ms
+  - tapOn:
+      id: login.button
+  - delay: 2000ms
+
+  # 2. Verify BlockedAccountScreen is shown
+  - assertVisible:
+      text: Conta Temporariamente Bloqueada
+
+  # 3. Tap retry action button (self-unlock option)
+  - tapOn:
+      text: Tentar Novamente
+  - delay: 1000ms
+
+  # 4. Verify self-unlock modal appears
+  - extendedWaitUntil:
+      timeout: 5000
+      condition:
+        - assertVisible:
+            id: self-unlock-code-input-0
+
+  # 5. Verify modal title and subtitle are visible
+  - assertVisible:
+      text: Desbloquear conta
+  - delay: 300ms
+
+  # 6. Verify email destination is masked (e.g., "a***@gmail.com")
+  - assertVisible:
+      text: Digite o código enviado para
+
+  # 7. Verify all 4 code input fields exist
+  - assertVisible:
+      id: self-unlock-code-input-0
+  - assertVisible:
+      id: self-unlock-code-input-1
+  - assertVisible:
+      id: self-unlock-code-input-2
+  - assertVisible:
+      id: self-unlock-code-input-3
+
+  # 8. Verify verify button exists and is disabled (no code entered)
+  - assertVisible:
+      id: self-unlock-verify-button
+  - assertDisabled:
+      id: self-unlock-verify-button
+
+  # Note: Full code verification is not tested here to avoid needing actual email codes
+  # In real QA, you would:
+  # - Check email for the code
+  # - Enter it in the 4 fields
+  # - Tap verify button
+  # - Verify success message and redirect to login
+
+  # 9. Test code input by entering digits
+  - tapOn:
+      id: self-unlock-code-input-0
+  - inputText:
+      id: self-unlock-code-input-0
+      text: "1"
+  - delay: 200ms
+  - tapOn:
+      id: self-unlock-code-input-1
+  - inputText:
+      id: self-unlock-code-input-1
+      text: "2"
+  - delay: 200ms
+  - tapOn:
+      id: self-unlock-code-input-2
+  - inputText:
+      id: self-unlock-code-input-2
+      text: "3"
+  - delay: 200ms
+  - tapOn:
+      id: self-unlock-code-input-3
+  - inputText:
+      id: self-unlock-code-input-3
+      text: "4"
+  - delay: 300ms
+
+  # 10. Verify button is now enabled
+  - assertEnabled:
+      id: self-unlock-verify-button
+
+  # 11. Close modal by tapping close button
+  - tapOn:
+      text: ×
+  - delay: 500ms
+
+  # 12. Verify modal is closed
+  - assertNotVisible:
+      id: self-unlock-code-input-0

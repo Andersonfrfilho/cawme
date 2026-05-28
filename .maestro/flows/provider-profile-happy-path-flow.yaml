@@ -1,0 +1,166 @@
+appId: com.andersonfilho.cawme
+name: ✅ Provider Profile Setup - Happy Path
+description: |
+  Complete provider profile setup flow (categories → services → availability → review → submit).
+  Provider selects 2 categories, adds 2 services, sets availability for 3 days, and submits.
+tags:
+  - provider
+  - profile
+  - e2e
+---
+- launchApp:
+    clearState: false
+
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 15000
+
+# ── Categories Screen: Select 2 categories ─────────────────────────────────────
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- tapOn:
+    id: "category-card"
+    index: 1
+
+- assertVisible: "checkmark-circle"
+  index: 0
+
+- assertVisible: "checkmark-circle"
+  index: 1
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Services Screen: Add services ──────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# Add first service
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Completa"
+
+- tapOn:
+    id: "duration-input"
+- eraseText: 10
+- inputText: "120"
+
+- tapOn:
+    id: "price-input"
+- inputText: "150.00"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- extendedWaitUntil:
+    visible: "Limpeza Completa"
+    timeout: 5000
+
+# Add second service
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Rápida"
+
+- tapOn:
+    id: "duration-input"
+- eraseText: 10
+- inputText: "60"
+
+- tapOn:
+    id: "price-input"
+- inputText: "75.00"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- extendedWaitUntil:
+    visible: "Limpeza Rápida"
+    timeout: 5000
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Availability Screen: Set availability ──────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+# Enable Segunda (Monday)
+- tapOn:
+    id: "day-toggle-1"
+
+- tapOn:
+    id: "day-1-start-time"
+- inputText: "09:00"
+
+- tapOn:
+    id: "day-1-end-time"
+- inputText: "18:00"
+
+# Enable Terça (Tuesday)
+- tapOn:
+    id: "day-toggle-2"
+
+- tapOn:
+    id: "day-2-start-time"
+- inputText: "09:00"
+
+- tapOn:
+    id: "day-2-end-time"
+- inputText: "18:00"
+
+# Enable Sexta (Friday)
+- tapOn:
+    id: "day-toggle-5"
+
+- tapOn:
+    id: "day-5-start-time"
+- inputText: "10:00"
+
+- tapOn:
+    id: "day-5-end-time"
+- inputText: "17:00"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Review Screen: Confirm and submit ──────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Confirmação do perfil"
+    timeout: 8000
+
+- assertVisible: "Categorias"
+- assertVisible: "Serviços"
+- assertVisible: "Disponibilidade"
+- assertVisible: "Limpeza Completa"
+- assertVisible: "Limpeza Rápida"
+- assertVisible: "Segunda"
+- assertVisible: "Terça"
+- assertVisible: "Sexta"
+
+- tapOn:
+    id: "action-bar-submit-button"
+
+# ── Success: Back to home ──────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 10000
+
+- assertVisible: ".*Início.*|.*Home.*|.*Dashboard.*"

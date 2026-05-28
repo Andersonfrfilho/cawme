@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { scale, verticalScale, moderateScale } from "@/shared/utils/scale";
 import { theme } from "@/shared/constants";
 
 export const styles = StyleSheet.create({
@@ -15,8 +16,8 @@ export const styles = StyleSheet.create({
 
   // ── Back navigation ───────────────────────────────
   backNav: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: verticalScale(40),
     borderRadius: theme.radii.md,
     backgroundColor: theme.colors.background.card,
     justifyContent: "center",
@@ -38,8 +39,8 @@ export const styles = StyleSheet.create({
     marginBottom: theme.spacing[7],
   },
   iconCircle: {
-    width: 68,
-    height: 68,
+    width: scale(68),
+    height: verticalScale(68),
     borderRadius: theme.radii.xl,
     backgroundColor: theme.colors.primary.surface,
     justifyContent: "center",
@@ -56,7 +57,6 @@ export const styles = StyleSheet.create({
   subtitle: {
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.secondary,
-    lineHeight: 22,
     marginBottom: theme.spacing[8],
     textAlign: "center",
   },
@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    height: 56,
+    height: verticalScale(56),
     backgroundColor: theme.colors.background.card,
     borderWidth: 1.5,
     borderColor: theme.colors.border.DEFAULT,
@@ -116,14 +116,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.status.error,
-    lineHeight: 18,
   },
 
   // ── Submit button ─────────────────────────────────
   submitButton: {
     backgroundColor: theme.colors.primary.DEFAULT,
     borderRadius: theme.radii.lg,
-    height: 56,
+    height: verticalScale(56),
     justifyContent: "center",
     alignItems: "center",
     ...theme.shadows.lg,
@@ -161,13 +160,12 @@ export const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text.secondary,
     textAlign: "center",
-    lineHeight: 24,
     marginBottom: theme.spacing[10],
   },
   backButton: {
     backgroundColor: theme.colors.primary.DEFAULT,
     borderRadius: theme.radii.lg,
-    height: 56,
+    height: verticalScale(56),
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
