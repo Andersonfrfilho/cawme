@@ -99,7 +99,7 @@ tags:
 - assertVisible:
     id: "verification-tab-phone"
 
-# 4. Toca skip → chega na home sem verificar
+# 4. Toca skip → auto-login → chega na home com badge pendente
 - tapOn:
     id: "verification-skip-button"
 
@@ -107,7 +107,9 @@ tags:
     visible: ".*Início.*|.*Home.*|.*Dashboard.*"
     timeout: 15000
 
-# 5. Badge de verificação pendente NÃO aparece (skip não faz setUser → isSignedIn=false)
-- assertNotVisible:
-    id: "pending-verification-banner"
-- assertNotVisible: "Verificação Pendente"
+# 5. Banner de onboarding pendente DEVE aparecer:
+# handleSkipVerification salva pendingOnboarding no store → home renderiza sem precisar de login
+- extendedWaitUntil:
+    visible:
+      id: "pending-onboarding-banner"
+    timeout: 8000

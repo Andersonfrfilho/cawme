@@ -63,8 +63,8 @@ tags:
     visible: ".*Início.*|.*Home.*|.*Dashboard.*"
     timeout: 8000
 
-# Badge NÃO deve aparecer: skip-to-home usa handleSkipVerification → isSignedIn=false
-# Usuário chega como convidado — design correto (Keycloak exige verificação para login)
-- assertNotVisible:
-    id: "pending-verification-banner"
-- assertNotVisible: "Verificação Pendente"
+# Banner de onboarding DEVE aparecer: handleSkipVerification salva pendingOnboarding → home renderiza sem precisar de login
+- extendedWaitUntil:
+    visible:
+      id: "pending-onboarding-banner"
+    timeout: 8000

@@ -55,6 +55,21 @@ export type SendCodeParams = {
   destination: string;
 };
 
+export type SendCodeExpirationInfo = {
+  value: number;
+  unit: "minutos" | "horas" | "segundos";
+};
+
+export type SendCodeResult = {
+  success: boolean;
+  message: string;
+  codeId: string;
+  expiresIn: SendCodeExpirationInfo;
+  expiresAt: string;
+  destination: string;
+  type: "email" | "phone";
+};
+
 export type VerifyCodeParams = {
   type: "email" | "sms";
   destination: string;
@@ -63,7 +78,13 @@ export type VerifyCodeParams = {
 };
 
 export type VerifyCodeResult = {
+  success: boolean;
   verified: boolean;
+  message: string;
+  codeId?: string;
+  destination: string;
+  type: "email" | "phone";
+  verifiedAt?: string;
 };
 
 export type OnboardingStep = "address" | "verification" | "document" | "complete";

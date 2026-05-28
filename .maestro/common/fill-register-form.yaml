@@ -7,50 +7,41 @@ appId: com.andersonfilho.cawme
 # IMPORTANTE: eraseText antes de cada inputText limpa valores residuais do
 # checkpoint de cadastro (auto-resume), pois clearState não limpa o MMKV.
 #
-# Campos com teclado numérico (phone-pad / number-pad) ficam atrás do teclado
-# quando teclado está aberto — tapOn nesses campos acertaria uma tecla do teclado.
-# Solução: usar pressKey: Enter para acionar onSubmitEditing → próximo campo via ref.
+# Cadeia de foco via onSubmitEditing (returnKeyType="next"):
+#   firstName → lastName → email → phone (foco automático)
+# pressKey: Return em cada campo de texto aciona onSubmitEditing → próximo campo.
+# Isso elimina hideKeyboard (intermitente no iOS com custom inputs) para campos de texto.
 #
-# hideKeyboard após pressKey: Enter no documento funciona para todos os tipos porque
-# há mudança de tipo de teclado em todos os casos:
-#   - CPF/CNPJ/RG: number-pad → default (campo senha)
-#   - Passport: ascii-capable → default (campo senha)
+# Campos numéricos (phone-pad / number-pad):
+#   phone → pressKey: Enter → onSubmitEditing → documentRef.focus()
+#   document → pressKey: Enter → onSubmitEditing → passwordRef.focus()
 #
-# PROBLEMA: após hideKeyboard, a árvore de acessibilidade reporta coordenadas desatualizadas
-# (a animação de fechamento do teclado ainda não atualizou as posições dos elementos).
-# Ambos os toggles reportam a mesma coordenada Y, indicando cache stale.
-# SOLUÇÃO: aguardar "Avançar" ficar visível — o botão só aparece na tela quando o teclado
-# está completamente fechado e o layout foi atualizado, forçando re-sync da árvore.
+# hideKeyboard só é usado antes dos toggles de senha, onde o teclado ainda
+# pode estar ativo após o Enter no documento.
 
 # Seleciona o tipo de documento ANTES de tocar nos campos (sem teclado)
 - tapOn:
     id: "register-docType-${DOCUMENT_TYPE}"
 
-# Nome (text keyboard → hideKeyboard funciona)
+# Nome → pressKey: Return → lastNameRef.focus() via onSubmitEditing
 - tapOn:
     id: "register-firstName"
 - eraseText: 50
 - inputText: "${FIRST_NAME}"
-- hideKeyboard
+- pressKey: Enter
 
-# Sobrenome
-- tapOn:
-    id: "register-lastName"
+# Sobrenome (foco vem do onSubmitEditing do firstName)
 - eraseText: 50
 - inputText: "${LAST_NAME}"
-- hideKeyboard
+- pressKey: Enter
 
-# E-mail
-- tapOn:
-    id: "register-email"
+# E-mail (foco vem do onSubmitEditing do lastName)
 - eraseText: 100
 - inputText: "${EMAIL}"
-- hideKeyboard
+- pressKey: Enter
 
-# Telefone (phone-pad)
-# pressKey: Enter → onSubmitEditing → documentRef.focus() (evita tapOn atrás do teclado)
-- tapOn:
-    id: "register-phone"
+# Telefone (foco vem do onSubmitEditing do email → phoneRef.focus())
+# pressKey: Enter → onSubmitEditing → documentRef.focus()
 - eraseText: 20
 - inputText: "${PHONE}"
 - pressKey: Enter

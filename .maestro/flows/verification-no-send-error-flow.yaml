@@ -1,19 +1,23 @@
 appId: com.andersonfilho.cawme
-name: ✅ Register + Verification UI Flow
+name: 🔒 Regression - Sem erro de envio na chegada da tela de verificação
 description: |
-  Testa a UI da tela de verificação:
-  1. Cadastra usuário único e chega na verificação
-  2. Verifica aba E-mail ativa e texto de destino
-  3. Troca para aba Telefone
-  4. Verifica botão "Verificar depois"
-  5. Pula verificação → home
+  Regressão: verifica que a mensagem "Não foi possível enviar o código." NÃO aparece
+  ao entrar na tela de verificação após um cadastro bem-sucedido.
+
+  Histórico: a mudança de sendVerificationCode para retornar SendCodeResult causou
+  um bug onde API no formato antigo (sem expiresIn) provocava TypeError internamente,
+  capturado pelo catch da tela e exibido como "Não foi possível enviar o código.",
+  mesmo sem falha real na API.
+
+  Critério de sucesso: a mensagem de erro (id: verification-error-message) é invisível
+  imediatamente após a tela de verificação aparecer.
 tags:
-  - register
+  - regression
   - verification
-  - ui
+  - send-error
   - e2e
 ---
-- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='109'+output.TS;}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='125'+output.TS;}
 
 - launchApp:
     clearState: true
@@ -40,9 +44,9 @@ tags:
     file: ../common/fill-register-form.yaml
     env:
       DOCUMENT_TYPE: "cpf"
-      FIRST_NAME: "VerifUI"
-      LAST_NAME: "Test"
-      EMAIL: "verifui${output.TS}@test.com"
+      FIRST_NAME: "NoError"
+      LAST_NAME: "Regression"
+      EMAIL: "nosenderror${output.TS}@test.com"
       PHONE: "${output.PHONE}"
       DOCUMENT: "${output.CPF}"
       PASSWORD: "Senha@123"
@@ -56,7 +60,6 @@ tags:
 - tapOn:
     id: "terms-submit-button"
 
-# Pula endereço se aparecer
 - runFlow:
     when:
       visible: "Onde você mora?"
@@ -73,34 +76,23 @@ tags:
       - pressKey: Enter
       - pressKey: Enter
 
-# Tela de verificação
+# ── Critério principal da regressão ──────────────────────────────────────────
 - extendedWaitUntil:
     visible: ".*Verificação.*|.*Confirme seu e-mail.*"
     timeout: 12000
 
-# Verifica que aba E-mail está presente
-- assertVisible:
-    id: "verification-tab-email"
+# Aguarda o sendInitialCode terminar (sucesso ou erro aparecem em ~1-2s)
+- waitForAnimationToEnd
 
-# Verifica que aba Telefone está presente
-- assertVisible:
-    id: "verification-tab-phone"
+# Mensagem de erro NÃO deve estar visível — se estiver, o sendCode falhou internamente
+- assertNotVisible:
+    id: "verification-error-message"
 
-# Verifica que campo de código existe
+# A tela deve estar pronta: campo de código e botão visíveis
 - assertVisible:
     id: "verification-code-0"
-
-# Verifica que botão "Verificar depois" existe
 - assertVisible:
-    id: "verification-skip-button"
-
-# Troca para aba Telefone
-- tapOn:
-    id: "verification-tab-phone"
-
-- extendedWaitUntil:
-    visible: ".*Código enviado.*|.*SMS.*|.*telefone.*"
-    timeout: 8000
+    id: "verification-verify-button"
 
 # Pula verificação → auto-login → home com badge pendente
 - tapOn:

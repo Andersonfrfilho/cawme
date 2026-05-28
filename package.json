@@ -63,7 +63,10 @@
     "test:document:upload": "npm run test:document:upload:all:contractor && npm run test:document:upload:all:provider",
     "test:badge": "npm run maestro -- test .maestro/flows/home-pending-badge-flow.yaml",
     "test:maestro:status": "PATH=$PATH:$HOME/.maestro/bin maestro status",
-    "test:maestro:devices": "PATH=$PATH:$HOME/.maestro/bin maestro list-devices"
+    "test:maestro:devices": "PATH=$PATH:$HOME/.maestro/bin maestro list-devices",
+    "test:verify:no-send-error": "npm run maestro -- test .maestro/flows/verification-no-send-error-flow.yaml",
+    "test:banner:onboarding": "npm run maestro -- test .maestro/flows/pending-onboarding-banner-flow.yaml",
+    "test:banner:reactivation": "npm run maestro -- test .maestro/flows/pending-onboarding-reactivation-flow.yaml"
   },
   "dependencies": {
     "@adatechnology/logger-client": "^0.0.2",
@@ -112,6 +115,7 @@
   "devDependencies": {
     "@faker-js/faker": "^10.4.0",
     "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.2.10",
     "axios-mock-adapter": "^2.1.0",
     "eslint": "^10.2.0",

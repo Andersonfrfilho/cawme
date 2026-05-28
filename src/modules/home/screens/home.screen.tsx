@@ -4,6 +4,7 @@ import { useNavigation, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useHome } from "@/modules/home/hooks/useHome";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useRegisterStore } from "@/modules/auth/store/register.store";
 import { useAuth } from "@/modules/auth/hooks/useAuth";
 import { PendingVerificationBadge } from "@/modules/auth/components/PendingVerificationBadge/PendingVerificationBadge.component";
 import { useLocale, LocaleKeys } from "@/shared/locales";
@@ -16,6 +17,7 @@ export default function HomeScreen() {
   const { home } = useLocale<LocaleKeys>();
   const { data, isLoading, error, refetch } = useHome();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const pendingOnboarding = useRegisterStore((s) => s.pendingOnboarding);
   const { logout } = useAuth();
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -89,6 +91,44 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {isSignedIn && <PendingVerificationBadge variant="banner" />}
+      {!isSignedIn && pendingOnboarding && (
+        <TouchableOpacity
+          testID="pending-onboarding-banner"
+          onPress={() => {
+            if (pendingOnboarding?.keycloakId && pendingOnboarding?.password) {
+              // Restaura keycloakId e tempCredentials para que a tela de verificação
+              // possa enviar código (keycloakId) e fazer auto-login após verificar (password).
+              useRegisterStore.getState().setKeycloakId(pendingOnboarding.keycloakId);
+              useRegisterStore.getState().setTempCredentials({
+                email: pendingOnboarding.email,
+                password: pendingOnboarding.password,
+              });
+              router.push({
+                pathname: "/(auth)/verification" as any,
+                params: {
+                  email: pendingOnboarding.email,
+                  phone: pendingOnboarding.phone,
+                  mode: "post-register",
+                },
+              });
+            } else {
+              // Fallback: keycloakId não disponível (sessão expirada) → login manual
+              router.push("/(auth)/login" as any);
+            }
+          }}
+          style={styles.pendingOnboardingBanner}
+          activeOpacity={0.9}
+        >
+          <View style={styles.pendingOnboardingIconContainer}>
+            <Ionicons name="person-circle-outline" size={moderateScale(20, 0.3)} color={theme.colors.primary.DEFAULT} />
+          </View>
+          <View style={styles.pendingOnboardingContent}>
+            <Text style={styles.pendingOnboardingTitle}>{home.pendingOnboardingTitle}</Text>
+            <Text style={styles.pendingOnboardingSubtitle}>{home.pendingOnboardingSubtitle}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={moderateScale(18, 0.3)} color={theme.colors.primary.DEFAULT} />
+        </TouchableOpacity>
+      )}
       <SduiRenderer
         layout={data?.layout ?? []}
         activeFilter={activeFilter}

@@ -30,6 +30,16 @@ jest.mock('@/modules/auth/store/auth.store', () => ({
   ),
 }));
 
+const mockClearPendingOnboarding = jest.fn();
+
+jest.mock('@/modules/auth/store/register.store', () => ({
+  useRegisterStore: Object.assign(jest.fn(), {
+    getState: jest.fn(() => ({
+      clearPendingOnboarding: mockClearPendingOnboarding,
+    })),
+  }),
+}));
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 const mockLogin = KeycloakService.login as jest.Mock;
 const mockGetVerificationStatus = KeycloakService.getVerificationStatus as jest.Mock;
@@ -103,6 +113,30 @@ describe('useAuth', () => {
         'Invalid credentials',
       );
       expect(mockCheckAndResume).not.toHaveBeenCalled();
+    });
+
+    it('limpa pendingOnboarding ao fazer login com sucesso', async () => {
+      // Garante que o banner "Quase lá!" desaparece após login bem-sucedido.
+      // pendingOnboarding é salvo quando o usuário pula verificação; deve ser
+      // removido imediatamente ao autenticar com sucesso.
+      mockLogin.mockResolvedValue({ id: 'u1', name: 'Anderson', email: 'a@test.com' });
+      mockCheckAndResume.mockResolvedValue({ resumed: true, step: 'address' });
+
+      const { login } = useAuth();
+      await login({ username: 'a@test.com', password: '123' });
+
+      expect(mockClearPendingOnboarding).toHaveBeenCalledTimes(1);
+    });
+
+    it('não limpa pendingOnboarding quando o login falha', async () => {
+      // Se o login falhou, o usuário ainda está no estado "skip feito" →
+      // o banner deve permanecer visível para guiá-lo de volta ao fluxo.
+      mockLogin.mockRejectedValue(new Error('Invalid credentials'));
+
+      const { login } = useAuth();
+      await expect(login({ username: 'wrong@test.com', password: 'wrong' })).rejects.toThrow();
+
+      expect(mockClearPendingOnboarding).not.toHaveBeenCalled();
     });
   });
 });

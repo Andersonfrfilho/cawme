@@ -85,6 +85,11 @@ tags:
     visible: ".*Verificação.*|.*Confirme seu e-mail.*"
     timeout: 12000
 
+# Regressão: código foi enviado com sucesso — mensagem de erro NÃO deve aparecer.
+# Se aparecer, o sendCode lançou internamente (ex: API retornou formato inesperado).
+- assertNotVisible:
+    id: "verification-error-message"
+
 - tapOn:
     id: "verification-code-0"
 - inputText: "0"

@@ -1,0 +1,127 @@
+appId: com.andersonfilho.cawme
+name: 🏠 Pending Onboarding Banner - Ciclo Completo
+description: |
+  Testa o ciclo completo do banner "Quase lá!" na home:
+  1. Cadastra usuário (contractor) e preenche endereço
+  2. Pula verificação → navega para home
+  3. Banner "pending-onboarding-banner" DEVE aparecer
+  4. Tap no banner → restaura keycloakId/tempCredentials → navega para tela de VERIFICAÇÃO
+  5. Verifica que chegou na tela de verificação (aba e-mail visível, botão skip visível)
+
+  Garante que:
+  - handleSkipVerification salva pendingOnboarding (com keycloakId e password) no store
+  - Home renderiza o banner sem precisar de login (isSignedIn=false)
+  - Tap no banner retoma a verificação diretamente (sem passar pelo login)
+tags:
+  - home
+  - banner
+  - onboarding
+  - verification
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='131'+output.TS;}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+# ── 1. Cadastro como contractor ───────────────────────────────────────────────
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Banner"
+      LAST_NAME: "Test"
+      EMAIL: "bannertest${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 2. Endereço ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 3. Pula verificação ───────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# Botão skip existe para contractor
+- assertVisible:
+    id: "verification-skip-button"
+
+- tapOn:
+    id: "verification-skip-button"
+
+# ── 4. Home: banner DEVE aparecer ────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 15000
+
+# Banner de onboarding pendente aparece (isSignedIn=false mas pendingOnboarding salvo)
+- extendedWaitUntil:
+    visible:
+      id: "pending-onboarding-banner"
+    timeout: 8000
+
+# Badge de usuário logado NÃO aparece (isSignedIn=false)
+- assertNotVisible:
+    id: "pending-verification-banner"
+
+# ── 5. Tap no banner → navega para a tela de verificação ─────────────────────
+- tapOn:
+    id: "pending-onboarding-banner"
+
+# Deve chegar na VERIFICAÇÃO (keycloakId restaurado → modo post-register)
+# O skip anterior salvou keycloakId e password no pendingOnboarding
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 8000
+
+# Aba e-mail e botão skip visíveis — confirma que é a tela de verificação
+- assertVisible:
+    id: "verification-tab-email"
+- assertVisible:
+    id: "verification-skip-button"

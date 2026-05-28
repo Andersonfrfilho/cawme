@@ -117,8 +117,13 @@ tags:
       - extendedWaitUntil:
           visible: ".*Início.*|.*Home.*|.*Dashboard.*"
           timeout: 10000
-      # ── Badge de ativação pendente ──
-      # Skip sem auto-login → isSignedIn=false → badge NÃO aparece
+      # ── Banner de onboarding pendente ──
+      # Skip salva pendingOnboarding → pending-onboarding-banner aparece (sem precisar de login)
+      - extendedWaitUntil:
+          visible:
+            id: "pending-onboarding-banner"
+          timeout: 8000
+      # Logged-in badge NÃO aparece: isSignedIn=false
       - assertNotVisible:
           id: "pending-verification-banner"
       - assertNotVisible: "Verificação Pendente"

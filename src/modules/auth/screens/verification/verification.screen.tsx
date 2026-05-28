@@ -15,6 +15,22 @@ import { logger } from "@/shared/utils/logger";
 import { DocumentUploadSheet } from "@/modules/auth/components/DocumentUploadSheet";
 import { styles } from "./styles";
 import type { VerificationScreenParams, VerificationTarget } from "./types";
+import type { SendCodeExpirationInfo } from "@/modules/auth/services/types";
+import { maskEmail, maskPhone } from "./utils";
+
+const FALLBACK_COUNTDOWN_SECONDS = 300;
+
+function expirationToSeconds(expiresIn: SendCodeExpirationInfo | undefined): number {
+  if (!expiresIn) return FALLBACK_COUNTDOWN_SECONDS;
+  switch (expiresIn.unit) {
+    case "segundos":
+      return expiresIn.value;
+    case "minutos":
+      return expiresIn.value * 60;
+    case "horas":
+      return expiresIn.value * 60 * 60;
+  }
+}
 
 const CODE_LENGTH = 4;
 
@@ -25,6 +41,7 @@ function formatPhoneDisplay(digits: string): string {
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
+
 
 export default function VerificationScreen() {
   const { auth } = useLocale<LocaleKeys>();
@@ -66,7 +83,7 @@ export default function VerificationScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [canResend, setCanResend] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(FALLBACK_COUNTDOWN_SECONDS);
   const [emailVerified, setEmailVerified] = useState(params.emailVerified === "true");
   const [phoneVerified, setPhoneVerified] = useState(params.phoneVerified === "true");
   const [showDocumentSheet, setShowDocumentSheet] = useState(false);
@@ -103,8 +120,8 @@ export default function VerificationScreen() {
     setLoading(true);
     setError("");
     try {
-      await sendCode({ type: "email", destination: effectiveEmail });
-      setCountdown(60);
+      const result = await sendCode({ type: "email", destination: effectiveEmail });
+      setCountdown(expirationToSeconds(result.expiresIn));
       setCanResend(false);
     } catch {
       setError(auth.verificationSendError);
@@ -123,8 +140,8 @@ export default function VerificationScreen() {
     setLoading(true);
     setError("");
     try {
-      await sendCode({ type: toApiType(activeTarget), destination });
-      setCountdown(60);
+      const result = await sendCode({ type: toApiType(activeTarget), destination });
+      setCountdown(expirationToSeconds(result.expiresIn));
       setCanResend(false);
     } catch {
       setError(auth.verificationSendError);
@@ -219,6 +236,7 @@ export default function VerificationScreen() {
         useRegisterStore.getState().clearAddress();
         useRegisterStore.getState().clearKeycloakId();
         useRegisterStore.getState().clearTempCredentials();
+        useRegisterStore.getState().clearPendingOnboarding();
 
         setShowDocumentSheet(true);
         return;
@@ -251,6 +269,26 @@ export default function VerificationScreen() {
   }, []);
 
   const handleSkipVerification = () => {
+    const userType = useRegisterStore.getState().pendingRegistration?.userType ?? "contractor";
+
+    if (params.mode === "post-register" && effectiveEmail) {
+      // Salva keycloakId e password antes de limpar o estado, para que o banner
+      // na home possa retomar a verificação diretamente (sem precisar de login).
+      const keycloakId = useRegisterStore.getState().keycloakId ?? undefined;
+      const password = useRegisterStore.getState().tempCredentials?.password ?? undefined;
+      useRegisterStore.getState().setPendingOnboarding({
+        email: effectiveEmail,
+        phone: effectivePhone,
+        userType,
+        keycloakId,
+        password,
+      });
+    }
+
+    // Limpa todo o estado de registro pendente para que o próximo login
+    // siga o caminho de checkVerificationStatusAndRedirect (post-login)
+    // e não volte ao loop de checkAndResume com mode=post-register.
+    useRegisterStore.getState().clearPendingRegistration();
     useRegisterStore.getState().clearTempCredentials();
     useRegisterStore.getState().clearAddress();
     useRegisterStore.getState().clearKeycloakId();
@@ -361,7 +399,7 @@ export default function VerificationScreen() {
                 {(target === "email"
                   ? auth.verificationEmailSent
                   : auth.verificationPhoneSent
-                ).replace("{target}", target === "email" ? effectiveEmail : formatPhoneDisplay(effectivePhone))}
+                ).replace("{target}", target === "email" ? maskEmail(effectiveEmail) : maskPhone(effectivePhone))}
               </Text>
 
               <View style={styles.codeContainer}>
@@ -384,7 +422,7 @@ export default function VerificationScreen() {
                   ))}
               </View>
 
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              {error ? <Text testID="verification-error-message" style={styles.errorText}>{error}</Text> : null}
 
               <TouchableOpacity
                 testID="verification-verify-button"
@@ -419,6 +457,7 @@ export default function VerificationScreen() {
 
           {bothVerified && (
             <TouchableOpacity
+              testID="verification-advance-button"
               style={styles.advanceButton}
               onPress={handleAdvance}
               activeOpacity={0.85}

@@ -13,6 +13,8 @@ import type {
   RegisterServiceResult,
   SaveAddressParams,
   SaveAddressResult,
+  SendCodeResult,
+  VerifyCodeResult,
 } from "./types";
 
 
@@ -129,8 +131,13 @@ export const KeycloakService = {
   async sendVerificationCode(params: {
     type: "email" | "sms";
     destination: string;
-  }): Promise<void> {
-    await apiClient.post(AUTH_ENDPOINTS.VERIFICATION_SEND, params, { _skipGlobalError: true });
+  }): Promise<SendCodeResult> {
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.VERIFICATION_SEND,
+      params,
+      { _skipGlobalError: true },
+    );
+    return response.data;
   },
 
   async verifyCode(params: {
@@ -138,7 +145,7 @@ export const KeycloakService = {
     destination: string;
     code: string;
     keycloakId?: string;
-  }): Promise<{ verified: boolean }> {
+  }): Promise<VerifyCodeResult> {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.VERIFICATION_VERIFY,
       params,

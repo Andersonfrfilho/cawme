@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/modules/auth/store/auth.store";
+import { useRegisterStore } from "@/modules/auth/store/register.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResume";
 import { useLoading } from "@/shared/hooks/useLoading";
@@ -76,6 +77,7 @@ export function useAuth() {
     try {
       const { id, name, email, type } = await KeycloakService.login(params);
       userAction('login.success', 'User logged in successfully', { userId: id });
+      useRegisterStore.getState().clearPendingOnboarding();
 
       const resumeResult = await checkAndResume();
       if (resumeResult.resumed) {

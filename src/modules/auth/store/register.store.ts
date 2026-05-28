@@ -26,11 +26,20 @@ export type PendingRegistration = {
   userType: "contractor" | "provider";
 };
 
+export type PendingOnboarding = {
+  email: string;
+  phone: string;
+  userType: "contractor" | "provider";
+  keycloakId?: string;
+  password?: string;
+};
+
 interface RegisterStore {
   tempCredentials: { email: string; password: string } | null;
   address: StoredAddress | null;
   keycloakId: string | null;
   pendingRegistration: PendingRegistration | null;
+  pendingOnboarding: PendingOnboarding | null;
   setTempCredentials: (credentials: { email: string; password: string }) => void;
   clearTempCredentials: () => void;
   setAddress: (address: StoredAddress) => void;
@@ -39,6 +48,8 @@ interface RegisterStore {
   clearKeycloakId: () => void;
   setPendingRegistration: (registration: PendingRegistration) => void;
   clearPendingRegistration: () => void;
+  setPendingOnboarding: (data: PendingOnboarding) => void;
+  clearPendingOnboarding: () => void;
 }
 
 export const useRegisterStore = create<RegisterStore>()(
@@ -48,6 +59,7 @@ export const useRegisterStore = create<RegisterStore>()(
       address: null,
       keycloakId: null,
       pendingRegistration: null,
+      pendingOnboarding: null,
       setTempCredentials: (tempCredentials) => set({ tempCredentials }),
       clearTempCredentials: () => set({ tempCredentials: null }),
       setAddress: (address) => set({ address }),
@@ -56,6 +68,8 @@ export const useRegisterStore = create<RegisterStore>()(
       clearKeycloakId: () => set({ keycloakId: null }),
       setPendingRegistration: (pendingRegistration) => set({ pendingRegistration }),
       clearPendingRegistration: () => set({ pendingRegistration: null }),
+      setPendingOnboarding: (pendingOnboarding) => set({ pendingOnboarding }),
+      clearPendingOnboarding: () => set({ pendingOnboarding: null }),
     }),
     {
       name: "register-store",

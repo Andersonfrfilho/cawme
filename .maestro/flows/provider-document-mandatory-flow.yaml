@@ -127,18 +127,16 @@ tags:
       - tapOn:
           id: "verification-verify-button"
 
-# ── Modo padrão: código SMS inválido → provider PERMANECE bloqueado ───────────
-# Assertivas incondicionais — se ainda estiver na tela de verificação, confirma
-# que skip não apareceu após o código falhar e aviso obrigatório persiste.
+# ── Modo QA: ambos verificados → "Avançar" → DocumentUploadSheet ─────────────
 - runFlow:
     when:
-      visible: ".*Verificação.*|.*Confirme seu e-mail.*|.*Código inválido.*|.*incorreto.*"
+      visible:
+        id: "verification-advance-button"
     commands:
-      - assertNotVisible: "Verificar depois"
-      - assertVisible:
-          id: "verification-provider-mandatory"
+      - tapOn:
+          id: "verification-advance-button"
 
-# ── Modo QA: ambos verificados → DocumentUploadSheet sem "Enviar depois" ───────
+# ── Modo QA: DocumentUploadSheet sem "Enviar depois" ─────────────────────────
 - runFlow:
     when:
       visible:
@@ -149,6 +147,15 @@ tags:
           id: "document-sheet-later-button"
       - tapOn:
           id: "document-sheet-now-button"
+
+# ── Modo padrão: código SMS inválido → provider PERMANECE bloqueado ───────────
+# Usa id-selector para não disparar no estado "verificado" (quando a mandatory está oculta).
+- runFlow:
+    when:
+      visible:
+        id: "verification-provider-mandatory"
+    commands:
+      - assertNotVisible: "Verificar depois"
 
 # ── Modo QA: tela de upload de documento — sem skip, com aviso obrigatório ───
 - runFlow:

@@ -1,18 +1,19 @@
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { userAction } from "@/shared/utils/logger";
-import type { SendCodeParams, VerifyCodeParams, VerifyCodeResult } from "../services/types";
+import type { SendCodeParams, SendCodeResult, VerifyCodeParams, VerifyCodeResult } from "../services/types";
 
 export function useVerification() {
   const { showLoading, hideLoading } = useLoading();
 
-  async function sendCode(params: SendCodeParams): Promise<void> {
+  async function sendCode(params: SendCodeParams): Promise<SendCodeResult> {
     userAction('verification.send', 'User requested verification code', { type: params.type });
     showLoading();
-    
+
     try {
-      await KeycloakService.sendVerificationCode(params);
+      const result = await KeycloakService.sendVerificationCode(params);
       userAction('verification.sent', 'Verification code sent successfully');
+      return result;
     } catch (error) {
       userAction('verification.send_error', 'Failed to send verification code');
       throw error;

@@ -113,7 +113,16 @@ tags:
       - tapOn:
           id: "verification-verify-button"
 
-# QA: ambos verificados → DocumentUploadSheet (sem "Enviar depois" para provider)
+# QA: ambos verificados → "Avançar" aparece → toca para auto-login → DocumentUploadSheet
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+# QA: DocumentUploadSheet aberto (sem "Enviar depois" para provider)
 - runFlow:
     when:
       visible:
@@ -137,10 +146,9 @@ tags:
 # Padrão: código inválido → provider permanece na verificação com aviso obrigatório
 - runFlow:
     when:
-      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+      visible:
+        id: "verification-provider-mandatory"
     commands:
-      - assertVisible:
-          id: "verification-provider-mandatory"
       - assertNotVisible: "Verificar depois"
 
 # QA: chegou na home após verificar tudo + enviar documento

@@ -8,6 +8,8 @@ export const homeLocale = {
     signIn: "Entrar",
     guestWelcome: "Bem-vindo ao Cawme",
     guestDescription: "Encontre profissionais qualificados para serviços domésticos. Crie uma conta para agendar e gerenciar seus serviços.",
+    pendingOnboardingTitle: "Quase lá!",
+    pendingOnboardingSubtitle: "Faça login para verificar sua conta e acessar todos os recursos.",
   },
 };
 

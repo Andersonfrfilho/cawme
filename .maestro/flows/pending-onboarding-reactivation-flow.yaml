@@ -1,0 +1,191 @@
+appId: com.andersonfilho.cawme
+name: 🔄 Pending Onboarding - Ciclo Completo de Reativação
+description: |
+  Testa o ciclo COMPLETO de reativação após pular verificação:
+  1. Cadastra contractor, preenche endereço, pula verificação
+  2. Banner "Quase lá!" aparece na home
+  3. Tap no banner → keycloakId restaurado → VERIFICAÇÃO direta (sem login)
+  4. Verifica e-mail com código QA (0000)
+  5. Troca para aba Telefone → verifica com últimos 4 dígitos
+  6. Ambos verificados → toca "Avançar" → auto-login → DocumentUploadSheet
+  7. "Fazer depois" → home logado
+  8. Banner "Quase lá!" NÃO está mais visível (clearPendingOnboarding no handleAdvance)
+
+  Garante que:
+  - handleSkipVerification salva keycloakId e password no pendingOnboarding
+  - Banner restaura keycloakId/tempCredentials e navega para verificação (post-register)
+  - handleAdvance faz auto-login e limpa pendingOnboarding
+  - Ciclo completo sem passar pelo login manual
+tags:
+  - critical
+  - reactivation
+  - verification
+  - banner
+  - e2e
+---
+# Gera CPF válido, TS único e pré-computa os dígitos do código de telefone (QA: últimos 4 dígitos)
+# IMPORTANTE: prefixo '117' (DDD 11 SP) é whitelisted no backend para QA de SMS.
+# Prefixos fora da whitelist (ex: '132') não recebem código QA determinístico.
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+# ── 1. Cadastro como contractor ───────────────────────────────────────────────
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Reactivate"
+      LAST_NAME: "Test"
+      EMAIL: "reactivate${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 2. Endereço ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 3. Pula verificação → banner na home ─────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 20000
+
+- assertVisible:
+    id: "verification-skip-button"
+
+- tapOn:
+    id: "verification-skip-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 15000
+
+# Banner deve aparecer
+- extendedWaitUntil:
+    visible:
+      id: "pending-onboarding-banner"
+    timeout: 8000
+
+# ── 4. Tap no banner → verificação direta (sem login) ────────────────────────
+# Banner restaura keycloakId e tempCredentials do pendingOnboarding,
+# depois navega para /(auth)/verification com mode=post-register
+- tapOn:
+    id: "pending-onboarding-banner"
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 10000
+
+# Confirma que é a tela de verificação (não a tela de login)
+- assertVisible:
+    id: "verification-tab-email"
+- assertVisible:
+    id: "verification-skip-button"
+
+# ── 5. Verifica e-mail (código QA: 0000) ─────────────────────────────────────
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 6. Verifica telefone (código QA: últimos 4 dígitos) ───────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 7. Ambos verificados → "Avançar" → auto-login → DocumentUploadSheet ───────
+- extendedWaitUntil:
+    visible:
+      id: "verification-advance-button"
+    timeout: 10000
+
+- tapOn:
+    id: "verification-advance-button"
+
+# handleAdvance em post-register: auto-login com tempCredentials restaurados
+# → clearPendingOnboarding → setShowDocumentSheet(true)
+- extendedWaitUntil:
+    visible:
+      id: "document-sheet-later-button"
+    timeout: 12000
+
+- tapOn:
+    id: "document-sheet-later-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 12000
+
+# ── 8. Verificações finais na home ────────────────────────────────────────────
+# Banner "Quase lá!" NÃO deve aparecer: clearPendingOnboarding no handleAdvance
+- assertNotVisible:
+    id: "pending-onboarding-banner"
+
+# Botão de logout visível: usuário está logado (isSignedIn=true)
+- assertVisible:
+    id: "logout-button"
