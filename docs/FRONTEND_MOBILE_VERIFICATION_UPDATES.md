@@ -1,71 +1,19 @@
-# Frontend Mobile - Verification Code Updates
+# Frontend Mobile Verification Updates
 
-**Version:** 1.0  
-**Date:** 2026-05-27  
-**Status:** Required for API v2 (Email + SMS verification with structured expiration)
+## Overview
 
----
-
-## 📋 Overview
-
-The backend API now returns verification code expiration information in a **structured format** instead of hardcoded string values. This allows your frontend to:
-
-- ✅ Display dynamic countdown timers
-- ✅ Validate expiration programmatically (not just strings)
-- ✅ Support multiple units (minutos, horas, segundos)
-- ✅ Handle both email and SMS in the same flow
-
-**Breaking Change:** API response format has changed. Update your verification screens to consume the new `expiresIn` structure.
+Este documento descreve as mudanças necessárias no app mobile (iOS/Android) para suportar a nova funcionalidade de verificação de e-mail e telefone com:
+- Expiração estruturada de códigos (5 minutos)
+- Auto-capture de códigos via SMS
+- Contador de expiração em tempo real
+- Suporte simultâneo para email e SMS
 
 ---
 
-## 🔄 API Response Changes
-
-### Before (Old)
-```json
-{
-  "success": true,
-  "message": "Código de verificação enviado com sucesso"
-}
-```
-
-### After (New) - Send Verification
-```json
-{
-  "success": true,
-  "message": "Código de verificação enviado com sucesso",
-  "codeId": "550e8400-e29b-41d4-a716-446655440000",
-  "expiresIn": {
-    "value": 5,
-    "unit": "minutos"
-  },
-  "expiresAt": "27/05/2026 20:35",
-  "destination": "user@example.com",
-  "type": "email"
-}
-```
-
-### After (New) - Verify Code
-```json
-{
-  "success": true,
-  "verified": true,
-  "message": "Verificação realizada com sucesso",
-  "codeId": "550e8400-e29b-41d4-a716-446655440000",
-  "destination": "user@example.com",
-  "type": "email",
-  "verifiedAt": "2026-05-27T20:35:30.123Z"
-}
-```
-
----
-
-## 💾 TypeScript Types
-
-Add these types to your mobile project:
+## TypeScript Types
 
 ```typescript
-// types/verification.ts
+export type VerificationChannel = 'email' | 'phone';
 
 export interface ExpirationInfo {
   value: number;
@@ -77,392 +25,763 @@ export interface SendVerificationCodeResponse {
   message: string;
   codeId: string;
   expiresIn: ExpirationInfo;
-  expiresAt: string;           // Formatted: "27/05/2026 20:35"
-  destination: string;          // email or phone
-  type: 'email' | 'phone';
+  expiresAt: string; // localized format: "28/05/2026 11:41"
+  destination: string;
+  type: VerificationChannel;
 }
 
 export interface VerifyCodeResponse {
   success: boolean;
-  verified: boolean;
   message: string;
-  codeId?: string;
+  token?: string;
+}
+
+export interface VerificationState {
+  type: VerificationChannel;
   destination: string;
-  type: 'email' | 'phone';
-  verifiedAt?: string;          // ISO timestamp
+  codeId: string;
+  code: string;
+  expiresAt: Date;
+  isExpired: boolean;
 }
 ```
 
 ---
 
-## 🎯 Implementation Examples
+## Implementation Guide
 
-### 1. Send Verification Code
+### 1. Verification Service
 
 ```typescript
-// services/verification.service.ts
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-import type { SendVerificationCodeResponse, ExpirationInfo } from '../types/verification';
+@Injectable({ providedIn: 'root' })
+export class VerificationService {
+  private readonly API_BASE = '/api/v1/auth';
+  private verificationState$ = new BehaviorSubject<VerificationState | null>(null);
 
-class VerificationService {
-  async sendVerificationCode(
-    type: 'email' | 'phone',
+  constructor(private http: HttpClient) {}
+
+  sendVerificationCode(
+    type: VerificationChannel,
     destination: string
-  ): Promise<SendVerificationCodeResponse> {
-    const response = await api.post<SendVerificationCodeResponse>(
-      '/onboarding/verification/send',
+  ): Observable<SendVerificationCodeResponse> {
+    return this.http.post<SendVerificationCodeResponse>(
+      `${this.API_BASE}/send-verification-code`,
       { type, destination }
     );
+  }
 
-    return response.data;
+  verifyCode(codeId: string, code: string): Observable<VerifyCodeResponse> {
+    return this.http.post<VerifyCodeResponse>(
+      `${this.API_BASE}/verify-code`,
+      { codeId, code }
+    );
+  }
+
+  getVerificationState(): Observable<VerificationState | null> {
+    return this.verificationState$.asObservable();
+  }
+
+  setVerificationState(state: VerificationState): void {
+    this.verificationState$.next(state);
+  }
+
+  clearVerificationState(): void {
+    this.verificationState$.next(null);
   }
 }
-
-// Usage in your verification screen
-const { expiresIn, expiresAt, codeId } = await verificationService.sendVerificationCode(
-  'email',
-  'user@example.com'
-);
-
-console.log(`Code expires in: ${expiresIn.value} ${expiresIn.unit}`);
-// Output: "Code expires in: 5 minutos"
 ```
 
-### 2. Countdown Timer Implementation
+### 2. Verification Countdown Component
 
 ```typescript
-// components/VerificationCountdown.tsx
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Subject, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-import React, { useState, useEffect } from 'react';
-import type { ExpirationInfo } from '../types/verification';
+@Component({
+  selector: 'app-verification-countdown',
+  template: `
+    <div class="countdown">
+      <div class="timer" [class.expired]="isExpired">
+        <svg class="timer-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="6" x2="12" y2="12" />
+          <line x1="12" y1="12" x2="16" y2="16" />
+        </svg>
+        <span>{{ remainingTime }}</span>
+      </div>
+      <p class="expire-text" *ngIf="!isExpired">
+        Este código expira em {{ remainingTime }}
+      </p>
+      <p class="expire-text expired" *ngIf="isExpired">
+        Código expirado. Solicite um novo.
+      </p>
+    </div>
+  `,
+  styles: [`
+    .countdown {
+      text-align: center;
+      margin: 16px 0;
+    }
+    .timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #1a45e8;
+      transition: color 0.3s;
+    }
+    .timer.expired {
+      color: #dc2626;
+    }
+    .timer-icon {
+      width: 32px;
+      height: 32px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+    .expire-text {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+    .expire-text.expired {
+      color: #dc2626;
+    }
+  `]
+})
+export class VerificationCountdownComponent implements OnInit, OnDestroy {
+  @Input() expiresAt: Date;
 
-interface Props {
-  expiresIn: ExpirationInfo;
-  onExpire: () => void;
-}
+  remainingTime: string = '';
+  isExpired = false;
+  private destroy$ = new Subject<void>();
 
-export const VerificationCountdown: React.FC<Props> = ({ expiresIn, onExpire }) => {
-  const [remaining, setRemaining] = useState<number>(
-    convertToSeconds(expiresIn)
-  );
+  ngOnInit() {
+    this.updateCountdown();
+    interval(1000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateCountdown());
+  }
 
-  useEffect(() => {
-    if (remaining <= 0) {
-      onExpire();
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private updateCountdown() {
+    const now = new Date();
+    const diff = this.expiresAt.getTime() - now.getTime();
+
+    if (diff <= 0) {
+      this.isExpired = true;
+      this.remainingTime = '0s';
       return;
     }
 
-    const timer = setInterval(() => {
-      setRemaining(prev => {
-        const next = prev - 1;
-        if (next <= 0) {
-          onExpire();
-          clearInterval(timer);
-        }
-        return next;
-      });
-    }, 1000);
+    const seconds = Math.floor((diff / 1000) % 60);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
 
-    return () => clearInterval(timer);
-  }, [remaining, onExpire]);
+    if (minutes > 0) {
+      this.remainingTime = `${minutes}m ${seconds}s`;
+    } else {
+      this.remainingTime = `${seconds}s`;
+    }
+  }
+}
+```
 
-  const minutes = Math.floor(remaining / 60);
-  const seconds = remaining % 60;
+### 3. Verification Screen Component
 
-  return (
-    <div className="countdown-timer">
-      <span className={remaining < 60 ? 'warning' : ''}>
-        {minutes}:{seconds.toString().padStart(2, '0')}
-      </span>
-      <p className="unit">{expiresIn.unit}</p>
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+
+@Component({
+  selector: 'app-verification-screen',
+  template: `
+    <div class="verification-container">
+      <h1>Verificar Identidade</h1>
+      
+      <!-- Tab Selection: Email or Phone -->
+      <div class="tabs">
+        <button 
+          [class.active]="verificationMethod === 'email'"
+          (click)="switchMethod('email')">
+          📧 E-mail
+        </button>
+        <button 
+          [class.active]="verificationMethod === 'phone'"
+          (click)="switchMethod('phone')">
+          📱 Telefone
+        </button>
+      </div>
+
+      <!-- Step 1: Request Code -->
+      <div *ngIf="currentStep === 'request-code'" class="step">
+        <p>Enviaremos um código de 4 dígitos para:</p>
+        <input 
+          type="text" 
+          [(ngModel)]="destination"
+          placeholder="E-mail ou telefone"
+          [disabled]="isLoading" />
+        <button 
+          (click)="requestCode()"
+          [disabled]="isLoading || !destination">
+          {{ isLoading ? 'Enviando...' : 'Enviar Código' }}
+        </button>
+        <p class="error" *ngIf="error">{{ error }}</p>
+      </div>
+
+      <!-- Step 2: Verify Code -->
+      <div *ngIf="currentStep === 'verify-code'" class="step">
+        <app-verification-countdown 
+          [expiresAt]="expiresAt"></app-verification-countdown>
+        
+        <p>Código enviado para {{ destination }}</p>
+        
+        <!-- Code Input Field -->
+        <input 
+          type="text" 
+          [(ngModel)]="code"
+          placeholder="0000"
+          maxlength="4"
+          [disabled]="isLoading || isCodeExpired"
+          (keyup.enter)="verifyCode()" />
+        
+        <!-- SMS Auto-Capture Indicator (iOS/Android) -->
+        <p class="auto-capture-hint" *ngIf="verificationMethod === 'phone'">
+          💡 Seu código será preenchido automaticamente quando a mensagem chegar
+        </p>
+
+        <button 
+          (click)="verifyCode()"
+          [disabled]="isLoading || isCodeExpired || !code">
+          {{ isLoading ? 'Verificando...' : 'Verificar' }}
+        </button>
+
+        <button 
+          (click)="requestNewCode()"
+          class="secondary">
+          Reenviar Código
+        </button>
+
+        <p class="error" *ngIf="error">{{ error }}</p>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div *ngIf="currentStep === 'success'" class="step success">
+        <p>✅ Verificado com sucesso!</p>
+        <button (click)="navigateNext()">Continuar</button>
+      </div>
     </div>
-  );
-};
-
-// Helper function
-function convertToSeconds(expiresIn: ExpirationInfo): number {
-  const { value, unit } = expiresIn;
-  
-  switch (unit) {
-    case 'segundos':
-      return value;
-    case 'minutos':
-      return value * 60;
-    case 'horas':
-      return value * 60 * 60;
-    default:
-      return 0;
-  }
-}
-```
-
-### 3. Verification Screen Integration
-
-```typescript
-// screens/VerificationScreen.tsx
-
-import React, { useState } from 'react';
-import { VerificationCountdown } from '../components/VerificationCountdown';
-import { verificationService } from '../services/verification.service';
-
-interface VerificationState {
-  destination: string;
-  type: 'email' | 'phone';
-  codeId: string;
-  expiresIn: ExpirationInfo;
-  expiresAt: string;
-  isExpired: boolean;
-}
-
-export const VerificationScreen: React.FC = () => {
-  const [state, setState] = useState<VerificationState | null>(null);
-  const [code, setCode] = useState('');
-
-  const handleSendCode = async (destination: string, type: 'email' | 'phone') => {
-    try {
-      const response = await verificationService.sendVerificationCode(type, destination);
-      
-      setState({
-        destination: response.destination,
-        type: response.type,
-        codeId: response.codeId,
-        expiresIn: response.expiresIn,
-        expiresAt: response.expiresAt,
-        isExpired: false,
-      });
-      
-      // Show success: "Code sent. Valid for 5 minutos"
-      showMessage(`${response.message} • Válido por ${response.expiresIn.value} ${response.expiresIn.unit}`);
-    } catch (error) {
-      showError('Failed to send code');
+  `,
+  styles: [`
+    .verification-container {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 24px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-  };
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 24px 0;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      border-color: #1a45e8;
+      background: #f0f4ff;
+      color: #1a45e8;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    input {
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px;
+      background: #1a45e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.secondary {
+      background: #6b7280;
+    }
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+    }
+    .auto-capture-hint {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #78350f;
+    }
+    .success {
+      text-align: center;
+    }
+  `]
+})
+export class VerificationScreenComponent implements OnInit {
+  verificationMethod: VerificationChannel = 'email';
+  currentStep: 'request-code' | 'verify-code' | 'success' = 'request-code';
+  
+  destination = '';
+  code = '';
+  isLoading = false;
+  error = '';
+  expiresAt: Date | null = null;
+  isCodeExpired = false;
 
-  const handleVerifyCode = async () => {
-    if (!state) return;
+  form: FormGroup;
 
-    try {
-      const response = await verificationService.verifyCode(
-        state.type,
-        state.destination,
-        code
-      );
+  constructor(
+    private verification: VerificationService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private fb: FormBuilder
+  ) {
+    this.form = this.fb.group({});
+  }
 
-      if (response.verified) {
-        // Success! Navigate to next screen
-        navigation.navigate('OnboardingComplete', {
-          codeId: response.codeId,
-          verifiedAt: response.verifiedAt,
-        });
-      } else {
-        showError(response.message); // "Código inválido ou expirado"
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['method']) {
+        this.verificationMethod = params['method'];
       }
-    } catch (error) {
-      showError('Verification failed');
-    }
-  };
-
-  const handleCodeExpired = () => {
-    setState(prev => prev ? { ...prev, isExpired: true } : null);
-    showWarning('Code has expired. Please request a new one.');
-  };
-
-  if (!state) {
-    return (
-      <View>
-        {/* Send verification code UI */}
-      </View>
-    );
+    });
   }
 
-  return (
-    <View className="verification-screen">
-      {/* Countdown Timer */}
-      {!state.isExpired && (
-        <VerificationCountdown
-          expiresIn={state.expiresIn}
-          onExpire={handleCodeExpired}
-        />
-      )}
+  switchMethod(method: VerificationChannel) {
+    this.verificationMethod = method;
+    this.currentStep = 'request-code';
+    this.code = '';
+    this.error = '';
+  }
 
-      {/* Display expiration time */}
-      <Text className="expiration-text">
-        Expires at: {state.expiresAt}
-      </Text>
+  requestCode() {
+    this.isLoading = true;
+    this.error = '';
 
-      {/* Code input and verify button */}
-      {state.isExpired ? (
-        <Button onPress={() => handleSendCode(state.destination, state.type)}>
-          Request New Code
-        </Button>
-      ) : (
-        <>
-          <TextInput
-            placeholder="Enter verification code"
-            value={code}
-            onChangeText={setCode}
-            maxLength={4}
-            keyboardType="numeric"
-          />
-          <Button onPress={handleVerifyCode}>
-            Verify Code
-          </Button>
-        </>
-      )}
-    </View>
-  );
-};
+    this.verification.sendVerificationCode(this.verificationMethod, this.destination)
+      .subscribe({
+        next: (response) => {
+          this.expiresAt = new Date(response.expiresAt);
+          this.currentStep = 'verify-code';
+          this.isLoading = false;
+          this.setupAutoCapture();
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Erro ao enviar código';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  verifyCode() {
+    if (!this.code || this.code.length !== 4) {
+      this.error = 'Digite um código válido';
+      return;
+    }
+
+    this.isLoading = true;
+    this.error = '';
+
+    // Get codeId from state (saved when requesting code)
+    const state = this.verification.getVerificationState();
+    // ... get codeId from state
+
+    this.verification.verifyCode(codeId, this.code)
+      .subscribe({
+        next: () => {
+          this.currentStep = 'success';
+          this.isLoading = false;
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Código inválido';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  requestNewCode() {
+    this.code = '';
+    this.currentStep = 'request-code';
+    this.requestCode();
+  }
+
+  private setupAutoCapture() {
+    if (this.verificationMethod === 'phone') {
+      // Android: SmsRetriever setup
+      if (this.isAndroid()) {
+        this.startAndroidSmsRetriever();
+      }
+      // iOS: Auto-capture happens automatically via One Time Codes
+    }
+  }
+
+  private startAndroidSmsRetriever() {
+    // Chamar native plugin do Capacitor/React Native para ativar SmsRetriever
+    // Veja seção "Android SmsRetriever" abaixo
+  }
+
+  private isAndroid(): boolean {
+    return /android/i.test(navigator.userAgent);
+  }
+
+  navigateNext() {
+    this.router.navigate(['/dashboard']);
+  }
+}
 ```
 
-### 4. Validate Time Programmatically
+---
+
+## Android: SMS Auto-Capture com SmsRetriever
+
+### Setup
+
+#### 1. Adicione dependência no `build.gradle`
+
+```gradle
+dependencies {
+  implementation 'com.google.android.gms:play-services-auth:20.7.0'
+  implementation 'com.google.android.gms:play-services-auth-api-phone:17.6.0'
+}
+```
+
+#### 2. Obtenha o App Signing Certificate Hash
+
+```bash
+# Para release build (produção)
+keytool -list -v -keystore /path/to/your/release.keystore
+
+# Procure pela linha "SHA-1" e copie apenas os últimos 11 caracteres
+# Exemplo: "3A:5C:8D..." → use apenas "3A5C8D..."
+```
+
+#### 3. Implementação (Capacitor)
 
 ```typescript
-// utils/verification-validation.ts
+import { Plugin, registerPlugin } from '@capacitor/core';
 
-import type { ExpirationInfo } from '../types/verification';
-
-/**
- * Validates if a code is still within the expiration window
- * Use for client-side validation (server will also validate)
- */
-export function isCodeStillValid(
-  sentAt: Date,
-  expiresIn: ExpirationInfo
-): boolean {
-  const now = new Date();
-  const expirationTime = new Date(
-    sentAt.getTime() + convertToMilliseconds(expiresIn)
-  );
-  
-  return now < expirationTime;
+export interface SmsRetrieverPlugin {
+  startListening(): Promise<{ code: string }>;
+  stopListening(): Promise<void>;
 }
 
-/**
- * Calculate remaining time in seconds
- */
-export function getRemainingSeconds(
-  sentAt: Date,
-  expiresIn: ExpirationInfo
-): number {
-  const now = new Date();
-  const expirationTime = new Date(
-    sentAt.getTime() + convertToMilliseconds(expiresIn)
-  );
-  
-  const remainingMs = expirationTime.getTime() - now.getTime();
-  return Math.max(0, Math.floor(remainingMs / 1000));
-}
+const SmsRetriever = registerPlugin<SmsRetrieverPlugin>('SmsRetriever');
 
-/**
- * Helper: Convert ExpirationInfo to milliseconds
- */
-export function convertToMilliseconds(expiresIn: ExpirationInfo): number {
-  const { value, unit } = expiresIn;
-  
-  switch (unit) {
-    case 'segundos':
-      return value * 1000;
-    case 'minutos':
-      return value * 60 * 1000;
-    case 'horas':
-      return value * 60 * 60 * 1000;
-    default:
-      return 0;
+export async function setupAndroidSmsRetriever(): Promise<string | null> {
+  try {
+    const result = await SmsRetriever.startListening();
+    // Extrai apenas os 4 dígitos do SMS
+    const codeMatch = result.code.match(/#(\d{4})/);
+    return codeMatch ? codeMatch[1] : null;
+  } catch (error) {
+    console.error('SMS Retriever failed:', error);
+    return null;
+  }
+}
+```
+
+#### 4. Native Plugin Implementation (Android/Kotlin)
+
+Crie em `android/app/src/main/kotlin/com/domestic/SmsRetrieverPlugin.kt`:
+
+```kotlin
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import com.google.android.gms.auth.api.phone.SmsRetriever
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Status
+import com.getcapacitor.JSObject
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+
+@CapacitorPlugin(name = "SmsRetriever")
+class SmsRetrieverPlugin : Plugin() {
+  private var smsRetrieverReceiver: SmsBroadcastReceiver? = null
+
+  @PluginMethod
+  fun startListening(call: PluginCall) {
+    val client = SmsRetriever.getClient(activity)
+    val task = client.startSmsRetriever()
+
+    task.addOnSuccessListener {
+      smsRetrieverReceiver = SmsBroadcastReceiver()
+      smsRetrieverReceiver!!.setCall(call)
+      
+      val intentFilter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.registerReceiver(smsRetrieverReceiver, intentFilter, Context.RECEIVER_EXPORTED)
+      } else {
+        context.registerReceiver(smsRetrieverReceiver, intentFilter)
+      }
+    }
+
+    task.addOnFailureListener {
+      call.reject("Failed to start SMS Retriever")
+    }
+  }
+
+  @PluginMethod
+  fun stopListening(call: PluginCall) {
+    if (smsRetrieverReceiver != null) {
+      context.unregisterReceiver(smsRetrieverReceiver)
+      smsRetrieverReceiver = null
+    }
+    call.resolve()
+  }
+
+  inner class SmsBroadcastReceiver : BroadcastReceiver() {
+    private lateinit var call: PluginCall
+
+    fun setCall(call: PluginCall) {
+      this.call = call
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+      if (SmsRetriever.SMS_RETRIEVED_ACTION == intent.action) {
+        val extras = intent.extras
+        val status = extras?.get(SmsRetriever.EXTRA_STATUS) as? Status
+
+        when (status?.statusCode) {
+          CommonStatusCodes.SUCCESS -> {
+            val message = extras?.get(SmsRetriever.EXTRA_SMS_MESSAGE) as? String
+            if (message != null) {
+              val result = JSObject()
+              result.put("code", message)
+              call.resolve(result)
+              context.unregisterReceiver(this)
+            }
+          }
+          CommonStatusCodes.TIMEOUT -> {
+            call.reject("SMS Retriever timeout")
+            context.unregisterReceiver(this)
+          }
+        }
+      }
+    }
   }
 }
 ```
 
 ---
 
-## 🧪 Testing Checklist
+## iOS: SMS Auto-Capture com One Time Codes
 
-- [ ] **Email verification flow**
-  - [ ] Send code to email
-  - [ ] Verify countdown timer shows "5 minutos"
-  - [ ] Timer counts down and triggers expiration
-  - [ ] Can still verify code before expiration
-  - [ ] Cannot verify code after expiration
+### Setup
 
-- [ ] **SMS verification flow**
-  - [ ] Send code to phone
-  - [ ] Verify countdown timer shows "5 minutos"
-  - [ ] Same expiration behavior as email
+#### 1. Adicione a capability no Xcode
 
-- [ ] **UI/UX**
-  - [ ] Display formatted expiration time: "27/05/2026 20:35"
-  - [ ] Show unit in countdown: "5 minutos" (not just "300")
-  - [ ] Warning state when < 1 minute remaining (color change)
-  - [ ] "Request new code" button appears after expiration
-  - [ ] Loading state while sending code
-  - [ ] Error messages are localized
+- Abra seu projeto no Xcode
+- Vá para **Signing & Capabilities**
+- Clique em **+ Capability**
+- Procure por **Associated Domains** e adicione
+- Em Associated Domains, adicione: `webcredentials:domestic.com.br`
 
-- [ ] **Edge Cases**
-  - [ ] Device clock difference (code might be valid on server but expired on client)
-  - [ ] Background/resume (timer should pause and resume correctly)
-  - [ ] Screen rotation (timer state preserved)
-  - [ ] Airplane mode → code sent but can't verify (handle gracefully)
+#### 2. Crie um `.well-known/apple-app-site-association` no seu servidor
 
----
+No domínio `domestic.com.br`, crie:
 
-## 📱 Integration Timeline
+```json
+{
+  "webcredentials": {
+    "apps": [
+      "TEAMID.com.domestic.app"
+    ]
+  }
+}
+```
 
-### Phase 1: Update types and services
-- Add TypeScript types for new response format
-- Update API service calls to consume `expiresIn` structure
+Onde `TEAMID` é seu Team ID da Apple.
 
-### Phase 2: Update screens
-- Replace hardcoded TTL with dynamic `expiresIn.value`
-- Implement countdown timer component
-- Add expiration handling
+#### 3. Implementação (Swift)
 
-### Phase 3: Testing
-- Test email verification flow end-to-end
-- Test SMS verification flow end-to-end
-- Test edge cases (expiration, device time sync, background state)
+```swift
+import AuthenticationServices
 
-### Phase 4: Release
-- Update app version
-- Deploy to TestFlight/internal testing
-- Monitor for issues
-- Release to production
+class VerificationViewController: UIViewController {
+  @IBOutlet weak var codeTextField: UITextField!
 
----
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    setupCodeAutofill()
+  }
 
-## ⚠️ Important Notes
-
-1. **TTL is now 5 minutes** (was 10 minutes)
-   - Verify this doesn't cause UX issues in your target markets
-   - If users typically take >5 min to copy code, consider requesting feedback
-
-2. **Client-side validation is supplementary**
-   - Always validate server-side response
-   - Don't trust client countdown timer for final decision
-
-3. **Timezone handling**
-   - `expiresAt` is formatted in user's locale: "27/05/2026 20:35"
-   - `verifiedAt` is ISO timestamp (server time)
-   - No timezone conversion needed on client
-
-4. **Backward compatibility**
-   - Old API endpoints will stop returning old format
-   - Make sure you update all calls in the app
-   - Old API version will be deprecated after 2 weeks
+  private func setupCodeAutofill() {
+    // iOS 12+: Detecta automaticamente códigos em SMS
+    if #available(iOS 12.0, *) {
+      codeTextField.textContentType = .oneTimeCode
+    }
+    
+    // iOS 16+: Usa autofill direto (mais suave)
+    if #available(iOS 16.0, *) {
+      codeTextField.autofillContentType = .oneTimeCode
+    }
+  }
+}
+```
 
 ---
 
-## 📞 Support
+## Formato do SMS Esperado
 
-For questions about the verification flow:
-1. Check BFF response format: `/onboarding/verification/send` endpoint
-2. Review API response types above
-3. Test with curl: 
+O backend envia SMS com este formato:
+
+```
+Seu código de verificação Domestic: 1234
+Válido por 5 minutos.
+Nunca compartilhe este código.
+
+@domestic.com.br #1234
+```
+
+**O que cada parte faz:**
+- `Seu código de verificação...` — Mensagem legível para o usuário
+- `@domestic.com.br` — Identificação do domínio (Android SmsRetriever)
+- `#1234` — Código em formato padrão (iOS One Time Codes detecta automaticamente)
+
+---
+
+## Testes
+
+### Teste Local (iOS)
+
+1. No Simulator, envie SMS via:
    ```bash
-   curl -X POST http://localhost:3001/bff/onboarding/verification/send \
-     -H "Content-Type: application/json" \
-     -d '{"type":"email","destination":"test@example.com"}'
+   xcrun simctl sms send booted 1234567890 "Seu código: 1234\n\n@domestic.com.br #1234"
    ```
+2. O código deve aparecer automaticamente no campo
+
+### Teste Local (Android)
+
+1. Use Android Studio Emulator
+2. Vá para Extended controls (⋯ menu)
+3. Clique em **Phone**
+4. Envie SMS com conteúdo acima
+5. O SmsRetriever vai capturar automaticamente
+
+### Teste em Produção
+
+1. Faça uma requisição de código real
+2. Aguarde o SMS chegar
+3. Verifique se o código é preenchido automaticamente (quando estiver em focus)
 
 ---
 
-**Last updated:** 2026-05-27  
-**Next review:** After first production release
+## Implementação Timeline
+
+### Fase 1: Setup Base (1 dia)
+- [ ] Adicionar tipos TypeScript
+- [ ] Implementar VerificationService
+- [ ] Implementar VerificationScreen (step 1: request code)
+
+### Fase 2: Verificação Manual (1 dia)
+- [ ] Implementar input de código
+- [ ] Implementar VerificationCountdown
+- [ ] Implementar verifyCode() logic
+- [ ] Testar fluxo manual end-to-end
+
+### Fase 3: Android Auto-Capture (2 dias)
+- [ ] Adicionar plugin SmsRetriever
+- [ ] Integrar com VerificationScreen
+- [ ] Testar em Android device/emulator
+
+### Fase 4: iOS Auto-Capture (1 dia)
+- [ ] Configurar Associated Domains
+- [ ] Definir apple-app-site-association
+- [ ] Testar em iOS device/simulator
+
+### Fase 5: Polish & Deploy (1 dia)
+- [ ] Testes E2E
+- [ ] Error handling refinement
+- [ ] Beta deploy
+
+---
+
+## Notas Importantes
+
+### Expiração de Código
+
+- **TTL no backend:** 5 minutos
+- **Formato de resposta:** `{ value: 5, unit: "minutos" }`
+- **Cliente deve validar:** Se o countdown atingir 0, desabilitar botão de verificação
+- **Servidor vai rejeitar:** Códigos expirados com erro `VERIFICATION_CODE_EXPIRED`
+
+### SMS vs Email
+
+- **SMS:** Auto-capture via SmsRetriever (Android) ou One Time Codes (iOS)
+- **Email:** Usuário digita manualmente (copia do email para o app)
+- **Ambos suportados:** Mesmo tipo de UI, seletor de método no topo
+
+### Segurança
+
+- Nunca armazene código em SharedPreferences/UserDefaults sem encryption
+- Limpe o código da memória após verificação bem-sucedida
+- Use HTTPS para toda comunicação
+- Validar o domínio do SMS (`@domestic.com.br`) antes de confiar
+
+### Tratamento de Erros
+
+```typescript
+// Possíveis erros da API
+{
+  "code": "VERIFICATION_CODE_EXPIRED",
+  "message": "Este código expirou"
+}
+
+{
+  "code": "VERIFICATION_CODE_INVALID",
+  "message": "Código incorreto"
+}
+
+{
+  "code": "VERIFICATION_CODE_NOT_FOUND",
+  "message": "Código não encontrado"
+}
+
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "Muitas tentativas, tente novamente em 5 minutos"
+}
+```
