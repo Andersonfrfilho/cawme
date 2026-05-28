@@ -11,6 +11,7 @@ export const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   visible,
   onNow,
   onLater,
+  isProvider = false,
 }) => {
   const { auth } = useLocale<LocaleKeys>();
   const slideAnim = useRef(new Animated.Value(300)).current;
@@ -59,9 +60,12 @@ export const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
           </View>
 
           <Text style={styles.title}>{auth.documentSheetTitle}</Text>
-          <Text style={styles.subtitle}>{auth.documentSheetSubtitle}</Text>
+          <Text style={styles.subtitle}>
+            {isProvider ? auth.documentSheetProviderMandatory : auth.documentSheetSubtitle}
+          </Text>
 
           <TouchableOpacity
+            testID="document-sheet-now-button"
             style={styles.optionNow}
             onPress={onNow}
             activeOpacity={0.85}
@@ -84,28 +88,31 @@ export const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.optionLater}
-            onPress={onLater}
-            activeOpacity={0.8}
-          >
-            <View style={styles.optionIconLater}>
+          {!isProvider && (
+            <TouchableOpacity
+              testID="document-sheet-later-button"
+              style={styles.optionLater}
+              onPress={onLater}
+              activeOpacity={0.8}
+            >
+              <View style={styles.optionIconLater}>
+                <Ionicons
+                  name="time-outline"
+                  size={moderateScale(20, 0.3)}
+                  color={theme.colors.primary.DEFAULT}
+                />
+              </View>
+              <View style={styles.optionTextGroup}>
+                <Text style={styles.optionTitleLater}>{auth.documentSheetLater}</Text>
+                <Text style={styles.optionDescriptionLater}>{auth.documentSheetLaterDescription}</Text>
+              </View>
               <Ionicons
-                name="time-outline"
-                size={moderateScale(20, 0.3)}
-                color={theme.colors.primary.DEFAULT}
+                name="chevron-forward"
+                size={moderateScale(18, 0.3)}
+                color={theme.palette.neutral[300]}
               />
-            </View>
-            <View style={styles.optionTextGroup}>
-              <Text style={styles.optionTitleLater}>{auth.documentSheetLater}</Text>
-              <Text style={styles.optionDescriptionLater}>{auth.documentSheetLaterDescription}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={moderateScale(18, 0.3)}
-              color={theme.palette.neutral[300]}
-            />
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       </Animated.View>
     </Modal>

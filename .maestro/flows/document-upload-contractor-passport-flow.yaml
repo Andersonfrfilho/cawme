@@ -1,0 +1,44 @@
+appId: com.andersonfilho.cawme
+name: 🛂 Contractor - Upload de Documento Passaporte
+description: |
+  Cadastro completo de contractor com upload de documento Passaporte (upload opcional — botão skip presente).
+  Registra com CPF, completa verificação (e-mail + telefone QA), navega pela
+  DocumentUploadSheet e faz upload selecionando o chip Passaporte na tela de upload.
+tags:
+  - contractor
+  - document
+  - upload
+  - passport
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join('');output.TS=Date.now().toString().slice(-8); output.PHONE='143'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- runFlow:
+    file: ../common/contractor-register-and-upload.yaml
+    env:
+      UPLOAD_CHIP_ID: "passport"
+      EMAIL_PREFIX: "ctrpass"
+      PHONE_PREFIX: "143"
+      FIRST_NAME: "Ctr"
+      LAST_NAME: "PassDoc"
+      CPF_DOC: "${output.CPF}"
+      PHONE: "${output.PHONE}"
+      PC0: "${output.PC0}"
+      PC1: "${output.PC1}"
+      PC2: "${output.PC2}"
+      PC3: "${output.PC3}"
+      TIMESTAMP: "${output.TS}"
+
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Verificação.*|.*dashboard.*"
+    timeout: 15000

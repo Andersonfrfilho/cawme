@@ -104,10 +104,10 @@ tags:
 
 - tapOn:
     id: "verification-code-0"
-- inputText: "0"
-- inputText: "0"
-- inputText: "0"
-- inputText: "0"
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
+- inputText: "9"
 
 - tapOn:
     id: "verification-verify-button"

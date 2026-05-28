@@ -1,10 +1,15 @@
 import axios from 'axios';
 import { router } from 'expo-router';
+import { initTraceContext } from '@adatechnology/logger-client';
 import { TokenService } from '@/modules/auth/services/token.service';
 import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { useErrorStore } from '@/shared/store/error.store';
 import { mobileCallStart, mobileCallEnd, mobileCallError } from '@/shared/utils/logger';
 import type { ErrorVariant } from '@/shared/components/error-screen';
+
+// Contexto de sessão: preserva o traceId retornado pelo backend entre requisições,
+// permitindo que o Jaeger correlacione mobile → BFF → API num único trace.
+const sessionTrace = initTraceContext();
 
 declare module 'axios' {
   interface InternalAxiosRequestConfig {
@@ -70,6 +75,10 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers['X-Request-Id'] = requestId;
   }
 
+  // Mobile é a fonte do traceId — usa o requestId da sessão como fallback até o backend
+  // retornar o OTEL traceId via X-Trace-Id. Kong repassa o header downstream.
+  config.headers['X-Trace-Id'] = sessionTrace.traceId ?? sessionTrace.requestId;
+
   return config;
 });
 
@@ -78,7 +87,13 @@ apiClient.interceptors.response.use(
   (res) => {
     const duration = Date.now() - ((res.config as any)._startTime ?? 0);
     const requestId = (res.config as any)._requestId;
-    
+
+    // Captura o traceId OTEL do backend para reenviar nas próximas requisições
+    const backendTraceId = res.headers['x-trace-id'] as string | undefined;
+    if (backendTraceId) {
+      sessionTrace.traceId = backendTraceId;
+    }
+
     if (!(res.config as any)._skipLog) {
       mobileCallEnd('http.request', duration, res.status, requestId);
     }

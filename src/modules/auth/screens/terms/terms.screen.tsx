@@ -148,6 +148,7 @@ export default function TermsScreen() {
         document: params.document,
         documentType: params.documentType,
         password: params.password,
+        userType: (params.userType as "contractor" | "provider") ?? "contractor",
       });
 
       // 3. Navega para tela de endereço se não tiver endereço

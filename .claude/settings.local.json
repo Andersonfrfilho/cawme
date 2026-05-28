@@ -47,7 +47,14 @@
       "Bash(maestro --version)",
       "Bash(maestro list-devices *)",
       "Bash(curl -fsSL \"https://get.maestro.mobile.dev\" -o /tmp/maestro-install.sh)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "mcp__postgres__query",
+      "Bash(vm_stat)",
+      "Bash(sysctl vm.swapusage)",
+      "Bash(sysctl hw.memsize)",
+      "Bash(awk '{printf \"RAM total: %.0f GB\\\\n\", $2/1024/1024/1024}')",
+      "Bash(sort -k4 -rn)",
+      "Bash(awk 'NR<=15 {printf \"%s %s %s %s\\\\n\", $1, $3, $4, $11}')"
     ]
   }
 }

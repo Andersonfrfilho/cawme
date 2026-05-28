@@ -23,6 +23,7 @@ export type PendingRegistration = {
   document: string;
   documentType: string;
   password: string;
+  userType: "contractor" | "provider";
 };
 
 interface RegisterStore {

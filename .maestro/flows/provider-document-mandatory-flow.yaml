@@ -1,0 +1,161 @@
+appId: com.andersonfilho.cawme
+name: 📄 Provider - Documento Obrigatório
+description: |
+  Verifica que providers NÃO podem pular verificação nem upload de documento.
+  Fluxo completo:
+  1. Cadastra como provider (welcome-offer-button)
+  2. Preenche endereço
+  3. Verificação de e-mail: assertiva de bloqueio → tenta código QA 0000
+  4. Após e-mail: vai para telefone → tenta código QA 0000
+  5. Modo padrão (SMS não é QA): provider PERMANECE bloqueado na verificação
+     - assertNotVisible: "Verificar depois" (skip ausente)
+     - assertVisible: id: "verification-provider-mandatory" (aviso permanente)
+  6. Modo QA (ambos verificados): DocumentUploadSheet sem "Fazer depois"
+     → tela de upload sem skip e com aviso obrigatório
+  Objetivo: garantir que provider não consegue avançar sem concluir todas as
+  verificações, nem na tela de verificação nem na de documento.
+tags:
+  - provider
+  - document
+  - mandatory
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='122'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+# Provider usa "Quero oferecer serviços" (welcome-offer-button)
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "DocMandatory"
+      EMAIL: "provdoc${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Preenche endereço
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── Verificação: assertivas de bloqueio (incondicionais) ─────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# Provider não tem skip — assertiva incondicional
+- assertNotVisible: "Verificar depois"
+- assertVisible:
+    id: "verification-provider-mandatory"
+
+# Tenta código QA 0000 no e-mail
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── E-mail verificado (QA): vai para telefone ─────────────────────────────────
+- runFlow:
+    when:
+      visible: ".*Telefone.*|.*verification-tab-phone.*"
+    commands:
+      - tapOn:
+          id: "verification-tab-phone"
+      - extendedWaitUntil:
+          visible: ".*Código enviado.*"
+          timeout: 8000
+      # Skip ainda ausente após mudar de aba — provider continua bloqueado
+      - assertNotVisible: "Verificar depois"
+      - assertVisible:
+          id: "verification-provider-mandatory"
+      - tapOn:
+          id: "verification-code-0"
+      - inputText: "${output.PC0}"
+      - inputText: "${output.PC1}"
+      - inputText: "${output.PC2}"
+      - inputText: "${output.PC3}"
+      - tapOn:
+          id: "verification-verify-button"
+
+# ── Modo padrão: código SMS inválido → provider PERMANECE bloqueado ───────────
+# Assertivas incondicionais — se ainda estiver na tela de verificação, confirma
+# que skip não apareceu após o código falhar e aviso obrigatório persiste.
+- runFlow:
+    when:
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*|.*Código inválido.*|.*incorreto.*"
+    commands:
+      - assertNotVisible: "Verificar depois"
+      - assertVisible:
+          id: "verification-provider-mandatory"
+
+# ── Modo QA: ambos verificados → DocumentUploadSheet sem "Enviar depois" ───────
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      # Provider não tem botão "Enviar depois"
+      - assertNotVisible:
+          id: "document-sheet-later-button"
+      - tapOn:
+          id: "document-sheet-now-button"
+
+# ── Modo QA: tela de upload de documento — sem skip, com aviso obrigatório ───
+- runFlow:
+    when:
+      visible: "Verificação de Documento"
+    commands:
+      - assertVisible:
+          id: "document-upload-provider-mandatory"
+      - assertNotVisible:
+          id: "document-upload-skip-button"

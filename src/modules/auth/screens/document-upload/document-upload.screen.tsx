@@ -21,6 +21,7 @@ import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { logger } from "@/shared/utils/logger";
 import { useDocumentUpload } from "../../hooks/useDocumentUpload";
 import { useAuthStore } from "../../store/auth.store";
+import { useRegisterStore } from "../../store/register.store";
 import type { DocumentUploadScreenParams } from "./types";
 import type { DocumentType } from "../../services/document.service";
 import { styles } from "./styles";
@@ -59,6 +60,12 @@ export default function DocumentUploadScreen() {
   const { uploadDocument, isUploading, error, uploadedDocument } =
     useDocumentUpload();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const authUser = useAuthStore((s) => s.user);
+
+  // Provider: envio de documento obrigatório — lê do pendingRegistration (post-register) ou do user logado
+  const isProvider =
+    useRegisterStore.getState().pendingRegistration?.userType === "provider" ||
+    authUser?.type === "provider";
 
   const [selectedType, setSelectedType] = useState<DocumentType | null>(
     resolveInitialDocumentType(params.documentType),
@@ -268,6 +275,7 @@ export default function DocumentUploadScreen() {
             {DOCUMENT_TYPES.map((type) => (
               <TouchableOpacity
                 key={type.key}
+                testID={`document-type-chip-${type.key.toLowerCase()}`}
                 style={[
                   styles.documentTypeChip,
                   selectedType === type.key && styles.documentTypeChipSelected,
@@ -291,6 +299,7 @@ export default function DocumentUploadScreen() {
 
         {/* Área de upload */}
         <TouchableOpacity
+          testID="document-upload-area"
           style={[
             styles.uploadArea,
             !!selectedFile && styles.uploadAreaHasImage,
@@ -454,6 +463,7 @@ export default function DocumentUploadScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity
+            testID="document-upload-submit-button"
             style={[
               styles.submitButton,
               !canSubmit && styles.submitButtonDisabled,
@@ -473,13 +483,30 @@ export default function DocumentUploadScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={handleSkip}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.skipButtonText}>{auth.documentUploadSkip}</Text>
-          </TouchableOpacity>
+          {!isProvider && (
+            <TouchableOpacity
+              testID="document-upload-skip-button"
+              style={styles.skipButton}
+              onPress={handleSkip}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipButtonText}>{auth.documentUploadSkip}</Text>
+            </TouchableOpacity>
+          )}
+
+          {isProvider && !uploadedDocument && (
+            <View testID="document-upload-provider-mandatory" style={styles.providerMandatoryContainer}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={moderateScale(16, 0.3)}
+                color={theme.colors.status.warning}
+                style={{ marginRight: moderateScale(6, 0.5) }}
+              />
+              <Text style={styles.providerMandatoryText}>
+                {auth.documentUploadProviderMandatory}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

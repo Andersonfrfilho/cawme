@@ -1,3 +1,5 @@
+import { TraceContext, getGlobalTraceContext } from '@adatechnology/logger-client';
+
 const LOG_LEVELS = ['none', 'error', 'warn', 'info', 'debug'] as const;
 type LogLevel = typeof LOG_LEVELS[number];
 
@@ -64,14 +66,36 @@ function timestamp(): string {
 }
 
 function generateRequestId(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
+  return new TraceContext().requestId;
+}
+
+function sanitizeContextValue(key: string, value: unknown): unknown {
+  // Mascara Authorization para não vazar JWT nos logs
+  if (key === 'headers' && typeof value === 'object' && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => {
+        if (k.toLowerCase() === 'authorization' && typeof v === 'string') {
+          return [k, `${v.slice(0, 14)}…${v.slice(-4)}`];
+        }
+        return [k, v];
+      }),
+    );
+  }
+  // Trunca UUIDs de requestId para 8 chars
+  if (key === 'requestId' && typeof value === 'string' && value.length > 8) {
+    return value.slice(0, 8);
+  }
+  // Remove valores undefined para não poluir o log
+  return value;
 }
 
 function formatContext(ctx?: LogContext): string {
   if (!ctx) return '';
-  const entries = Object.entries(ctx);
+  const entries = Object.entries(ctx).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return '';
-  return entries.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ');
+  return entries
+    .map(([k, v]) => `${k}=${JSON.stringify(sanitizeContextValue(k, v))}`)
+    .join(' ');
 }
 
 function getColor(eventType: EventType, severity: Severity): string {
@@ -184,6 +208,8 @@ function generateCurlCommand(ctx: LogContext): string {
   
   // Add headers
   Object.entries(headers).forEach(([key, value]) => {
+    // Ignora headers com valor undefined/null (e.g. Content-Type em GETs)
+    if (value === undefined || value === null || value === 'undefined') return;
     // Skip authorization header for security (show only partial token)
     if (key.toLowerCase() === 'authorization') {
       const masked = value.slice(0, 20) + '...' + value.slice(-5);
@@ -222,14 +248,20 @@ function log(
   const stackStr = formatCallStack(callStack);
   const ctx = formatContext(payload as LogContext);
   const ctxStr = ctx ? ` | ${ctx}` : '';
-  
+
+  // TraceId da sessão: OTEL traceId retornado pelo backend, ou requestId da sessão como fallback
+  const sessionCtx = getGlobalTraceContext();
+  const traceId = sessionCtx?.traceId ?? sessionCtx?.requestId;
+  const traceStr = traceId ? `${colors.dim}[T:${traceId.slice(0, 8)}]${colors.reset} ` : '';
+
   // Generate curl command if URL is present
   const ctxObj = payload as LogContext | undefined;
   const curlCommand = ctxObj?.url ? generateCurlCommand(ctxObj) : null;
-  
+
   console.log(
     `${colors.timestamp}[${timestamp()}]${colors.reset} ` +
-    `${colors.requestId}[${id}]${colors.reset} ` +
+    `${colors.requestId}[${id.slice(0, 8)}]${colors.reset} ` +
+    `${traceStr}` +
     `${stackStr ? `${colors.dim}${stackStr}${colors.reset} ` : ''}` +
     `${color}${eventIcon}${severityIcon}${colors.reset} ` +
     `${colors.bold}${source}${colors.reset} ` +
@@ -267,17 +299,8 @@ export function mobileCallStart(
 ): string {
   const requestId = generateRequestId();
   const ctx: LogContext = { ...payload, requestId };
+  // O curl já é impresso pelo log() quando eventType=mobileCall + severity=debug
   log('mobileCall', 'debug', 'API', `${action}.start`, 'Request initiated', ctx, requestId);
-  
-  // Log curl command if URL is available
-  if (ctx.url) {
-    const curlCmd = generateCurlCommand(ctx);
-    if (curlCmd) {
-      console.log(`${colors.dim}  ↪ CURL:${colors.reset}`);
-      console.log(`${colors.dim}  ${curlCmd}${colors.reset}`);
-    }
-  }
-  
   return requestId;
 }
 

@@ -7,6 +7,7 @@ export type LoginServiceResult = {
   id: string;
   name: string;
   email: string;
+  type: "contractor" | "provider";
 };
 
 export type ForgotPasswordServiceParams = {

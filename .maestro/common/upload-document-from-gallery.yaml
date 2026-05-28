@@ -1,0 +1,65 @@
+appId: com.andersonfilho.cawme
+---
+# upload-document-from-gallery.yaml
+#
+# Flow comum: seleciona tipo de documento, abre galeria e faz upload.
+#
+# ENV obrigatório:
+#   DOCUMENT_TYPE_ID — id do chip de tipo (cpf | rg | cnh | passport)
+#
+# Pré-condição: tela "Verificação de Documento" já está visível.
+# Pós-condição: upload enviado, aguardando navegação do caller.
+
+# 1. Adiciona imagem de teste à galeria do simulador/emulador
+- addMedia:
+  - /Users/anderson.filho/Documents/personal/domestic/cawme/.maestro/assets/test-document.png
+
+# 2. Seleciona o tipo de documento pelo chip
+- tapOn:
+    id: "document-type-chip-${DOCUMENT_TYPE_ID}"
+
+# 3. Toca na área de upload → Alert com opções de origem
+- tapOn:
+    id: "document-upload-area"
+
+# 4. Escolhe "Galeria de Fotos" no Alert nativo
+- tapOn:
+    text: ".*[Gg]aleria.*"
+
+# 5. Aguarda o picker de fotos do iOS abrir totalmente
+- extendedWaitUntil:
+    visible: ".*[Ff]otos.*|.*[Rr]ecentes.*|.*All Photos.*"
+    timeout: 10000
+- waitForAnimationToEnd
+
+# 6. Toca na primeira foto do grid (imagem de teste recém-adicionada)
+#    iPhone 16 Plus portrait — layout confirmado por análise de screenshot:
+#      Header (Cancelar/Fotos/Coleções/search): y ≈ 10–17%
+#      Grid row 1 (foto mais recente): y ≈ 17–34% → centro y ≈ 25%
+#    Coluna 1 (x≈16%): foto desta execução (pode estar sendo indexada)
+#    Coluna 2 (x≈50%): foto da execução anterior (já indexada)
+#    Tapa na coluna 2 que tem o mesmo conteúdo e está certamente indexada.
+- tapOn:
+    point: "50%,25%"
+
+# 7. Aguarda animação pós-seleção (crop view pode levar 1–2s para aparecer)
+- waitForAnimationToEnd
+
+# 8. Se aparecer tela de edição/crop (allowsEditing: true → Usar/Escolher/Choose)
+- runFlow:
+    when:
+      visible: ".*[Uu]sar.*|.*[Ee]scolher.*|.*[Cc]hoose.*"
+    commands:
+      - tapOn:
+          text: ".*[Uu]sar.*|.*[Ee]scolher.*|.*[Cc]hoose.*"
+      - waitForAnimationToEnd
+
+# 9. Aguarda a imagem aparecer no preview (área de upload com imagem selecionada)
+- extendedWaitUntil:
+    visible:
+      id: "document-upload-submit-button"
+    timeout: 15000
+
+# 10. Envia o documento
+- tapOn:
+    id: "document-upload-submit-button"

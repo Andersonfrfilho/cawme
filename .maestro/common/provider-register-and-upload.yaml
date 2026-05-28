@@ -1,0 +1,151 @@
+appId: com.andersonfilho.cawme
+---
+# provider-register-and-upload.yaml
+#
+# Fluxo completo de provider (prestador): cadastro → verificação obrigatória → sheet → upload.
+# Registra com CPF e faz upload do tipo escolhido pelo chip (CPF, RG, CNH ou PASSPORT).
+#
+# ENV obrigatório (passado pelo wrapper):
+#   UPLOAD_CHIP_ID  — chip de tipo no upload: cpf | rg | cnh | passport
+#   EMAIL_PREFIX    — prefixo único do e-mail (ex: "prvcpf", "prvrg")
+#   PHONE_PREFIX    — 3 dígitos de prefixo do telefone (ex: "150", "151")
+#   FIRST_NAME      — nome do usuário de teste
+#   LAST_NAME       — sobrenome do usuário de teste
+#   CPF_DOC         — CPF válido gerado pelo evalScript do wrapper
+#   PHONE           — telefone gerado pelo wrapper
+#   PC0,PC1,PC2,PC3 — últimos 4 dígitos do telefone (código QA de SMS)
+#   TIMESTAMP       — sufixo único (slice do epoch)
+
+# ── 1. Cadastro como provider (Quero oferecer serviços) ───────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "${FIRST_NAME}"
+      LAST_NAME: "${LAST_NAME}"
+      EMAIL: "${EMAIL_PREFIX}${TIMESTAMP}@test.com"
+      PHONE: "${PHONE}"
+      DOCUMENT: "${CPF_DOC}"
+      PASSWORD: "Senha@123"
+
+# ── 2. Termos ─────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 3. Endereço via CEP ───────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 4. Verificação de e-mail — provider NÃO tem skip ─────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- assertNotVisible: "Verificar depois"
+- assertVisible:
+    id: "verification-provider-mandatory"
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 5. Verificação de telefone ────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 8000
+
+- assertNotVisible: "Verificar depois"
+- assertVisible:
+    id: "verification-provider-mandatory"
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${PC0}"
+- inputText: "${PC1}"
+- inputText: "${PC2}"
+- inputText: "${PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 6. Avançar → auto-login → DocumentUploadSheet sem "Enviar depois" ─────────
+- extendedWaitUntil:
+    visible: ".*Avançar.*|.*document-sheet-now-button.*"
+    timeout: 10000
+
+- runFlow:
+    when:
+      visible: ".*Avançar.*"
+    commands:
+      - tapOn: "Avançar"
+
+- extendedWaitUntil:
+    visible:
+      id: "document-sheet-now-button"
+    timeout: 10000
+
+# Provider NÃO tem "Enviar depois" na sheet
+- assertNotVisible:
+    id: "document-sheet-later-button"
+
+- tapOn:
+    id: "document-sheet-now-button"
+
+# ── 7. Tela de upload — provider NÃO tem skip ────────────────────────────────
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 8000
+
+- assertNotVisible:
+    id: "document-upload-skip-button"
+- assertVisible:
+    id: "document-upload-provider-mandatory"
+
+- runFlow:
+    file: upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "${UPLOAD_CHIP_ID}"

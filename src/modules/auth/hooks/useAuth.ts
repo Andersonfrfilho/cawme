@@ -11,7 +11,12 @@ export function useAuth() {
   const { showLoading, hideLoading } = useLoading();
   const { checkAndResume } = useRegistrationResume();
 
-  async function checkVerificationStatusAndRedirect(userId: string, name: string, email: string) {
+  async function checkVerificationStatusAndRedirect(
+    userId: string,
+    name: string,
+    email: string,
+    userType: "contractor" | "provider",
+  ) {
     try {
       const status = await KeycloakService.getVerificationStatus();
       const local = useAuthStore.getState().verificationStatus;
@@ -46,13 +51,13 @@ export function useAuth() {
       }
 
       const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
-      setUser({ id: userId, name, email, type: "contractor", phone: storedPhone });
+      setUser({ id: userId, name, email, type: userType, phone: storedPhone });
       router.replace("/(app)/home");
     } catch (error) {
       // Se falhar a checagem, usa o estado local para decidir
       const local = useAuthStore.getState().verificationStatus;
       const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
-      setUser({ id: userId, name, email, type: "contractor", phone: storedPhone });
+      setUser({ id: userId, name, email, type: userType, phone: storedPhone });
       if (local.emailVerified && local.phoneVerified) {
         router.replace("/(app)/home");
       } else {
@@ -69,7 +74,7 @@ export function useAuth() {
     showLoading();
 
     try {
-      const { id, name, email } = await KeycloakService.login(params);
+      const { id, name, email, type } = await KeycloakService.login(params);
       userAction('login.success', 'User logged in successfully', { userId: id });
 
       const resumeResult = await checkAndResume();
@@ -80,7 +85,7 @@ export function useAuth() {
         return;
       }
 
-      await checkVerificationStatusAndRedirect(id, name, email);
+      await checkVerificationStatusAndRedirect(id, name, email, type);
     } catch (error) {
       userAction('login.error', 'Login failed');
       throw error;

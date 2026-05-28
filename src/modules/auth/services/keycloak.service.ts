@@ -40,10 +40,21 @@ export const KeycloakService = {
     });
 
     const claims = decodeJwtPayload(response.data.access_token);
+
+    // Extrai userType do JWT: tenta grupos Keycloak, roles e atributo customizado
+    const groups: string[] = claims.groups ?? [];
+    const roles: string[] = claims.realm_access?.roles ?? [];
+    const isProvider =
+      groups.some((g: string) => g.toLowerCase().includes("provider")) ||
+      roles.some((r: string) => r.toLowerCase() === "provider") ||
+      claims.userType === "provider" ||
+      claims.user_type === "provider";
+
     return {
       id: claims.sub,
       name: claims.name ?? claims.given_name ?? username,
       email: claims.email ?? username,
+      type: isProvider ? "provider" : "contractor",
     };
   },
 

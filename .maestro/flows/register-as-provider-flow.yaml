@@ -1,12 +1,16 @@
 appId: com.andersonfilho.cawme
 name: ✅ Register Flow - Prestador de Serviço
-description: Cadastro pelo caminho "Quero cadastrar meu serviço" (provider)
+description: |
+  Cadastro pelo caminho "Quero cadastrar meu serviço" (provider).
+  Provider tem verificações obrigatórias — sem botão "Verificar depois" nem "Enviar depois".
+  Em modo QA (código 0000): verifica email+telefone+documento e chega na home.
+  Em modo padrão: asserta que os avisos obrigatórios aparecem e o skip está oculto.
 tags:
   - register
   - provider
   - e2e
 ---
-- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS;}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
 
 - launchApp:
     clearState: true
@@ -18,7 +22,7 @@ tags:
 - runFlow:
     file: ../common/logout-if-needed.yaml
 
-# Caminho de provider (diferente de contractor)
+# ── Welcome: caminho de provider ─────────────────────────────────────────────
 - extendedWaitUntil:
     visible: "Encontre profissionais"
     timeout: 15000
@@ -43,16 +47,105 @@ tags:
 
 - extendedWaitUntil:
     visible: "Termos de Uso"
-    timeout: 8000
+    timeout: 15000
 
 - tapOn:
     id: "terms-accept-checkbox"
 - tapOn:
     id: "terms-submit-button"
 
+# ── Endereço (obrigatório para todos) ────────────────────────────────────────
 - extendedWaitUntil:
-    visible: ".*Endereço.*|.*Verificação.*|.*CEP.*"
+    visible: "Onde você mora?"
     timeout: 12000
 
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── Verificação (obrigatória para provider) ───────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# Provider: aviso obrigatório visível, botão skip ausente
+- assertVisible:
+    id: "verification-provider-mandatory"
+- assertNotVisible: "Verificar depois"
+
+# Tenta código QA 0000 no email
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# QA: email verificado → vai para telefone automaticamente
 - runFlow:
-    file: ../common/skip-to-home.yaml
+    when:
+      visible: "Telefone"
+    commands:
+      - tapOn:
+          id: "verification-tab-phone"
+      - extendedWaitUntil:
+          visible: ".*Código enviado.*"
+          timeout: 8000
+      - tapOn:
+          id: "verification-code-0"
+      - inputText: "${output.PC0}"
+      - inputText: "${output.PC1}"
+      - inputText: "${output.PC2}"
+      - inputText: "${output.PC3}"
+      - tapOn:
+          id: "verification-verify-button"
+
+# QA: ambos verificados → DocumentUploadSheet (sem "Enviar depois" para provider)
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - assertNotVisible:
+          id: "document-sheet-later-button"
+      - tapOn:
+          id: "document-sheet-now-button"
+
+# QA: tela de upload de documento (provider: sem skip, com aviso)
+- runFlow:
+    when:
+      visible: "Verificação de Documento"
+    commands:
+      - assertVisible:
+          id: "document-upload-provider-mandatory"
+      - assertNotVisible:
+          id: "document-upload-skip-button"
+
+# Padrão: código inválido → provider permanece na verificação com aviso obrigatório
+- runFlow:
+    when:
+      visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    commands:
+      - assertVisible:
+          id: "verification-provider-mandatory"
+      - assertNotVisible: "Verificar depois"
+
+# QA: chegou na home após verificar tudo + enviar documento
+- runFlow:
+    when:
+      visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    commands:
+      - assertVisible: ".*Início.*|.*Home.*|.*Dashboard.*"

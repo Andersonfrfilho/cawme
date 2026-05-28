@@ -1,0 +1,125 @@
+appId: com.andersonfilho.cawme
+name: 🔐 Provider - Verificação Obrigatória
+description: |
+  Verifica que providers NÃO podem pular a verificação de e-mail e telefone:
+  1. Cadastra usuário como provider (welcome-offer-button)
+  2. Preenche endereço
+  3. Na tela de verificação:
+     - Botão "Verificar depois" NÃO deve existir
+     - Aviso obrigatório (id: verification-provider-mandatory) DEVE aparecer
+     - Abas de e-mail e telefone funcionam normalmente
+     - Campo de código e botão Verificar funcionam normalmente
+  Objetivo: garantir que a verificação é bloqueante para providers.
+tags:
+  - provider
+  - verification
+  - mandatory
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='121'+output.TS;}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+# Provider usa "Quero oferecer serviços" (welcome-offer-button)
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Mandatory"
+      EMAIL: "provmandatory${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# Preenche endereço
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── Verificação obrigatória para provider ─────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+# 1. Botão skip NÃO deve existir para provider
+- assertNotVisible: "Verificar depois"
+
+# 2. Aviso obrigatório DEVE aparecer
+- assertVisible:
+    id: "verification-provider-mandatory"
+
+# 3. Abas de e-mail e telefone estão presentes e funcionam
+- assertVisible:
+    id: "verification-tab-email"
+- assertVisible:
+    id: "verification-tab-phone"
+
+# 4. Campo de código e botão verificar existem
+- assertVisible:
+    id: "verification-code-0"
+- assertVisible:
+    id: "verification-verify-button"
+
+# 5. Troca para aba telefone — aviso obrigatório ainda visível, skip ainda ausente
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*|.*SMS.*|.*telefone.*"
+    timeout: 8000
+
+- assertNotVisible: "Verificar depois"
+- assertVisible:
+    id: "verification-provider-mandatory"
+
+# 6. Volta para e-mail — comportamento consistente
+- tapOn:
+    id: "verification-tab-email"
+
+- assertNotVisible: "Verificar depois"
+- assertVisible:
+    id: "verification-provider-mandatory"

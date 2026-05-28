@@ -56,6 +56,11 @@ export default function VerificationScreen() {
   const effectiveEmail = params.email || authUser?.email || "";
   const effectivePhone = params.phone || authUser?.phone || "";
 
+  // Provider: verificação obrigatória — lê do pendingRegistration (post-register) ou do user logado (post-login)
+  const isProvider =
+    useRegisterStore.getState().pendingRegistration?.userType === "provider" ||
+    authUser?.type === "provider";
+
   const [target, setTarget] = useState<VerificationTarget>("email");
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [loading, setLoading] = useState(false);
@@ -207,7 +212,9 @@ export default function VerificationScreen() {
           username: tempCreds.email,
           password: tempCreds.password,
         });
-        useAuthStore.getState().setUser({ id, name, email, type: "contractor", phone: effectivePhone || undefined });
+        // Lê userType do pendingRegistration (persistido no terms.screen.tsx no momento do cadastro)
+        const userType = useRegisterStore.getState().pendingRegistration?.userType ?? "contractor";
+        useAuthStore.getState().setUser({ id, name, email, type: userType, phone: effectivePhone || undefined });
 
         useRegisterStore.getState().clearAddress();
         useRegisterStore.getState().clearKeycloakId();
@@ -258,6 +265,7 @@ export default function VerificationScreen() {
         visible={showDocumentSheet}
         onNow={handleSheetNow}
         onLater={handleSheetLater}
+        isProvider={isProvider}
       />
       <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
         <View style={styles.header}>
@@ -419,7 +427,7 @@ export default function VerificationScreen() {
             </TouchableOpacity>
           )}
 
-          {!bothVerified && (
+          {!bothVerified && !isProvider && (
             <TouchableOpacity
               testID="verification-skip-button"
               style={styles.skipButton}
@@ -428,6 +436,20 @@ export default function VerificationScreen() {
             >
               <Text style={styles.skipButtonText}>{auth.verificationSkip}</Text>
             </TouchableOpacity>
+          )}
+
+          {!bothVerified && isProvider && (
+            <View testID="verification-provider-mandatory" style={styles.providerMandatoryContainer}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={moderateScale(16, 0.3)}
+                color={theme.colors.status.warning}
+                style={{ marginRight: moderateScale(6, 0.5) }}
+              />
+              <Text style={styles.providerMandatoryText}>
+                {auth.verificationProviderMandatory}
+              </Text>
+            </View>
           )}
         </View>
       </SafeAreaView>

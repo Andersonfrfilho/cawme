@@ -243,4 +243,21 @@ export const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     textDecorationLine: "underline",
   },
+  providerMandatoryContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: verticalScale(16),
+    paddingHorizontal: moderateScale(16, 0.5),
+    paddingVertical: verticalScale(12),
+    backgroundColor: theme.colors.background.elevated,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.status.warning,
+  },
+  providerMandatoryText: {
+    flex: 1,
+    fontSize: moderateScale(13, 0.3),
+    color: theme.colors.text.secondary,
+    lineHeight: moderateScale(18, 0.3),
+  },
 });

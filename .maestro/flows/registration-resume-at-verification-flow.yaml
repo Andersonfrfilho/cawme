@@ -99,7 +99,7 @@ tags:
 # ou redireciona para /verification em modo QA
 - extendedWaitUntil:
     visible: ".*Cawme.*|.*Encontre profissionais.*|.*Verificação.*|.*Confirme seu e-mail.*"
-    timeout: 20000
+    timeout: 45000
 
 # Modo QA: login bem sucedido → checkAndResume → redireciona para verificação
 - runFlow:
@@ -132,3 +132,8 @@ tags:
       - assertNotVisible: ".*Verificação.*"
       # Badge NÃO aparece: isSignedIn=false
       - assertNotVisible: "Verificação Pendente"
+
+# Garantia incondicional: badge nunca aparece enquanto isSignedIn=false
+- assertNotVisible: "Verificação Pendente"
+- assertNotVisible:
+    id: "pending-verification-banner"

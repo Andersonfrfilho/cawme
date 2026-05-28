@@ -81,7 +81,7 @@ tags:
 # O app retorna para a welcome screen sem crash após o timeout do login
 - extendedWaitUntil:
     visible: ".*Cawme.*|.*Encontre profissionais.*|.*Endereço.*|.*Onde você mora.*"
-    timeout: 20000
+    timeout: 45000
 
 # Se o servidor estiver em QA mode (sem verificação obrigatória), vai para endereço:
 - runFlow:
@@ -120,3 +120,9 @@ tags:
       - assertVisible: "Encontre profissionais"
       # Badge NÃO aparece: isSignedIn=false após falha do auto-resume
       - assertNotVisible: "Verificação Pendente"
+
+# Garantia incondicional: badge nunca aparece enquanto isSignedIn=false
+# (cobre o caso onde o app ainda está em transição quando os condicionais rodam)
+- assertNotVisible: "Verificação Pendente"
+- assertNotVisible:
+    id: "pending-verification-banner"

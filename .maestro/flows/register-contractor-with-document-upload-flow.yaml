@@ -1,0 +1,164 @@
+appId: com.andersonfilho.cawme
+name: 📄 Contractor - Registro Completo com Upload de Documento
+description: |
+  Fluxo completo de cadastro de contractor (cliente) com upload de documento:
+  1. Cadastra usuário único com CPF
+  2. Preenche endereço via CEP
+  3. Verificação de e-mail (código QA: 0000)
+  4. Verificação de telefone (código QA: últimos 4 dígitos)
+  5. Avança → auto-login → DocumentUploadSheet
+  6. Toca "Enviar agora" → tela de upload
+  7. Seleciona tipo CPF, escolhe imagem da galeria, envia documento
+  8. Navega para home com badge de pendente → documento em análise
+  Diferencial do contractor: pode pular o upload (botão "Enviar depois" existe),
+  mas neste teste exercita o caminho do upload completo.
+tags:
+  - contractor
+  - document
+  - upload
+  - full-flow
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='130'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── 1. Cadastro como contractor (Quero contratar) ─────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Contractor"
+      LAST_NAME: "DocUpload"
+      EMAIL: "ctrdoc${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+# ── 2. Termos ─────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 3. Endereço via CEP ───────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 4. Verificação de e-mail (código QA: 0000) ────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 5. Verificação de telefone (código QA: últimos 4 dígitos) ─────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 6. Ambos verificados → Avançar → auto-login → DocumentUploadSheet ─────────
+- extendedWaitUntil:
+    visible: ".*Avançar.*|.*document-sheet-now-button.*"
+    timeout: 10000
+
+- runFlow:
+    when:
+      visible: ".*Avançar.*"
+    commands:
+      - tapOn: "Avançar"
+
+- extendedWaitUntil:
+    visible:
+      id: "document-sheet-now-button"
+    timeout: 10000
+
+# Contractor tem "Enviar depois" — assertiva de que o botão existe
+- assertVisible:
+    id: "document-sheet-later-button"
+
+# Toca "Enviar agora" para ir à tela de upload
+- tapOn:
+    id: "document-sheet-now-button"
+
+# ── 7. Tela de upload: seleciona tipo, abre galeria, envia ────────────────────
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 8000
+
+# Contractor pode pular — assertiva de que o botão está presente
+- assertVisible:
+    id: "document-upload-skip-button"
+
+# Realiza o upload via galeria
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── 8. Após upload: navega para home ou verificação ───────────────────────────
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Verificação.*|.*dashboard.*"
+    timeout: 15000

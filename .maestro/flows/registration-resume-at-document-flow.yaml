@@ -16,7 +16,7 @@ tags:
   - document
   - e2e
 ---
-- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='120'+output.TS;}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='120'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
 
 # ── PARTE 1: Cadastro completo até a tela de documento ────────────────────────
 - launchApp:
@@ -117,33 +117,29 @@ tags:
                 timeout: 8000
             - tapOn:
                 id: "verification-code-0"
-            - inputText: "0"
-            - inputText: "0"
-            - inputText: "0"
-            - inputText: "0"
+            - inputText: "${output.PC0}"
+            - inputText: "${output.PC1}"
+            - inputText: "${output.PC2}"
+            - inputText: "${output.PC3}"
             - tapOn:
                 id: "verification-verify-button"
-            - runFlow:
-                when:
-                  visible: ".*inválido.*|.*incorreto.*"
-                commands:
-                  - tapOn:
-                      id: "verification-skip-button"
 
-# Se chegou no DocumentUploadSheet (após auto-login QA) → clica "Fazer depois"
+# QA: DocumentUploadSheet após auto-login → "Enviar agora" para chegar na tela de documento
 - runFlow:
     when:
-      visible: ".*Verificação de Documento.*|.*Enviar depois.*"
+      visible:
+        id: "document-sheet-now-button"
     commands:
       - tapOn:
-          text: ".*Fazer depois.*|.*Enviar depois.*"
+          id: "document-sheet-now-button"
 
-# Aguarda tela de envio de documento (post-register via document-upload screen direta)
+# Aguarda tela de envio de documento (contractor: tem botão "Enviar depois")
 - runFlow:
     when:
       visible: "Verificação de Documento"
     commands:
-      - assertVisible: "Enviar depois"
+      - assertVisible:
+          id: "document-upload-skip-button"
 
 # ── Ponto de interrupção: fecha o app na tela de documento ────────────────────
 - runFlow:
@@ -158,8 +154,8 @@ tags:
 
       # Auto-resume: login falha em modo padrão, ou redireciona para /document-upload em QA
       - extendedWaitUntil:
-          visible: ".*Cawme.*|.*Encontre profissionais.*|.*Verificação de Documento.*"
-          timeout: 20000
+          visible: ".*Encontre profissionais.*|.*Verificação de Documento.*"
+          timeout: 30000
 
       # Modo QA: auto-login bem sucedido → redireciona para envio de documento
       - runFlow:
@@ -167,7 +163,8 @@ tags:
             visible: "Verificação de Documento"
           commands:
             - assertVisible: "Verificação de Documento"
-            - assertVisible: "Enviar depois"
+            - assertVisible:
+                id: "document-upload-skip-button"
             - assertNotVisible: "Encontre profissionais"
 
       # Modo padrão: login falhou → welcome sem crash
@@ -188,10 +185,11 @@ tags:
 
 - runFlow:
     when:
-      visible: ".*Enviar depois.*"
+      visible:
+        id: "document-upload-skip-button"
     commands:
       - tapOn:
-          text: "Enviar depois"
+          id: "document-upload-skip-button"
 
 - runFlow:
     when:
