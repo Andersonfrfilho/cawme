@@ -93,20 +93,19 @@ tags:
 - tapOn:
     id: "register-passwordConfirmation-toggle"
 
-# Wait for toggles to process (iOS needs time to update secureTextEntry property)
-- delay: 1000ms
+# Password - wait for element to be accessible after toggle
+- extendedWaitUntil:
+    visible: "register-password"
+    timeout: 5000
 
-# Password
 - tapOn:
     id: "register-password"
-- delay: 500ms
 - eraseText: 50
 - inputText: "Test@12345"
 
 # Password confirmation (tap directly, don't rely on Enter focus)
 - tapOn:
     id: "register-passwordConfirmation"
-- delay: 500ms
 - eraseText: 50
 - inputText: "Test@12345"
 - pressKey: Enter
