@@ -147,6 +147,8 @@ tags:
 
 - runFlow:
     file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
 
 # ── Provider Profile Setup: Categories ──────────────────────────────────────
 - extendedWaitUntil:
