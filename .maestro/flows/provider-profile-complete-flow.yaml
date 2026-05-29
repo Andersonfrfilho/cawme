@@ -140,16 +140,28 @@ tags:
 - tapOn:
     id: "verification-verify-button"
 
+# ── Advance from Verification ──────────────────────────────────────────────
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+# ── Document Upload Sheet ──────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
 # ── Document Upload ────────────────────────────────────────────────────────
 - extendedWaitUntil:
-    visible: ".*Avançar.*|.*document-sheet-now-button.*|.*Verificação de Documento.*"
+    visible: "Verificação de Documento"
     timeout: 15000
-
-# Wait for document type chips to be visible
-- extendedWaitUntil:
-    visible:
-      id: "document-type-chip-cpf"
-    timeout: 8000
 
 - runFlow:
     file: ../common/upload-document-from-gallery.yaml
