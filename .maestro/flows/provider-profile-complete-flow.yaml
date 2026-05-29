@@ -93,11 +93,7 @@ tags:
 - tapOn:
     id: "register-passwordConfirmation-toggle"
 
-# Password - wait for element to be accessible after toggle
-- extendedWaitUntil:
-    visible: "register-password"
-    timeout: 5000
-
+# Password
 - tapOn:
     id: "register-password"
 - eraseText: 50
