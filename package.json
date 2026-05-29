@@ -68,7 +68,8 @@
     "test:banner:onboarding": "npm run maestro -- test .maestro/flows/pending-onboarding-banner-flow.yaml",
     "test:banner:reactivation": "npm run maestro -- test .maestro/flows/pending-onboarding-reactivation-flow.yaml",
     "test:provider:complete": "npm run maestro -- test .maestro/flows/provider-profile-complete-flow.yaml",
-    "test:provider:all": "npm run test:e2e:provider"
+    "test:provider:fast": "npm run maestro -- test .maestro/flows/provider-profile-fast-flow.yaml",
+    "test:provider:all": "npm run test:e2e:provider && npm run test:provider:complete"
   },
   "dependencies": {
     "@adatechnology/logger-client": "^0.0.2",
