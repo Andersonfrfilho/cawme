@@ -98,9 +98,10 @@ tags:
     id: "register-password"
 - eraseText: 50
 - inputText: "Test@12345"
-- pressKey: Enter
 
-# Password confirmation (auto-focus from Enter)
+# Password confirmation (tap directly, don't rely on Enter focus)
+- tapOn:
+    id: "register-passwordConfirmation"
 - eraseText: 50
 - inputText: "Test@12345"
 - pressKey: Enter
