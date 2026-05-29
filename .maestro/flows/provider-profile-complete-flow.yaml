@@ -50,9 +50,9 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# Use common flow to fill registration (proven to work)
+# Use provider-specific registration flow (handles password field correctly)
 - runFlow:
-    file: ../common/fill-register-form.yaml
+    file: ../common/fill-register-form-provider.yaml
     env:
       DOCUMENT_TYPE: "cpf"
       FIRST_NAME: "Provider"

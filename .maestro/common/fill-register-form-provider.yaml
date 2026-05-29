@@ -1,0 +1,65 @@
+appId: com.andersonfilho.cawme
+---
+# Preenche o formulário de cadastro com dados configuráveis via env.
+# Variáveis: FIRST_NAME, LAST_NAME, EMAIL, PHONE, DOCUMENT_TYPE, DOCUMENT, PASSWORD
+# Versão corrigida para provider flow - sem hideKeyboard problemático
+
+# Seleciona o tipo de documento ANTES de tocar nos campos (sem teclado)
+- tapOn:
+    id: "register-docType-${DOCUMENT_TYPE}"
+
+# Nome → pressKey: Return → lastNameRef.focus() via onSubmitEditing
+- tapOn:
+    id: "register-firstName"
+- eraseText: 50
+- inputText: "${FIRST_NAME}"
+- pressKey: Enter
+
+# Sobrenome (foco vem do onSubmitEditing do firstName)
+- eraseText: 50
+- inputText: "${LAST_NAME}"
+- pressKey: Enter
+
+# E-mail (foco vem do onSubmitEditing do lastName)
+- eraseText: 100
+- inputText: "${EMAIL}"
+- pressKey: Enter
+
+# Telefone (foco vem do onSubmitEditing do email → phoneRef.focus())
+# pressKey: Enter → onSubmitEditing → documentRef.focus()
+- eraseText: 20
+- inputText: "${PHONE}"
+- pressKey: Enter
+
+# Número do documento (foco vem via onSubmitEditing do telefone)
+# pressKey: Enter → onSubmitEditing → passwordRef.focus()
+- eraseText: 20
+- inputText: "${DOCUMENT}"
+- pressKey: Enter
+
+# Close keyboard by tapping static text instead of hideKeyboard
+- tapOn:
+    text: "Crie sua conta"
+
+# Aguarda "Confirmar senha" ficar visível
+- extendedWaitUntil:
+    visible: "Confirmar senha"
+    timeout: 8000
+
+# Toggle password visibility (XCUITest doesn't input into secureTextEntry)
+- tapOn:
+    id: "register-password-toggle"
+- tapOn:
+    id: "register-passwordConfirmation-toggle"
+
+# Senha (secureTextEntry=false após toggle)
+- tapOn:
+    id: "register-password"
+- eraseText: 50
+- inputText: "${PASSWORD}"
+- pressKey: Enter
+
+# Confirmação de senha (foco via onSubmitEditing; secureTextEntry=false após toggle acima)
+- eraseText: 50
+- inputText: "${PASSWORD}"
+- pressKey: Enter
