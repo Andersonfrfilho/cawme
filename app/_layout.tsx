@@ -9,7 +9,13 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
+  LogBox,
 } from "react-native";
+
+// Disable all warnings for E2E testing
+if (process.env.NODE_ENV === 'development') {
+  LogBox.ignoreAllLogs();
+}
 import * as Linking from "expo-linking";
 import { styles } from "@/shared/styles/root-layout.styles";
 import { useUIStore } from "@/shared/store/ui.store";
