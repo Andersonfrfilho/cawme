@@ -142,7 +142,13 @@ tags:
 
 # ── Document Upload ────────────────────────────────────────────────────────
 - extendedWaitUntil:
-    visible: ".*Avançar.*|.*document-sheet-now-button.*"
+    visible: ".*Avançar.*|.*document-sheet-now-button.*|.*Verificação de Documento.*"
+    timeout: 15000
+
+# Wait for document type chips to be visible
+- extendedWaitUntil:
+    visible:
+      id: "document-type-chip-cpf"
     timeout: 8000
 
 - runFlow:
