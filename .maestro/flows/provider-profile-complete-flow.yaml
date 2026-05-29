@@ -67,8 +67,16 @@ tags:
     visible: "Termos de Uso"
     timeout: 15000
 
+# Close any debug warning overlay by tapping outside it
+- tapOn:
+    text: "Termos de Uso"
+
 - tapOn:
     id: "terms-accept-checkbox"
+
+# Close any overlay again before submitting
+- tapOn:
+    text: "Termos de Uso"
 
 - tapOn:
     id: "terms-submit-button"
