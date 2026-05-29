@@ -1,0 +1,302 @@
+appId: com.andersonfilho.cawme
+name: 🎯 Provider Profile Setup - Complete Flow
+description: |
+  Complete end-to-end provider profile setup flow.
+  Creates a new provider user from scratch and tests:
+  1. Registration (email, phone, document, password)
+  2. Email verification (QA mode: 0000)
+  3. Phone verification (QA mode: last 4 digits)
+  4. Document upload
+  5. Provider Profile Setup:
+     - Select 2 service categories
+     - Add 2 services with pricing
+     - Set availability for 3 days
+     - Review and submit
+  6. Verify successful completion (redirect to home)
+
+tags:
+  - provider
+  - profile
+  - registration
+  - e2e
+  - complete
+---
+# Generate random but valid CPF and phone
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='117'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+# Start fresh
+- launchApp:
+    clearState: true
+
+# Wait for app to load
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+# Logout if needed (cleanup from previous tests)
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Welcome Screen: Select Provider Path ────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+# ── Registration Form ───────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+# Use common flow to fill registration
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Test"
+      EMAIL: "provider-${TS}@test.com"
+      PHONE: "${PHONE}"
+      DOCUMENT: "${CPF}"
+      PASSWORD: "Test@12345"
+
+# ── Terms Screen ────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 8000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+
+- tapOn:
+    id: "terms-submit-button"
+
+# ── Address Screen ──────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 8000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 5000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+
+# ── Email Verification ──────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 8000
+
+# QA Mode: Enter 0000 for all verification codes
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+
+- tapOn:
+    id: "verification-verify-button"
+
+# ── Phone Verification ──────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+# Use last 4 digits of phone number
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${PC0}"
+- inputText: "${PC1}"
+- inputText: "${PC2}"
+- inputText: "${PC3}"
+
+- tapOn:
+    id: "verification-verify-button"
+
+# ── Document Upload ────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Avançar.*|.*document-sheet-now-button.*"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+
+# ── Provider Profile Setup: Categories ──────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 15000
+
+# Select 2 categories
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- tapOn:
+    id: "category-card"
+    index: 1
+
+# Verify checkmarks appear
+- assertVisible: "checkmark-circle"
+- assertVisible: "checkmark-circle"
+
+# Proceed to services
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Provider Profile Setup: Services ────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# Add first service
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Completa"
+
+- tapOn:
+    id: "duration-input"
+- eraseText: 10
+- inputText: "120"
+
+- tapOn:
+    id: "price-input"
+- inputText: "150.00"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+# Verify service appears
+- assertVisible: "Limpeza Completa"
+
+# Add second service
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Rápida"
+
+- tapOn:
+    id: "duration-input"
+- eraseText: 10
+- inputText: "60"
+
+- tapOn:
+    id: "price-input"
+- inputText: "75.00"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+# Verify second service
+- assertVisible: "Limpeza Rápida"
+
+# Proceed to availability
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Provider Profile Setup: Availability ────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+# Enable Monday (index 1)
+- tapOn:
+    id: "day-toggle-1"
+
+- tapOn:
+    id: "day-1-start-time"
+- inputText: "09:00"
+
+- tapOn:
+    id: "day-1-end-time"
+- inputText: "18:00"
+
+# Enable Tuesday (index 2)
+- tapOn:
+    id: "day-toggle-2"
+
+- tapOn:
+    id: "day-2-start-time"
+- inputText: "09:00"
+
+- tapOn:
+    id: "day-2-end-time"
+- inputText: "18:00"
+
+# Enable Friday (index 5)
+- tapOn:
+    id: "day-toggle-5"
+
+- tapOn:
+    id: "day-5-start-time"
+- inputText: "10:00"
+
+- tapOn:
+    id: "day-5-end-time"
+- inputText: "17:00"
+
+# Proceed to review
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Provider Profile Setup: Review ──────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Confirmação do perfil"
+    timeout: 8000
+
+# Verify all sections are visible
+- assertVisible: "Categorias"
+- assertVisible: "Serviços"
+- assertVisible: "Disponibilidade"
+
+# Verify services appear
+- assertVisible: "Limpeza Completa"
+- assertVisible: "Limpeza Rápida"
+
+# Verify days appear
+- assertVisible: "Segunda"
+- assertVisible: "Terça"
+- assertVisible: "Sexta"
+
+# Submit profile
+- tapOn:
+    id: "action-bar-submit-button"
+
+# ── Verify Completion ───────────────────────────────────────────────────────
+# Should redirect to home/dashboard
+- extendedWaitUntil:
+    visible: ".*Início.*|.*Home.*|.*Dashboard.*"
+    timeout: 15000
+
+# Final verification that we're on home screen
+- assertVisible: ".*Início.*|.*Home.*|.*Dashboard.*"
