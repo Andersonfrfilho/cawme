@@ -12,9 +12,9 @@ tags:
   - e2e
 ---
 - launchApp:
-    clearState: false
+    clearState: true
+    url: cawme://(auth)/provider-profile
 
-# Wait for app to load — assumes user is already logged in
 - extendedWaitUntil:
     visible: "Quais serviços você oferece?"
     timeout: 15000
