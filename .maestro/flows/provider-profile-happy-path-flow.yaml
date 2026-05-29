@@ -4,16 +4,17 @@ description: |
   Complete provider profile setup flow (categories → services → availability → review → submit).
   Provider selects 2 categories, adds 2 services, sets availability for 3 days, and submits.
 
-  ⚠️ NOTE: This flow assumes the provider is already registered and authenticated.
-  Run test:provider:all for complete flow including registration.
+  ⚠️ NOTE: This flow is designed to run AFTER provider registration.
+  Best used with: npm run test:provider:all
+  Which includes registration flow first, then this profile setup flow.
+
+  For standalone testing: Ensure a provider is logged in before running.
 tags:
   - provider
   - profile
   - e2e
 ---
-- launchApp:
-    clearState: true
-    url: cawme://(auth)/provider-profile
+- launchApp
 
 - extendedWaitUntil:
     visible: "Quais serviços você oferece?"
