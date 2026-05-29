@@ -50,17 +50,60 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# Use common flow to fill registration
-- runFlow:
-    file: ../common/fill-register-form.yaml
-    env:
-      DOCUMENT_TYPE: "cpf"
-      FIRST_NAME: "Provider"
-      LAST_NAME: "Test"
-      EMAIL: "provider-${TS}@test.com"
-      PHONE: "${PHONE}"
-      DOCUMENT: "${CPF}"
-      PASSWORD: "Test@12345"
+# Select CPF document type
+- tapOn:
+    id: "register-docType-cpf"
+
+# First name
+- tapOn:
+    id: "register-firstName"
+- eraseText: 50
+- inputText: "Provider"
+- pressKey: Enter
+
+# Last name (auto-focus from Enter)
+- eraseText: 50
+- inputText: "Test"
+- pressKey: Enter
+
+# Email (auto-focus from Enter) - using TS for unique email
+- eraseText: 100
+- inputText: "provider-${output.TS}@test.com"
+- pressKey: Enter
+
+# Phone (auto-focus from Enter)
+- eraseText: 20
+- inputText: "${output.PHONE}"
+- pressKey: Enter
+
+# Document/CPF (auto-focus from Enter)
+- eraseText: 20
+- inputText: "${output.CPF}"
+- pressKey: Enter
+
+# Wait for password fields to be visible
+- extendedWaitUntil:
+    visible: "Confirmar senha"
+    timeout: 5000
+
+# Toggle password visibility (XCUITest doesn't input into secureTextEntry)
+- tapOn:
+    id: "register-password-toggle"
+
+- tapOn:
+    id: "register-passwordConfirmation-toggle"
+
+# Password
+- tapOn:
+    id: "register-password"
+- eraseText: 50
+- inputText: "Test@12345"
+- pressKey: Enter
+
+# Password confirmation (auto-focus from Enter)
+- eraseText: 50
+- inputText: "Test@12345"
+- pressKey: Enter
 
 # ── Terms Screen ────────────────────────────────────────────────────────────
 - extendedWaitUntil:
@@ -123,10 +166,10 @@ tags:
 # Use last 4 digits of phone number
 - tapOn:
     id: "verification-code-0"
-- inputText: "${PC0}"
-- inputText: "${PC1}"
-- inputText: "${PC2}"
-- inputText: "${PC3}"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
 
 - tapOn:
     id: "verification-verify-button"
@@ -154,7 +197,6 @@ tags:
     index: 1
 
 # Verify checkmarks appear
-- assertVisible: "checkmark-circle"
 - assertVisible: "checkmark-circle"
 
 # Proceed to services
