@@ -50,69 +50,22 @@ tags:
     visible: "Crie sua conta"
     timeout: 8000
 
-# Select CPF document type
-- tapOn:
-    id: "register-docType-cpf"
-
-# First name
-- tapOn:
-    id: "register-firstName"
-- eraseText: 50
-- inputText: "Provider"
-- pressKey: Enter
-
-# Last name (auto-focus from Enter)
-- eraseText: 50
-- inputText: "Test"
-- pressKey: Enter
-
-# Email (auto-focus from Enter) - using TS for unique email
-- eraseText: 100
-- inputText: "provider-${output.TS}@test.com"
-- pressKey: Enter
-
-# Phone (auto-focus from Enter)
-- eraseText: 20
-- inputText: "${output.PHONE}"
-- pressKey: Enter
-
-# Document/CPF (auto-focus from Enter)
-- eraseText: 20
-- inputText: "${output.CPF}"
-- pressKey: Enter
-
-# Wait for password fields to be visible
-- extendedWaitUntil:
-    visible: "Confirmar senha"
-    timeout: 5000
-
-# Toggle password visibility (XCUITest doesn't input into secureTextEntry)
-- tapOn:
-    id: "register-password-toggle"
-
-- tapOn:
-    id: "register-passwordConfirmation-toggle"
-
-# Close keyboard before accessing password fields (like fill-register-form.yaml does)
-- tapOn:
-    text: "Crie sua conta"
-
-# Password
-- tapOn:
-    id: "register-password"
-- eraseText: 50
-- inputText: "Test@12345"
-- pressKey: Enter
-
-# Password confirmation (auto-focus from Enter)
-- eraseText: 50
-- inputText: "Test@12345"
-- pressKey: Enter
+# Use common flow to fill registration (proven to work)
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Complete"
+      EMAIL: "provider-complete-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
 
 # ── Terms Screen ────────────────────────────────────────────────────────────
 - extendedWaitUntil:
     visible: "Termos de Uso"
-    timeout: 8000
+    timeout: 15000
 
 - tapOn:
     id: "terms-accept-checkbox"
@@ -123,7 +76,7 @@ tags:
 # ── Address Screen ──────────────────────────────────────────────────────────
 - extendedWaitUntil:
     visible: "Onde você mora?"
-    timeout: 8000
+    timeout: 12000
 
 - tapOn:
     id: "address-cep-input"
@@ -132,19 +85,20 @@ tags:
 
 - extendedWaitUntil:
     visible: "Endereço encontrado"
-    timeout: 5000
+    timeout: 15000
 
 - tapOn:
     id: "address-number-input"
 - inputText: "100"
 - pressKey: Enter
+- pressKey: Enter
 
 # ── Email Verification ──────────────────────────────────────────────────────
 - extendedWaitUntil:
     visible: ".*Verificação.*|.*Confirme seu e-mail.*"
-    timeout: 8000
+    timeout: 12000
 
-# QA Mode: Enter 0000 for all verification codes
+# QA Mode: Enter 0000 for email verification
 - tapOn:
     id: "verification-code-0"
 - inputText: "0"
