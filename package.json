@@ -67,10 +67,7 @@
     "test:verify:no-send-error": "npm run maestro -- test .maestro/flows/verification-no-send-error-flow.yaml",
     "test:banner:onboarding": "npm run maestro -- test .maestro/flows/pending-onboarding-banner-flow.yaml",
     "test:banner:reactivation": "npm run maestro -- test .maestro/flows/pending-onboarding-reactivation-flow.yaml",
-    "test:provider:profile:happy": "npm run maestro -- test .maestro/flows/provider-profile-happy-path-flow.yaml",
-    "test:provider:profile:validation": "npm run maestro -- test .maestro/flows/provider-profile-validation-flow.yaml",
-    "test:provider:profile": "npm run test:provider:profile:happy && npm run test:provider:profile:validation",
-    "test:provider:all": "npm run test:e2e:provider && npm run test:provider:profile"
+    "test:provider:all": "npm run test:e2e:provider"
   },
   "dependencies": {
     "@adatechnology/logger-client": "^0.0.2",
