@@ -93,15 +93,18 @@ tags:
 - tapOn:
     id: "register-passwordConfirmation-toggle"
 
+# Close keyboard before accessing password fields (like fill-register-form.yaml does)
+- tapOn:
+    text: "Crie sua conta"
+
 # Password
 - tapOn:
     id: "register-password"
 - eraseText: 50
 - inputText: "Test@12345"
+- pressKey: Enter
 
-# Password confirmation (tap directly, don't rely on Enter focus)
-- tapOn:
-    id: "register-passwordConfirmation"
+# Password confirmation (auto-focus from Enter)
 - eraseText: 50
 - inputText: "Test@12345"
 - pressKey: Enter
