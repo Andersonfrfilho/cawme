@@ -44,7 +44,8 @@ export default function ContactChangeScreen() {
   const [contactFocused, setContactFocused] = useState(false);
   const [otpFocused, setOtpFocused] = useState(false);
 
-  const isEmail = type === "email";
+  const contactType = type ?? "email";
+  const isEmail = contactType === "email";
   const title = isEmail ? account.changeEmailTitle : account.changePhoneTitle;
   const placeholder = isEmail ? account.newEmailPlaceholder : account.newPhonePlaceholder;
   const otpCodeLength = isEmail ? 4 : 6;
@@ -66,7 +67,7 @@ export default function ContactChangeScreen() {
     try {
       const available = await checkContactAvailability({
         contact: values.contact,
-        type: type ?? "email",
+        type: contactType,
       });
       if (!available) {
         contactForm.setError("contact", { message: account.alreadyInUse });
@@ -74,7 +75,7 @@ export default function ContactChangeScreen() {
       }
       const result = await initiateContactChange({
         contact: values.contact,
-        type: type ?? "email",
+        type: contactType,
       });
       setContactId(result.contactId);
       setDestination(result.destination);
@@ -90,7 +91,7 @@ export default function ContactChangeScreen() {
       await confirmContactChange({
         contactId,
         code: values.code,
-        type: type ?? "email",
+        type: contactType,
       });
       Alert.alert("", account.changeSuccess, [
         { text: "OK", onPress: () => router.back() },
@@ -105,7 +106,7 @@ export default function ContactChangeScreen() {
       const contactValue = contactForm.getValues("contact");
       const result = await initiateContactChange({
         contact: contactValue,
-        type: type ?? "email",
+        type: contactType,
       });
       setContactId(result.contactId);
       setDestination(result.destination);
