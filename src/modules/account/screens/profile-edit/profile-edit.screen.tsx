@@ -108,17 +108,19 @@ export default function ProfileEditScreen() {
           )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          testID="save-button"
-          activeOpacity={0.85}
-        >
-          <Text style={styles.saveButtonText}>
-            {isSubmitting ? account.savingButton : account.saveButton}
-          </Text>
-        </TouchableOpacity>
+        {fullName.trim() !== (user?.name ?? "").trim() && (
+          <TouchableOpacity
+            style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+            testID="save-button"
+            activeOpacity={0.85}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? account.savingButton : account.saveButton}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.sectionDivider} />
 
