@@ -11,7 +11,7 @@ export const accountLocale = {
     tapToChange: "Toque para alterar",
     saveButton: "Salvar",
     savingButton: "Salvando...",
-    saveSuccess: "Perfil atualizado com sucesso",
+    saveSuccess: "Nome atualizado com sucesso",
     changeEmailTitle: "Alterar e-mail",
     changePhoneTitle: "Alterar telefone",
     newEmailPlaceholder: "Novo e-mail",
