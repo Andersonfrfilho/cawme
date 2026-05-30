@@ -46,6 +46,12 @@ export const AUTH_ENDPOINTS = {
   PROVIDER_SERVICE_DELETE: (serviceId: string) => `/bff/auth/providers/me/services/${serviceId}`,
   PROVIDER_AVAILABILITY: "/bff/auth/providers/me/availability",
   PROVIDER_AVAILABILITY_UPDATE: (dayOfWeek: number) => `/bff/auth/providers/me/availability/${dayOfWeek}`,
+  ACCOUNT_PROFILE: "/bff/account/me",
+  ACCOUNT_UPDATE_NAME: "/bff/account/me/name",
+  ACCOUNT_EMAIL_CHANGE: "/bff/account/me/email/change",
+  ACCOUNT_EMAIL_CHANGE_CONFIRM: "/bff/account/me/email/change/confirm",
+  ACCOUNT_PHONE_CHANGE: "/bff/account/me/phone/change",
+  ACCOUNT_PHONE_CHANGE_CONFIRM: "/bff/account/me/phone/change/confirm",
 };
 
 export const HERO_OVERLAY = {

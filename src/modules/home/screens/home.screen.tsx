@@ -27,16 +27,27 @@ export default function HomeScreen() {
       headerShown: true,
       headerRight: () =>
         isSignedIn ? (
-          <TouchableOpacity
-            onPress={logout}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{ marginRight: 16 }}
-            accessibilityLabel="Sair"
-            testID="logout-button"
-          >
-            <Ionicons name="log-out-outline" size={22} color={theme.colors.status.error} />
-          </TouchableOpacity>
-        )         : (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: moderateScale(4, 0.5) }}>
+            <TouchableOpacity
+              onPress={() => router.push("/(app)/account/profile-edit" as any)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginRight: moderateScale(8, 0.5) }}
+              accessibilityLabel="Editar perfil"
+              testID="edit-profile-button"
+            >
+              <Ionicons name="person-circle-outline" size={22} color={theme.colors.primary.DEFAULT} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={logout}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginRight: 16 }}
+              accessibilityLabel="Sair"
+              testID="logout-button"
+            >
+              <Ionicons name="log-out-outline" size={22} color={theme.colors.status.error} />
+            </TouchableOpacity>
+          </View>
+        ) : (
           <TouchableOpacity
             onPress={() => router.push("/(auth)")}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

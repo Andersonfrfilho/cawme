@@ -8,5 +8,6 @@
  * import "@/modules/chat/locales";
  */
 
+import "@/modules/account/locales";
 import "@/modules/auth/locales";
 import "@/modules/company/locales";
