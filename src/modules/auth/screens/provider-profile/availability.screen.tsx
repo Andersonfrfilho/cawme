@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { useProviderProfileStore } from '@/modules/auth/store/provider-profile.store';
 import { useLoading } from '@/shared/hooks/useLoading';
@@ -37,6 +37,24 @@ export default function AvailabilityScreen() {
     return initial;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{ marginLeft: 16 }}
+        >
+          <Ionicons name="chevron-back" size={moderateScale(22, 0.3)} color={theme.colors.text.primary} />
+        </TouchableOpacity>
+      ),
+      headerTitle: '',
+      headerShadowVisible: false,
+    });
+  }, [navigation]);
 
   const toggleDay = (day: number) => {
     setDayTimes((prev) => ({
