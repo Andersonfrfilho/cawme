@@ -9,7 +9,7 @@ import { isTestEnvironment } from '@/shared/utils/test-environment';
 
 // Rotas em (app)/ gerenciadas pelo servidor (não aparecem como tabs por padrão).
 // Em test/dev mode, 'providers' fica visível no tab bar para permitir E2E nessa tela.
-const ALWAYS_HIDDEN_ROUTES = ['company'];
+const ALWAYS_HIDDEN_ROUTES = ['company', 'account'];
 
 const DEFAULT_TABS = [
   { id: 'search', label: t('navigation.search'), icon: 'search-outline' },
@@ -44,7 +44,7 @@ function centerHome<T extends { id: string }>(tabs: T[]): T[] {
   const home = tabs.find((tab) => tab.id === 'home');
   const others = tabs.filter((tab) => tab.id !== 'home');
   if (!home) return tabs;
-  const mid = Math.floor(others.length / 2);
+  const mid = Math.floor((others.length + 1) / 2);
   return [...others.slice(0, mid), home, ...others.slice(mid)];
 }
 
@@ -97,7 +97,7 @@ export default function AppLayout() {
       ))}
 
       {hiddenRoutes.map((name) => (
-        <Tabs.Screen key={name} name={name} options={{ href: null }} />
+        <Tabs.Screen key={name} name={name} options={{ href: null, headerShown: false }} />
       ))}
     </Tabs>
   );

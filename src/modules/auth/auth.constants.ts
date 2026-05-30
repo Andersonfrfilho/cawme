@@ -52,6 +52,11 @@ export const AUTH_ENDPOINTS = {
   ACCOUNT_EMAIL_CHANGE_CONFIRM: "/bff/account/me/email/change/confirm",
   ACCOUNT_PHONE_CHANGE: "/bff/account/me/phone/change",
   ACCOUNT_PHONE_CHANGE_CONFIRM: "/bff/account/me/phone/change/confirm",
+  ACCOUNT_EMAIL_CHECK: "/bff/account/me/email/check",
+  ACCOUNT_PHONE_CHECK: "/bff/account/me/phone/check",
+  ACCOUNT_ADDRESS_UPDATE: "/bff/account/me/address",
+  ACCOUNT_DOCUMENT_UPLOAD: "/bff/account/me/document",
+  ACCOUNT_DOCUMENT_CHECK: "/bff/account/me/document/check",
 };
 
 export const HERO_OVERLAY = {

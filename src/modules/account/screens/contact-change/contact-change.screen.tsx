@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,16 +13,17 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { z } from "zod";
 
 import { useAccount } from "@/modules/account/hooks/useAccount";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
-import { moderateScale } from "@/shared/utils/scale";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import styles from "./styles";
 import {
   contactSchema,
-  otpSchema,
   type ContactFormValues,
   type ContactChangeScreenParams,
   type OtpFormValues,
@@ -30,9 +32,10 @@ import {
 type Step = "enter-contact" | "enter-otp";
 
 export default function ContactChangeScreen() {
+  const insets = useSafeAreaInsets();
   const { account } = useLocale<LocaleKeys>();
   const { type, currentContact } = useLocalSearchParams<ContactChangeScreenParams>();
-  const { initiateContactChange, confirmContactChange } = useAccount();
+  const { checkContactAvailability, initiateContactChange, confirmContactChange } = useAccount();
 
   const [step, setStep] = useState<Step>("enter-contact");
   const [contactId, setContactId] = useState<string>("");
@@ -44,6 +47,10 @@ export default function ContactChangeScreen() {
   const isEmail = type === "email";
   const title = isEmail ? account.changeEmailTitle : account.changePhoneTitle;
   const placeholder = isEmail ? account.newEmailPlaceholder : account.newPhonePlaceholder;
+  const otpCodeLength = isEmail ? 4 : 6;
+  const otpSchema = z.object({
+    code: z.string().length(otpCodeLength, `Código deve ter ${otpCodeLength} dígitos`),
+  });
 
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -57,6 +64,14 @@ export default function ContactChangeScreen() {
 
   async function onContactSubmit(values: ContactFormValues): Promise<void> {
     try {
+      const available = await checkContactAvailability({
+        contact: values.contact,
+        type: type ?? "email",
+      });
+      if (!available) {
+        contactForm.setError("contact", { message: account.alreadyInUse });
+        return;
+      }
       const result = await initiateContactChange({
         contact: values.contact,
         type: type ?? "email",
@@ -64,8 +79,9 @@ export default function ContactChangeScreen() {
       setContactId(result.contactId);
       setDestination(result.destination);
       setStep("enter-otp");
-    } catch {
-      Alert.alert("", "Não foi possível enviar o código. Verifique o valor informado.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      Alert.alert("Erro", `Não foi possível enviar o código: ${detail}`);
     }
   }
 
@@ -107,7 +123,10 @@ export default function ContactChangeScreen() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(24) }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+          <Ionicons name="arrow-back" size={24} color={theme.palette.neutral[0]} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{title}</Text>
       </View>
 
@@ -178,14 +197,14 @@ export default function ContactChangeScreen() {
               placeholderTextColor={theme.colors.text.secondary}
               value={otpValue}
               onChangeText={(text) =>
-                otpForm.setValue("code", text.replace(/\D/g, "").slice(0, 6), {
+                otpForm.setValue("code", text.replace(/\D/g, "").slice(0, otpCodeLength), {
                   shouldValidate: true,
                 })
               }
               onFocus={() => setOtpFocused(true)}
               onBlur={() => setOtpFocused(false)}
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={otpCodeLength}
               testID="otp-input"
             />
             {otpForm.formState.errors.code && (
@@ -197,11 +216,11 @@ export default function ContactChangeScreen() {
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                (otpForm.formState.isSubmitting || otpValue.length !== 6) &&
+                (otpForm.formState.isSubmitting || otpValue.length !== otpCodeLength) &&
                   styles.primaryButtonDisabled,
               ]}
               onPress={otpForm.handleSubmit(onOtpSubmit)}
-              disabled={otpForm.formState.isSubmitting || otpValue.length !== 6}
+              disabled={otpForm.formState.isSubmitting || otpValue.length !== otpCodeLength}
               testID="confirm-button"
               activeOpacity={0.85}
             >

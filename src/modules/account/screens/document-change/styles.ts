@@ -1,18 +1,17 @@
 import { StyleSheet } from "react-native";
 import { theme } from "@/shared/constants";
-import { moderateScale, verticalScale } from "@/shared/utils/scale";
+import { moderateScale, scale, verticalScale } from "@/shared/utils/scale";
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: theme.colors.background.DEFAULT,
   },
   header: {
     backgroundColor: theme.colors.primary.DEFAULT,
-    paddingTop: verticalScale(24),
     paddingBottom: verticalScale(24),
     paddingHorizontal: moderateScale(24, 0.5),
-    flexDirection: 'row',
+    flexDirection: "row",
     alignItems: "center",
   },
   backButton: {
@@ -25,19 +24,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  contentContainer: {
     paddingHorizontal: moderateScale(24, 0.5),
     paddingTop: verticalScale(32),
-    paddingBottom: moderateScale(32, 0.5),
-    gap: moderateScale(32, 0.5),
   },
   fieldGroup: {
     gap: moderateScale(10, 0.5),
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: theme.colors.border.DEFAULT,
+    marginBottom: moderateScale(24, 0.5),
   },
   label: {
     fontSize: moderateScale(13, 0.3),
@@ -46,39 +38,84 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  input: {
-    height: verticalScale(52),
-    borderRadius: 12,
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: moderateScale(8, 0.5),
+  },
+  chip: {
+    paddingHorizontal: moderateScale(16, 0.5),
+    paddingVertical: verticalScale(8),
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: theme.colors.border.DEFAULT,
-    paddingHorizontal: moderateScale(16, 0.5),
-    fontSize: moderateScale(15, 0.3),
-    color: theme.colors.text.primary,
     backgroundColor: theme.colors.background.elevated,
   },
-  inputFocused: {
+  chipSelected: {
     borderColor: theme.colors.primary.DEFAULT,
+    backgroundColor: theme.colors.primary.DEFAULT,
   },
-  contactRow: {
+  chipText: {
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.primary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  chipTextSelected: {
+    color: theme.palette.neutral[0],
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  uploadRow: {
+    flexDirection: "row",
+    gap: moderateScale(12, 0.5),
+  },
+  uploadButton: {
+    flex: 1,
     height: verticalScale(52),
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: theme.colors.border.DEFAULT,
-    paddingHorizontal: moderateScale(16, 0.5),
+    borderColor: theme.colors.primary.DEFAULT,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: moderateScale(6, 0.5),
     backgroundColor: theme.colors.background.elevated,
   },
-  contactValue: {
-    fontSize: moderateScale(15, 0.3),
-    color: theme.colors.text.primary,
-    flex: 1,
-  },
-  contactChangeLabel: {
-    fontSize: moderateScale(12, 0.3),
+  uploadButtonText: {
+    fontSize: moderateScale(14, 0.3),
     color: theme.colors.primary.DEFAULT,
     fontWeight: theme.typography.fontWeight.medium,
+  },
+  filePreview: {
+    marginTop: verticalScale(8),
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  imagePreview: {
+    width: "100%",
+    height: verticalScale(180),
+    borderRadius: 12,
+  },
+  pdfPreview: {
+    height: verticalScale(80),
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border.DEFAULT,
+    backgroundColor: theme.colors.background.elevated,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: moderateScale(16, 0.5),
+    gap: moderateScale(12, 0.5),
+  },
+  fileName: {
+    flex: 1,
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.primary,
+  },
+  removeFile: {
+    position: "absolute",
+    top: moderateScale(8, 0.5),
+    right: moderateScale(8, 0.5),
   },
   saveButton: {
     height: verticalScale(52),
@@ -97,5 +134,3 @@ const styles = StyleSheet.create({
     color: theme.palette.neutral[0],
   },
 });
-
-export default styles;

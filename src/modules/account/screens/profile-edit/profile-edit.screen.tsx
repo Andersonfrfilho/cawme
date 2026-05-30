@@ -11,17 +11,19 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { useAccount } from "@/modules/account/hooks/useAccount";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
-import { moderateScale } from "@/shared/utils/scale";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
 
 import styles from "./styles";
 import { profileEditSchema, type ProfileEditFormValues } from "./types";
 
 export default function ProfileEditScreen() {
+  const insets = useSafeAreaInsets();
   const { account } = useLocale<LocaleKeys>();
   const user = useAuthStore((state) => state.user);
   const { updateName } = useAccount();
@@ -64,15 +66,26 @@ export default function ProfileEditScreen() {
     });
   }
 
+  function handleAddressChange(): void {
+    router.push({ pathname: "/(app)/account/address-list" as any });
+  }
+
+  function handleDocumentChange(): void {
+    router.push({ pathname: "/(app)/account/document-change" as any });
+  }
+
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(24) }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+          <Ionicons name="arrow-back" size={24} color={theme.palette.neutral[0]} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{account.editTitle}</Text>
       </View>
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={{ paddingBottom: moderateScale(32, 0.5) }}
+        contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.fieldGroup}>
@@ -94,6 +107,20 @@ export default function ProfileEditScreen() {
             </Text>
           )}
         </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
+          testID="save-button"
+          activeOpacity={0.85}
+        >
+          <Text style={styles.saveButtonText}>
+            {isSubmitting ? account.savingButton : account.saveButton}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.sectionDivider} />
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>{account.emailLabel}</Text>
@@ -133,17 +160,43 @@ export default function ProfileEditScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          testID="save-button"
-          activeOpacity={0.85}
-        >
-          <Text style={styles.saveButtonText}>
-            {isSubmitting ? account.savingButton : account.saveButton}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{account.addressLabel}</Text>
+          <TouchableOpacity
+            style={styles.contactRow}
+            onPress={handleAddressChange}
+            testID="change-address-button"
+            activeOpacity={0.7}
+          >
+            <Text style={styles.contactValue} numberOfLines={1}>
+              {account.tapToChange}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={moderateScale(16, 0.3)}
+              color={theme.colors.primary.DEFAULT}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{account.documentLabel}</Text>
+          <TouchableOpacity
+            style={styles.contactRow}
+            onPress={handleDocumentChange}
+            testID="change-document-button"
+            activeOpacity={0.7}
+          >
+            <Text style={styles.contactValue} numberOfLines={1}>
+              {account.tapToChange}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={moderateScale(16, 0.3)}
+              color={theme.colors.primary.DEFAULT}
+            />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
