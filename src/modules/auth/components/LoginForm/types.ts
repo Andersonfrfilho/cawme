@@ -9,6 +9,7 @@ export interface LoginFormProps {
   handleSubmit: any;
   onForgotPassword: () => void;
   onRegister: () => void;
+  onRegisterAsProvider: () => void;
   onContinueAsGuest: () => void;
   rememberMe: boolean;
   onToggleRememberMe: () => void;

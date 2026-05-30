@@ -22,12 +22,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         transition={200}
       />
       <View style={styles.headerInfo}>
-        <Text style={styles.name}>{name}</Text>
+        <Text style={styles.name} testID="provider-profile-name">{name}</Text>
         <Text style={styles.location}>
           {location.city}, {location.state}
         </Text>
         <View style={styles.ratingContainer}>
-          <Text style={styles.rating}>⭐ {rating.toFixed(1)}</Text>
+          <Text style={styles.rating} testID="provider-profile-rating">{rating.toFixed(1)}</Text>
           <Text style={styles.reviews}>
             ({reviewCount} {t("profile.reviews")})
           </Text>

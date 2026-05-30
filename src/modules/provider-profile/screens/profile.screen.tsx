@@ -38,12 +38,12 @@ export default function ProviderProfileScreen() {
         reviewCount={profile.reviewCount}
       />
 
-      <View style={styles.section}>
+      <View style={styles.section} testID="provider-profile-about">
         <Text style={styles.sectionTitle}>{t("profile.about")}</Text>
-        <Text style={styles.bio}>{profile.bio}</Text>
+        <Text style={styles.bio} testID="provider-profile-bio">{profile.bio}</Text>
       </View>
 
-      <View style={styles.section}>
+      <View style={styles.section} testID="provider-profile-services">
         <Text style={styles.sectionTitle}>{t("profile.services")}</Text>
         {profile.services.map((service) => (
           <ServiceItem

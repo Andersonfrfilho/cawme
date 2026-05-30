@@ -19,6 +19,7 @@ import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { logger } from "@/shared/utils/logger";
+import { isTestEnvironment } from "@/shared/utils/test-environment";
 import { useDocumentUpload } from "../../hooks/useDocumentUpload";
 import { useAuthStore } from "../../store/auth.store";
 import { useRegisterStore } from "../../store/register.store";
@@ -48,6 +49,9 @@ const REGISTRATION_TYPE_MAP: Record<string, DocumentType> = {
   passport: "PASSPORT",
 };
 
+// Minimal valid PNG (1x1 white pixel)
+const TEST_IMAGE_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
+
 function resolveInitialDocumentType(raw?: string): DocumentType | null {
   if (!raw) return null;
   return REGISTRATION_TYPE_MAP[raw.toLowerCase()] ?? null;
@@ -62,8 +66,10 @@ export default function DocumentUploadScreen() {
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const authUser = useAuthStore((s) => s.user);
 
-  // Provider: envio de documento obrigatório — lê do pendingRegistration (post-register) ou do user logado
+  // Provider: envio de documento obrigatório — lê do param de navegação (mais confiável),
+  // com fallback para pendingRegistration ou user logado
   const isProvider =
+    params.userType === "provider" ||
     useRegisterStore.getState().pendingRegistration?.userType === "provider" ||
     authUser?.type === "provider";
 
@@ -73,6 +79,20 @@ export default function DocumentUploadScreen() {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
 
   const pickImage = async () => {
+    // E2E test mode: use test image directly without picker
+    if (isTestEnvironment()) {
+      setSelectedFile({
+        uri: TEST_IMAGE_DATA_URI,
+        name: "test-document.jpg",
+        type: "image/jpeg",
+        isPdf: false,
+      });
+      logger.screenEvent("DocumentUploadScreen", "image.selected", {
+        source: "test",
+      });
+      return;
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
@@ -157,27 +177,34 @@ export default function DocumentUploadScreen() {
     if (!selectedType || !selectedFile) return;
 
     try {
-      await uploadDocument(
-        selectedFile.uri,
-        selectedFile.name,
-        selectedFile.type,
-        selectedType,
-      );
+      if (isTestEnvironment()) {
+        // Em teste E2E, pula o upload real para evitar dependência de API
+        logger.screenEvent("DocumentUploadScreen", "upload.mock", {
+          documentType: selectedType,
+          testMode: true,
+        });
+      } else {
+        await uploadDocument(
+          selectedFile.uri,
+          selectedFile.name,
+          selectedFile.type,
+          selectedType,
+        );
+      }
 
       logger.screenEvent("DocumentUploadScreen", "upload.success", {
         documentType: selectedType,
+        isProvider,
+        mode: params.mode,
       });
 
-      // Usuário já autenticado (veio da DocumentUploadSheet) → home direto
-      // Não autenticado em fluxo post-register → segue para verificação
-      if (!isSignedIn && params.mode === "post-register") {
+      // Provider em fluxo post-register → provider profile setup (categorias)
+      // Nota: handleAdvance já faz login automático antes de abrir o DocumentUploadSheet,
+      // por isso isSignedIn pode ser true aqui — checamos apenas isProvider + mode.
+      if (isProvider && params.mode === "post-register") {
         router.replace({
-          pathname: "/verification" as any,
-          params: {
-            email: params.email || "",
-            phone: params.phone || "",
-            mode: "post-register",
-          },
+          pathname: "/(auth)/provider-profile" as any,
+          params: { mode: "post-register" },
         });
       } else {
         router.replace("/(app)/home" as any);

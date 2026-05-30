@@ -1,0 +1,136 @@
+appId: com.andersonfilho.cawme
+name: 👥 Providers List + Perfil Público
+description: |
+  Testa a listagem de providers e o perfil público de um provider:
+  1. Registra usuário (contractor) e chega na home
+  2. Navega para aba "Profissionais" (visível em test/dev mode via DEFAULT_TABS)
+  3. Assertivas da lista:
+     - Cards de providers visíveis (mock: Maria Limpeza, João Elétrica, etc.)
+     - Badge "Disponível" e "Indisponível" presentes
+  4. Tap no card da "Maria Limpeza" → navega para o perfil público
+  5. Assertivas do perfil:
+     - Nome: "Maria Limpeza"
+     - Seção "Sobre": bio visível
+     - Seção "Serviços": "Limpeza Completa", "Limpeza Rápida" (mock data)
+     - Rating: "4.9"
+     - Localização: "São Paulo, SP"
+
+tags:
+  - provider
+  - providers-list
+  - provider-profile
+  - e2e
+---
+# ── Gera dados únicos ─────────────────────────────────────────────────────────
+- evalScript: ${output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+# ── Inicia app limpo ──────────────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Welcome → caminho contractor ──────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+# ── Cadastro ──────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Providers"
+      LAST_NAME: "Test"
+      EMAIL: "providers-list-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+# ── Termos ────────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── Endereço + verificação + skip → home ─────────────────────────────────────
+- runFlow:
+    file: ../common/skip-to-home.yaml
+
+# ── Home → aba "Profissionais" ────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "tab-home"
+    timeout: 10000
+
+- tapOn:
+    id: "tab-providers"
+
+# ── Assertivas da lista ───────────────────────────────────────────────────────
+# Aguarda o título da tela (aparece mais rápido que o conteúdo do FlatList)
+- extendedWaitUntil:
+    visible: "Profissionais"
+    timeout: 12000
+
+# Aguarda o primeiro item do FlatList (pode ter lag no accessibility tree)
+- extendedWaitUntil:
+    visible: "Maria Limpeza"
+    timeout: 12000
+
+- assertVisible: "Maria Limpeza"
+- assertVisible: "João Elétrica"
+- assertVisible: "Ana Pintura"
+
+# Cards acessíveis
+- assertVisible:
+    id: "provider-card"
+
+# ── Tap no card → navega para o perfil público ────────────────────────────────
+- tapOn:
+    text: "Maria Limpeza"
+
+# ── Assertivas do perfil público ─────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "provider-profile-name"
+    timeout: 8000
+
+- assertVisible:
+    id: "provider-profile-name"
+
+# Nome, localização, rating
+- assertVisible: "Maria Limpeza"
+- assertVisible: "São Paulo, SP"
+- assertVisible: "4.9"
+
+# Seção Sobre
+- assertVisible:
+    id: "provider-profile-about"
+
+# Seção Serviços
+- assertVisible:
+    id: "provider-profile-services"
+
+# Serviços do mock
+- assertVisible: "Limpeza Completa"
+- assertVisible: "Limpeza Rápida"
+
+# Items de serviço acessíveis
+- assertVisible:
+    id: "provider-service-item"

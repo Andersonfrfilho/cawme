@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { theme } from "@/shared/constants";
+import { verticalScale } from "@/shared/utils/scale";
 
 export const styles = StyleSheet.create({
   formCard: {
@@ -127,14 +128,18 @@ export const styles = StyleSheet.create({
     fontWeight: theme.typography.fontWeight.bold,
   },
   secondaryActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: theme.spacing[6],
+    flexDirection: "column",
+    alignItems: "stretch",
+    marginTop: theme.spacing[8],
+    gap: theme.spacing[3],
   },
   secondaryButton: {
-    paddingVertical: theme.spacing[2],
-    paddingHorizontal: theme.spacing[2],
+    height: verticalScale(48),
+    borderRadius: theme.radii.xl,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border.DEFAULT,
+    justifyContent: "center",
+    alignItems: "center",
   },
   secondaryButtonContent: {
     flexDirection: "row",
@@ -143,6 +148,22 @@ export const styles = StyleSheet.create({
   },
   secondaryText: {
     fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.primary.DEFAULT,
+  },
+  providerLink: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: theme.spacing[5],
+    gap: theme.spacing[1],
+  },
+  providerLinkText: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.tertiary,
+  },
+  providerLinkAction: {
+    fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.primary.DEFAULT,
   },

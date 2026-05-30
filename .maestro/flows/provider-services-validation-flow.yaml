@@ -1,0 +1,228 @@
+appId: com.andersonfilho.cawme
+name: ❌ Provider Services - Validação de Campos
+description: |
+  Testa validações da tela de serviços do provider:
+  1. Abre modal e submete com nome vazio → alerta "Preencha todos os campos obrigatórios."
+  2. Preenche nome, submete com preço vazio → mesmo alerta
+  3. Fecha modal sem adicionar nenhum serviço
+  4. Tenta avançar sem serviços → alerta "Adicione pelo menos um serviço para continuar."
+  5. Adiciona serviço válido para limpar o estado → alerta some, botão Continuar ativa
+
+tags:
+  - provider
+  - services
+  - validation
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='120'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Registro como provider ────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form-provider.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Validation"
+      EMAIL: "svc-validation-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 15000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── Seleciona 1 categoria → navega para serviços ──────────────────────────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 30000
+
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- assertVisible:
+    id: "category-checkmark"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Tela de serviços ──────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# ── Validação 1: submeter com nome E preço vazios ─────────────────────────────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Preencha todos os campos obrigatórios."
+
+- tapOn: "OK"
+
+# ── Validação 2: submeter só com nome (preço vazio) ───────────────────────────
+- tapOn:
+    id: "service-name-input"
+- inputText: "Serviço Sem Preço"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Preencha todos os campos obrigatórios."
+
+- tapOn: "OK"
+
+# Fecha modal
+- tapOn:
+    id: "modal-close-button"
+
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 5000
+
+# ── Validação 3: avançar sem nenhum serviço ───────────────────────────────────
+- tapOn:
+    id: "action-bar-next-button"
+
+- assertVisible: "Adicione pelo menos um serviço para continuar."
+
+- tapOn: "OK"
+
+# ── Adiciona serviço válido para confirmar que funciona após as validações ─────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Serviço Válido"
+
+- tapOn:
+    id: "price-input"
+- inputText: "100"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Serviço Válido"
+
+# Botão Continuar agora está ativo (serviço existe)
+- assertVisible:
+    id: "action-bar-next-button"

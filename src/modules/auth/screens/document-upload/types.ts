@@ -3,4 +3,5 @@ export type DocumentUploadScreenParams = {
   email?: string;
   phone?: string;
   documentType?: string;
+  userType?: "contractor" | "provider";
 };

@@ -10,11 +10,17 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   LogBox,
+  Platform,
 } from "react-native";
 
 // Disable all warnings for E2E testing
 if (process.env.NODE_ENV === 'development') {
   LogBox.ignoreAllLogs();
+}
+
+// Set e2e flag for testing
+if (__DEV__) {
+  (globalThis as any).__e2e__ = true;
 }
 import * as Linking from "expo-linking";
 import { styles } from "@/shared/styles/root-layout.styles";

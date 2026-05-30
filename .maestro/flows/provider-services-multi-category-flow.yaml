@@ -1,0 +1,242 @@
+appId: com.andersonfilho.cawme
+name: 🗂️ Provider Services - Múltiplas Categorias
+description: |
+  Testa a troca de pills de categoria na tela de serviços e a separação de serviços por categoria:
+  1. Seleciona 2 categorias: Limpeza (test-cat-1) e Encanamento (test-cat-2)
+  2. Na tela de serviços, categoria ativa inicial = Limpeza
+  3. Adiciona "Limpeza Residencial" à categoria Limpeza
+  4. Verifica que "Limpeza Residencial" aparece
+  5. Troca pill para Encanamento
+  6. Verifica que "Limpeza Residencial" NÃO aparece (categoria diferente)
+  7. Adiciona "Desentupimento" à categoria Encanamento
+  8. Verifica que "Desentupimento" aparece
+  9. Troca pill de volta para Limpeza
+  10. Verifica que "Limpeza Residencial" aparece e "Desentupimento" NÃO
+  11. Avança (ambas categorias têm serviços)
+
+tags:
+  - provider
+  - services
+  - multi-category
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='122'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Registro como provider ────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form-provider.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "MultiCat"
+      EMAIL: "svc-multicat-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 15000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── Seleciona 2 categorias: Limpeza (index 0) + Encanamento (index 1) ─────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 30000
+
+# Limpeza (test-cat-1)
+- tapOn:
+    id: "category-card"
+    index: 0
+
+# Encanamento (test-cat-2)
+- tapOn:
+    id: "category-card"
+    index: 1
+
+- assertVisible:
+    id: "category-checkmark"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Tela de serviços — categoria ativa inicial: Limpeza ───────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# Pill de Limpeza deve estar ativo (primeira categoria selecionada)
+- assertVisible:
+    id: "category-pill-test-cat-1"
+
+# ── Adiciona serviço à Limpeza ────────────────────────────────────────────────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Residencial"
+
+- tapOn:
+    id: "price-input"
+- inputText: "150"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Limpeza Residencial"
+
+# ── Troca para categoria Encanamento ──────────────────────────────────────────
+- tapOn:
+    id: "category-pill-test-cat-2"
+
+# "Limpeza Residencial" NÃO deve aparecer (pertence à Limpeza)
+- assertNotVisible: "Limpeza Residencial"
+
+# ── Adiciona serviço ao Encanamento ──────────────────────────────────────────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Desentupimento"
+
+- tapOn:
+    id: "price-input"
+- inputText: "200"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Desentupimento"
+
+# ── Volta para Limpeza — verifica isolamento ──────────────────────────────────
+- tapOn:
+    id: "category-pill-test-cat-1"
+
+- assertVisible: "Limpeza Residencial"
+- assertNotVisible: "Desentupimento"
+
+# ── Avança — ambas as categorias têm serviços (total services.length > 0) ─────
+- tapOn:
+    id: "action-bar-next-button"
+
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+- assertVisible: "Sua disponibilidade"

@@ -9,8 +9,8 @@ export const ServiceItem: React.FC<ServiceItemProps> = ({
   unit,
 }) => {
   return (
-    <View style={styles.serviceItem}>
-      <Text style={styles.serviceName}>{name}</Text>
+    <View style={styles.serviceItem} testID="provider-service-item">
+      <Text style={styles.serviceName} testID="provider-service-name">{name}</Text>
       <Text style={styles.servicePrice}>
         R$ {price.toFixed(2)} / {unit}
       </Text>

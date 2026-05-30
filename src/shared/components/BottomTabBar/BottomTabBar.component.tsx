@@ -27,7 +27,7 @@ interface TabItemProps {
   onPress: () => void;
 }
 
-function TabItem({ descriptor, isFocused, onPress }: TabItemProps) {
+function TabItem({ route, descriptor, isFocused, onPress }: TabItemProps) {
   const progress = useSharedValue(isFocused ? 1 : 0);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ function TabItem({ descriptor, isFocused, onPress }: TabItemProps) {
   const color = isFocused ? theme.palette.blue[500] : theme.colors.text.tertiary;
 
   return (
-    <TouchableOpacity style={styles.tab} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.tab} onPress={onPress} activeOpacity={0.7} testID={`tab-${route.name}`}>
       <Animated.View style={[styles.pill, pillStyle]} />
       {descriptor.options.tabBarIcon?.({
         color,
@@ -53,7 +53,7 @@ function TabItem({ descriptor, isFocused, onPress }: TabItemProps) {
   );
 }
 
-function CenterTabItem({ descriptor, isFocused, onPress }: TabItemProps) {
+function CenterTabItem({ route, descriptor, isFocused, onPress }: TabItemProps) {
   const progress = useSharedValue(isFocused ? 1 : 0);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ function CenterTabItem({ descriptor, isFocused, onPress }: TabItemProps) {
   return (
     <View style={styles.centerWrapper}>
       <Animated.View style={[styles.centerButton, buttonStyle]}>
-        <TouchableOpacity style={styles.centerTouchable} onPress={onPress} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.centerTouchable} onPress={onPress} activeOpacity={0.85} testID={`tab-${route.name}`}>
           {descriptor.options.tabBarIcon?.({
             color,
             size: theme.metrics.iconSize.lg,

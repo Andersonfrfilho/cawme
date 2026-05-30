@@ -1,0 +1,191 @@
+appId: com.andersonfilho.cawme
+name: 📊 Provider Dashboard Flow
+description: |
+  Testa o dashboard do provider após registro e setup de perfil completos:
+  1. Registro como provider (CPF único + telefone único)
+  2. Endereço via CEP (01310100)
+  3. Verificação de e-mail (QA: 0000) e telefone (QA: últimos 4 dígitos)
+  4. Upload de documento (test mode: sem picker nativo, sem API)
+  5. Setup de perfil: 2 categorias, 2 serviços, disponibilidade Seg+Ter, revisão
+  6. Home → tap na aba "Dashboard"
+  7. Assertivas:
+     - ProviderDashboard renderiza (título "Dashboard")
+     - Seção "Agenda Ativa" visível
+     - Seção "Novas Solicitações" visível
+     - StatCards: "Agenda", "Pendentes", "Concluídos" (mock data)
+     - RequestItems: "Limpeza Residencial" (accepted), "Desentupimento Urgente" (pending)
+
+tags:
+  - provider
+  - dashboard
+  - e2e
+---
+# ── Gera CPF válido e telefone único ─────────────────────────────────────────
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='118'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+# ── Inicia app limpo ──────────────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Welcome → caminho provider ────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+# ── Cadastro ──────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form-provider.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Dashboard"
+      EMAIL: "provider-dashboard-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+# ── Termos ────────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── Endereço ──────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── Verificação e-mail ────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+
+- tapOn:
+    id: "verification-verify-button"
+
+# ── Verificação telefone ──────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+
+- tapOn:
+    id: "verification-verify-button"
+
+# ── Avançar + DocumentUploadSheet ────────────────────────────────────────────
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
+# ── Upload de documento ───────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 15000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── Setup de perfil: categorias → serviços → disponibilidade → revisão → home ─
+- runFlow:
+    file: ../common/provider-complete-profile-setup.yaml
+
+# ── Home → aba Dashboard ──────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "tab-home"
+    timeout: 10000
+
+- tapOn:
+    id: "tab-dashboard"
+
+# ── Assertivas do dashboard do provider ───────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Agenda Ativa"
+    timeout: 8000
+
+- assertVisible: "Agenda Ativa"
+- assertVisible: "Novas Solicitações"
+
+# Stats (mock data: Agenda, Pendentes, Concluídos)
+- assertVisible: "Agenda"
+- assertVisible: "Pendentes"
+- assertVisible: "Concluídos"
+
+# Request items (mock data)
+- assertVisible: "Limpeza Residencial"
+- assertVisible: "Desentupimento Urgente"
+
+# Status badges
+- assertVisible: "ACCEPTED"
+- assertVisible: "PENDING"

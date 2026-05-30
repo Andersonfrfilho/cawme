@@ -51,11 +51,13 @@ appId: com.andersonfilho.cawme
 - eraseText: 20
 - inputText: "${DOCUMENT}"
 - pressKey: Enter
-- hideKeyboard
+
+# Fecha teclado tocando em texto estático — mais estável que hideKeyboard no iOS/XCUITest
+- tapOn:
+    text: "Crie sua conta"
 
 # Aguarda "Confirmar senha" ficar visível — indica que o teclado fechou e o form rolou
-# para a área de senha. Mais confiável do que "Avançar" pois não sai da tela quando
-# há mensagens de erro inline (duplicatas) que empurram o botão para baixo do viewport.
+# para a área de senha.
 - extendedWaitUntil:
     visible: "Confirmar senha"
     timeout: 8000

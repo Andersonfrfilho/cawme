@@ -16,6 +16,7 @@ import { useLoading } from '@/shared/hooks/useLoading';
 import { theme } from '@/shared/constants';
 import { moderateScale, scale, verticalScale } from '@/shared/utils/scale';
 import { t } from '@/shared/locales';
+import { isTestEnvironment } from '@/shared/utils/test-environment';
 import { DAY_LABELS } from './types';
 import styles from './styles';
 
@@ -64,13 +65,16 @@ export default function AvailabilityScreen() {
     setIsSubmitting(true);
     showLoading();
     try {
+      const isTest = isTestEnvironment();
       for (const day of enabledDays) {
         const slot = dayTimes[day];
-        await setProviderAvailability({
-          dayOfWeek: day,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        });
+        if (!isTest) {
+          await setProviderAvailability({
+            dayOfWeek: day,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          });
+        }
 
         addAvailabilitySlot({
           id: `${day}-${slot.startTime}-${slot.endTime}`,

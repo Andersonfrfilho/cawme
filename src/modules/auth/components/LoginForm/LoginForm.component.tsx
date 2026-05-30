@@ -22,6 +22,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   handleSubmit,
   onForgotPassword,
   onRegister,
+  onRegisterAsProvider,
   onContinueAsGuest,
   rememberMe,
   onToggleRememberMe,
@@ -245,6 +246,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </View>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        onPress={onRegisterAsProvider}
+        activeOpacity={0.7}
+        style={styles.providerLink}
+      >
+        <Text style={styles.providerLinkText}>{t("auth.registerProviderPrompt")}</Text>
+        <Text style={styles.providerLinkAction}>{t("auth.registerProviderLink")}</Text>
+      </TouchableOpacity>
     </Animated.View>
   );
 };

@@ -18,13 +18,13 @@ export function RequestItemComponent({ item }: RequestItemProps) {
   };
 
   return (
-    <View style={styles.requestItem}>
+    <View style={styles.requestItem} testID="request-item">
       <View>
-        <Text style={styles.requestTitle}>{item.title}</Text>
+        <Text style={styles.requestTitle} testID="request-item-title">{item.title}</Text>
         <Text style={styles.requestDate}>{item.date}</Text>
       </View>
       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-        <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+        <Text style={styles.statusText} testID="request-item-status">{item.status.toUpperCase()}</Text>
       </View>
     </View>
   );

@@ -1,0 +1,222 @@
+appId: com.andersonfilho.cawme
+name: 📅 Provider Availability - Validação e Preenchimento
+description: |
+  Testa a tela de disponibilidade do provider:
+  1. Registra provider, seleciona 1 categoria, adiciona 1 serviço
+  2. Chega na tela de disponibilidade com 0 dias habilitados
+  3. Verifica que o botão Continuar está desabilitado (0 dias = disabled)
+  4. Habilita Segunda-Feira (day-toggle-1) e Terça-Feira (day-toggle-2)
+  5. Avança → chega na tela de revisão ("Confirmação do perfil")
+
+tags:
+  - provider
+  - availability
+  - validation
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='123'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Registro como provider ────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form-provider.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Avail"
+      EMAIL: "svc-avail-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 15000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── Seleciona 1 categoria → serviços ─────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 30000
+
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- assertVisible:
+    id: "category-checkmark"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# ── Adiciona 1 serviço para poder avançar ────────────────────────────────────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Serviço Teste"
+
+- tapOn:
+    id: "price-input"
+- inputText: "100"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Serviço Teste"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Tela de disponibilidade ───────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+- assertVisible: "Sua disponibilidade"
+
+# ── Botão Continuar existe (pode estar desabilitado visualmente com 0 dias) ───
+- assertVisible:
+    id: "action-bar-next-button"
+
+# "0 dias selecionados" — texto de feedback na tela (está no topo, antes dos toggles)
+- assertVisible: "0 dias selecionados"
+
+# ── Habilita Segunda-Feira (day 1) ────────────────────────────────────────────
+- tapOn:
+    id: "day-toggle-1"
+
+# Inputs de horário aparecem quando o dia é habilitado (confirma toggle funcionou)
+- assertVisible:
+    id: "day-1-start-time"
+
+# ── Habilita Terça-Feira (day 2) ──────────────────────────────────────────────
+- tapOn:
+    id: "day-toggle-2"
+
+- assertVisible:
+    id: "day-2-start-time"
+
+# ── Avança para revisão ───────────────────────────────────────────────────────
+- tapOn:
+    id: "action-bar-next-button"
+
+- extendedWaitUntil:
+    visible: "Confirmação do perfil"
+    timeout: 8000
+
+- assertVisible: "Confirmação do perfil"

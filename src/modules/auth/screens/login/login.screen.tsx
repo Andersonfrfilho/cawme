@@ -95,7 +95,13 @@ export default function LoginScreen(_: LoginScreenParams) {
               onRegister={() => {
                 if (navigatingRef.current) return;
                 navigatingRef.current = true;
-                router.push("/register" as any);
+                router.push({ pathname: "/register" as any, params: { userType: "contractor" } });
+                setTimeout(() => { navigatingRef.current = false; }, 1000);
+              }}
+              onRegisterAsProvider={() => {
+                if (navigatingRef.current) return;
+                navigatingRef.current = true;
+                router.push({ pathname: "/register" as any, params: { userType: "provider" } });
                 setTimeout(() => { navigatingRef.current = false; }, 1000);
               }}
               onContinueAsGuest={() => router.replace("/(app)/search" as any)}

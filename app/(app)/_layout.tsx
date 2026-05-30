@@ -5,14 +5,17 @@ import { t } from '@/shared/locales';
 import { theme } from '@/shared/constants';
 import { scale } from '@/shared/utils/scale';
 import { BottomTabBar } from '@/shared/components/BottomTabBar';
+import { isTestEnvironment } from '@/shared/utils/test-environment';
 
-// Rotas em (app)/ que não devem aparecer como tabs
-const HIDDEN_ROUTES = ['providers', 'company'];
+// Rotas em (app)/ gerenciadas pelo servidor (não aparecem como tabs por padrão).
+// Em test/dev mode, 'providers' fica visível no tab bar para permitir E2E nessa tela.
+const ALWAYS_HIDDEN_ROUTES = ['company'];
 
 const DEFAULT_TABS = [
   { id: 'search', label: t('navigation.search'), icon: 'search-outline' },
   { id: 'dashboard', label: t('navigation.dashboard'), icon: 'stats-chart-outline' },
   { id: 'home', label: t('navigation.home'), icon: 'home-outline' },
+  { id: 'providers', label: t('navigation.providers'), icon: 'people-outline' },
   { id: 'chat', label: t('navigation.chat'), icon: 'chatbubbles-outline' },
   { id: 'notifications', label: t('navigation.notifications'), icon: 'notifications-outline' },
 ];
@@ -26,6 +29,9 @@ const ICON_MAP: Record<string, any> = {
   'stats-chart': 'stats-chart-outline',
   'stats-chart-outline': 'stats-chart-outline',
   list: 'list-outline',
+  providers: 'people-outline',
+  people: 'people-outline',
+  'people-outline': 'people-outline',
   chat: 'chatbubbles-outline',
   chatbubbles: 'chatbubbles-outline',
   'chatbubbles-outline': 'chatbubbles-outline',
@@ -45,7 +51,9 @@ function centerHome<T extends { id: string }>(tabs: T[]): T[] {
 export default function AppLayout() {
   const config = useAppConfigStore((s) => s.config);
 
-  const rawTabs = config?.navigation.tabBar.items.filter((tab) => tab.visible) ?? DEFAULT_TABS;
+  // Em test mode, forçar DEFAULT_TABS para garantir que 'providers' apareça no tab bar
+  const serverTabs = isTestEnvironment() ? null : config?.navigation.tabBar.items.filter((tab) => tab.visible);
+  const rawTabs = serverTabs ?? DEFAULT_TABS;
 
   const uniqueTabs = rawTabs.filter((tab, index, self) =>
     index === self.findIndex((t) => t.id === tab.id),
@@ -53,9 +61,18 @@ export default function AppLayout() {
 
   const tabs = centerHome(uniqueTabs);
 
+  // Rotas já renderizadas como tabs não precisam de registro duplicado em HIDDEN_ROUTES.
+  // Em produção (config do servidor), providers não aparece nos tabs e é registrado como hidden.
+  const renderedTabIds = new Set(tabs.map((tab) => tab.id));
+  const hiddenRoutes = [
+    ...ALWAYS_HIDDEN_ROUTES,
+    // providers só vai para hidden quando o servidor não o inclui nos tabs visíveis
+    ...(!renderedTabIds.has('providers') ? ['providers'] : []),
+  ];
+
   return (
     <Tabs
-      tabBar={(props) => <BottomTabBar {...props} hiddenRoutes={HIDDEN_ROUTES} />}
+      tabBar={(props) => <BottomTabBar {...props} hiddenRoutes={hiddenRoutes} />}
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary.DEFAULT,
         tabBarInactiveTintColor: theme.colors.text.secondary,
@@ -79,7 +96,7 @@ export default function AppLayout() {
         />
       ))}
 
-      {HIDDEN_ROUTES.map((name) => (
+      {hiddenRoutes.map((name) => (
         <Tabs.Screen key={name} name={name} options={{ href: null }} />
       ))}
     </Tabs>

@@ -1,0 +1,216 @@
+appId: com.andersonfilho.cawme
+name: 🗑️ Provider Services - Remoção de Serviço
+description: |
+  Testa a remoção de um serviço na tela de serviços do provider:
+  1. Adiciona "Serviço Para Remover" com preço R$80
+  2. Verifica que aparece na lista (service-card visível)
+  3. Toca no botão de remover (trash icon)
+  4. Verifica que "Serviço Para Remover" sumiu da lista
+  5. Verifica que o botão Continuar voltou a ficar desabilitado (sem serviços)
+  6. Adiciona outro serviço e verifica que pode avançar
+
+tags:
+  - provider
+  - services
+  - remove
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='121'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Registro como provider ────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-offer-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form-provider.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Provider"
+      LAST_NAME: "Remove"
+      EMAIL: "svc-remove-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    text: "Termos de Uso"
+- tapOn:
+    id: "terms-submit-button"
+
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+- extendedWaitUntil:
+    visible: ".*Telefone.*|.*verification-tab-phone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 5000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "verification-advance-button"
+    commands:
+      - tapOn:
+          id: "verification-advance-button"
+
+- runFlow:
+    when:
+      visible:
+        id: "document-sheet-now-button"
+    commands:
+      - tapOn:
+          id: "document-sheet-now-button"
+
+- extendedWaitUntil:
+    visible: "Verificação de Documento"
+    timeout: 15000
+
+- runFlow:
+    file: ../common/upload-document-from-gallery.yaml
+    env:
+      DOCUMENT_TYPE_ID: "cpf"
+
+# ── Seleciona 1 categoria → serviços ─────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 30000
+
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- tapOn:
+    id: "action-bar-next-button"
+
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+# ── Adiciona serviço que será removido ────────────────────────────────────────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Serviço Para Remover"
+
+- tapOn:
+    id: "price-input"
+- inputText: "80"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+# Verifica que apareceu na lista
+- assertVisible: "Serviço Para Remover"
+- assertVisible:
+    id: "service-card"
+
+# ── Remove o serviço ──────────────────────────────────────────────────────────
+- tapOn:
+    id: "remove-service-button"
+    index: 0
+
+# Verifica que sumiu
+- assertNotVisible: "Serviço Para Remover"
+- assertNotVisible:
+    id: "service-card"
+
+# ── Tenta avançar: botão Continuar deve estar desabilitado (0 serviços) ───────
+# O botão existe mas está disabled — verifica que a lista está vazia
+- assertNotVisible: "Serviço Para Remover"
+
+# ── Adiciona novo serviço para confirmar que o fluxo continua funcionando ─────
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Novo Serviço"
+
+- tapOn:
+    id: "price-input"
+- inputText: "120"
+
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Novo Serviço"

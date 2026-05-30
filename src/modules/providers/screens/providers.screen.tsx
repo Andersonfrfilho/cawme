@@ -32,12 +32,14 @@ export default function ProvidersScreen() {
       style={styles.card}
       onPress={() => router.push(`/providers/${item.id}/profile` as any)}
       activeOpacity={0.7}
+      testID="provider-card"
+      accessibilityLabel={item.businessName}
     >
       <View style={styles.cardAvatar}>
         <Ionicons name="person" size={scale(28)} color={theme.colors.primary.DEFAULT} />
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.cardName}>{item.businessName}</Text>
+        <Text style={styles.cardName} testID="provider-card-name">{item.businessName}</Text>
         <View style={styles.cardRow}>
           <Ionicons name="star" size={moderateScale(14, 0.3)} color={theme.colors.accent.yellow} />
           <Text style={styles.cardRating}>{item.averageRating}</Text>

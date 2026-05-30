@@ -1,0 +1,103 @@
+appId: com.andersonfilho.cawme
+---
+# provider-complete-profile-setup.yaml
+#
+# Assume que o usuário está na tela de categorias após o upload do documento.
+# Percorre: categorias → 2 serviços → disponibilidade (Seg + Ter) → revisão → home.
+#
+# Serviços criados (assertíveis nos flows de destino):
+#   - "Limpeza Completa"  R$150
+#   - "Limpeza Rápida"    R$75
+#
+# Dias ativados: Segunda (day-toggle-1) e Terça (day-toggle-2)
+
+# ── Categorias ──────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Quais serviços você oferece?"
+    timeout: 30000
+
+- tapOn:
+    id: "category-card"
+    index: 0
+
+- tapOn:
+    id: "category-card"
+    index: 1
+
+- assertVisible:
+    id: "category-checkmark"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Serviços ─────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Seus serviços"
+    timeout: 8000
+
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Completa"
+- tapOn:
+    id: "price-input"
+- inputText: "150"
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Limpeza Completa"
+
+- tapOn:
+    id: "add-service-button"
+
+- extendedWaitUntil:
+    visible: "Adicionar novo serviço"
+    timeout: 5000
+
+- tapOn:
+    id: "service-name-input"
+- inputText: "Limpeza Rápida"
+- tapOn:
+    id: "price-input"
+- inputText: "75"
+- tapOn:
+    id: "service-modal-submit-button"
+
+- assertVisible: "Limpeza Rápida"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Disponibilidade ───────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Sua disponibilidade"
+    timeout: 8000
+
+- tapOn:
+    id: "day-toggle-1"
+
+- tapOn:
+    id: "day-toggle-2"
+
+- tapOn:
+    id: "action-bar-next-button"
+
+# ── Revisão → Submit ──────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Confirmação do perfil"
+    timeout: 8000
+
+- tapOn:
+    id: "action-bar-submit-button"
+
+# ── Home ──────────────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "tab-home"
+    timeout: 15000

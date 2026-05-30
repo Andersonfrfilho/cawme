@@ -19,6 +19,7 @@ import styles from './styles';
 
 export default function ReviewScreen() {
   const { selectedCategories, services, availability, reset } = useProviderProfileStore();
+  const { createProviderService, setProviderAvailability } = useAuth();
   const { showLoading, hideLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,6 +32,24 @@ export default function ReviewScreen() {
     setIsSubmitting(true);
     showLoading();
     try {
+      for (const service of services) {
+        await createProviderService({
+          serviceId: service.serviceId,
+          estimatedDurationMinutes: service.estimatedDurationMinutes,
+          pricePerHour: service.pricePerHour,
+          priceBase: service.priceBase,
+          priceType: service.priceType,
+        });
+      }
+
+      for (const slot of availability) {
+        await setProviderAvailability({
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+        });
+      }
+
       reset();
       router.replace('/(app)/home');
     } catch (error) {

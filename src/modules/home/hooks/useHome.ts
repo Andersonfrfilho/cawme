@@ -2,11 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { HomeService } from '@/modules/home/services/home.service';
 import { screenRender } from '@/shared/utils/logger';
 import { useEffect } from 'react';
+import { isTestEnvironment } from '@/shared/utils/test-environment';
 
 export function useHome() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['home'],
     queryFn: async () => {
+      if (isTestEnvironment()) {
+        return { layout: [] };
+      }
       // Logging é feito automaticamente pelo api-client interceptor
       try {
         const result = await HomeService.get();

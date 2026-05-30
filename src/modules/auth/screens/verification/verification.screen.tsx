@@ -257,11 +257,15 @@ export default function VerificationScreen() {
 
   const handleSheetNow = useCallback(() => {
     setShowDocumentSheet(false);
+    const userType =
+      useRegisterStore.getState().pendingRegistration?.userType ??
+      authUser?.type ??
+      "contractor";
     router.replace({
       pathname: "/(auth)/document-upload" as any,
-      params: { documentType: params.documentType, mode: "post-register" },
+      params: { documentType: params.documentType, mode: "post-register", userType },
     });
-  }, [params.documentType]);
+  }, [params.documentType, authUser?.type]);
 
   const handleSheetLater = useCallback(() => {
     setShowDocumentSheet(false);
