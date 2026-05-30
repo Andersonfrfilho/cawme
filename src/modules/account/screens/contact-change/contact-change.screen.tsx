@@ -35,7 +35,7 @@ export default function ContactChangeScreen() {
   const insets = useSafeAreaInsets();
   const { account } = useLocale<LocaleKeys>();
   const { type, currentContact } = useLocalSearchParams<ContactChangeScreenParams>();
-  const { checkContactAvailability, initiateContactChange, confirmContactChange } = useAccount();
+  const { initiateContactChange, confirmContactChange } = useAccount();
 
   const [step, setStep] = useState<Step>("enter-contact");
   const [contactId, setContactId] = useState<string>("");
@@ -64,14 +64,6 @@ export default function ContactChangeScreen() {
 
   async function onContactSubmit(values: ContactFormValues): Promise<void> {
     try {
-      const available = await checkContactAvailability({
-        contact: values.contact,
-        type: type ?? "email",
-      });
-      if (!available) {
-        contactForm.setError("contact", { message: account.alreadyInUse });
-        return;
-      }
       const result = await initiateContactChange({
         contact: values.contact,
         type: type ?? "email",
