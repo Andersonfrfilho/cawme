@@ -1,0 +1,189 @@
+appId: com.andersonfilho.cawme
+name: 📧 Profile Edit - Trocar E-mail (OTP 0000)
+description: |
+  Fluxo de troca de e-mail com verificação OTP:
+  1. Cadastra contractor único + endereço + verificação completa
+  2. Chega na home autenticado
+  3. Toca no ícone de perfil no header
+  4. Tela "Editar perfil" aparece — e-mail atual visível
+  5. Toca no campo e-mail → tela "Alterar e-mail"
+  6. Digita novo e-mail
+  7. Toca "Enviar código"
+  8. Digita código QA: 0000
+  9. Toca "Confirmar"
+  10. Alerta de sucesso → volta para edição de perfil
+  Código QA para e-mail: 0000
+tags:
+  - account
+  - profile-edit
+  - email-change
+  - otp
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='192'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── 1. Cadastro (contractor) ──────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "EditEmail"
+      LAST_NAME: "Teste"
+      EMAIL: "editemail${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 2. Endereço ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 3. Verificação e-mail (QA: 0000) ─────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 4. Verificação telefone (QA: últimos 4 dígitos) ───────────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 5. Avançar → auto-login → home ────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "verification-advance-button"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-advance-button"
+
+# Pula DocumentUploadSheet se aparecer
+- runFlow:
+    when:
+      visible: ".*documento.*|.*Enviar depois.*"
+    commands:
+      - tapOn:
+          id: "document-upload-skip-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*"
+    timeout: 20000
+
+# ── 6. Abre tela de edição de perfil ─────────────────────────────────────────
+- tapOn:
+    id: "edit-profile-button"
+
+- extendedWaitUntil:
+    visible: "Editar perfil"
+    timeout: 8000
+
+# E-mail atual deve estar visível
+- assertVisible:
+    id: "change-email-button"
+
+# ── 7. Inicia troca de e-mail ─────────────────────────────────────────────────
+- tapOn:
+    id: "change-email-button"
+
+- extendedWaitUntil:
+    visible: "Alterar e-mail"
+    timeout: 8000
+
+# ── 8. Digita novo e-mail ─────────────────────────────────────────────────────
+- tapOn:
+    id: "contact-input"
+- eraseText: 50
+- inputText: "newemail${output.TS}@test.com"
+- pressKey: Enter
+
+# ── 9. Envia código ───────────────────────────────────────────────────────────
+- tapOn:
+    id: "send-code-button"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*|.*newemail.*"
+    timeout: 12000
+
+# ── 10. Digita código QA: 0000 ────────────────────────────────────────────────
+- tapOn:
+    id: "otp-input"
+- inputText: "0000"
+
+# ── 11. Confirma ─────────────────────────────────────────────────────────────
+- tapOn:
+    id: "confirm-button"
+
+- extendedWaitUntil:
+    visible: ".*sucesso.*|.*atualizado.*|.*trocado.*"
+    timeout: 12000

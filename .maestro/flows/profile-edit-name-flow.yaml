@@ -1,0 +1,162 @@
+appId: com.andersonfilho.cawme
+name: ✏️ Profile Edit - Atualizar Nome
+description: |
+  Fluxo de edição de perfil — atualização do nome completo:
+  1. Cadastra contractor único + endereço
+  2. Verifica email (0000) e telefone (últimos 4 dígitos)
+  3. Auto-login → home
+  4. Toca no ícone de perfil no header
+  5. Tela "Editar perfil" aparece
+  6. Limpa campo nome e digita novo nome
+  7. Toca "Salvar"
+  8. Alerta de sucesso aparece
+tags:
+  - account
+  - profile-edit
+  - e2e
+---
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='191'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1];}
+
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── 1. Cadastro (contractor) ──────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "EditNome"
+      LAST_NAME: "Teste"
+      EMAIL: "editnome${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+# ── 2. Endereço ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Onde você mora?"
+    timeout: 12000
+
+- tapOn:
+    id: "address-cep-input"
+- eraseText: 10
+- inputText: "01310100"
+
+- extendedWaitUntil:
+    visible: "Endereço encontrado"
+    timeout: 15000
+
+- tapOn:
+    id: "address-number-input"
+- inputText: "100"
+- pressKey: Enter
+- pressKey: Enter
+
+# ── 3. Verificação e-mail (QA: 0000) ─────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Verificação.*|.*Confirme seu e-mail.*"
+    timeout: 12000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- inputText: "0"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 4. Verificação telefone (QA: últimos 4 dígitos) ───────────────────────────
+- extendedWaitUntil:
+    visible: ".*Telefone.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-tab-phone"
+
+- extendedWaitUntil:
+    visible: ".*Código enviado.*"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-code-0"
+- inputText: "${output.PC0}"
+- inputText: "${output.PC1}"
+- inputText: "${output.PC2}"
+- inputText: "${output.PC3}"
+- tapOn:
+    id: "verification-verify-button"
+
+# ── 5. Avançar → auto-login → home ────────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "verification-advance-button"
+    timeout: 8000
+
+- tapOn:
+    id: "verification-advance-button"
+
+# Pula DocumentUploadSheet se aparecer
+- runFlow:
+    when:
+      visible: ".*documento.*|.*Enviar depois.*"
+    commands:
+      - tapOn:
+          id: "document-upload-skip-button"
+
+- extendedWaitUntil:
+    visible: ".*Início.*"
+    timeout: 20000
+
+# ── 6. Abre tela de edição de perfil ─────────────────────────────────────────
+- assertVisible:
+    id: "edit-profile-button"
+
+- tapOn:
+    id: "edit-profile-button"
+
+- extendedWaitUntil:
+    visible: "Editar perfil"
+    timeout: 8000
+
+# ── 7. Altera nome ────────────────────────────────────────────────────────────
+- tapOn:
+    id: "full-name-input"
+- eraseText: 50
+- inputText: "Nome Atualizado Teste"
+- pressKey: Enter
+
+# ── 8. Salva e verifica sucesso ───────────────────────────────────────────────
+- tapOn:
+    id: "save-button"
+
+- extendedWaitUntil:
+    visible: ".*sucesso.*|.*atualizado.*"
+    timeout: 12000
