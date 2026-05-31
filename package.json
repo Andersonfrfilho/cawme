@@ -5,8 +5,11 @@
   "scripts": {
     "start": "expo start --dev-client",
     "start:clean": "expo start --dev-client --clear",
+    "start:local": "cp .env.local .env.development && expo start --dev-client",
     "android": "expo run:android",
+    "android:local": "cp .env.local .env.development && expo run:android",
     "ios": "expo run:ios",
+    "ios:local": "cp .env.local .env.development && expo run:ios",
     "ios:clean": "xcodebuild clean -workspace ios/Cawme.xcworkspace -scheme Cawme -quiet && expo run:ios",
     "web": "expo start --web",
     "check-locales": "node ./scripts/check-locales.js",
