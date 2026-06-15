@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { useRegisterStore } from "@/modules/auth/store/register.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { AccountService } from "@/modules/account/services/account.service";
 import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResume";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { router } from "expo-router";
@@ -13,6 +14,14 @@ import type {
   SelfUnlockVerifyParams,
   SelfUnlockVerifyResult,
 } from "../services/types";
+
+async function createCategory(params: Parameters<typeof KeycloakService.createCategory>[0]) {
+  return KeycloakService.createCategory(params);
+}
+
+async function createServiceCatalog(params: Parameters<typeof KeycloakService.createServiceCatalog>[0]) {
+  return KeycloakService.createServiceCatalog(params);
+}
 
 export function useAuth() {
   const { setUser, logout: clearUser } = useAuthStore();
@@ -58,8 +67,14 @@ export function useAuth() {
         return;
       }
 
-      const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
-      setUser({ id: userId, name, email, type: userType, phone: storedPhone });
+      let primaryPhone: string | undefined;
+      try {
+        const profile = await AccountService.getProfile();
+        primaryPhone = profile.primaryPhone;
+      } catch {
+        primaryPhone = useAuthStore.getState().user?.phone;
+      }
+      setUser({ id: userId, name, email, type: userType, phone: primaryPhone });
       router.replace("/(app)/home");
     } catch (error) {
       // Se falhar a checagem, usa o estado local para decidir
@@ -170,6 +185,10 @@ export function useAuth() {
     return KeycloakService.getCategories();
   }
 
+  async function getServices() {
+    return KeycloakService.getServices();
+  }
+
   async function createProviderService(params: Parameters<typeof KeycloakService.createProviderService>[0]) {
     return KeycloakService.createProviderService(params);
   }
@@ -198,10 +217,13 @@ export function useAuth() {
   }
 
   async function updateProviderAvailability(
-    dayOfWeek: number,
-    params: Parameters<typeof KeycloakService.updateProviderAvailability>[1],
+    params: Parameters<typeof KeycloakService.updateProviderAvailability>[0],
   ) {
-    return KeycloakService.updateProviderAvailability(dayOfWeek, params);
+    return KeycloakService.updateProviderAvailability(params);
+  }
+
+  async function deleteProviderAvailability(id: string) {
+    return KeycloakService.deleteProviderAvailability(id);
   }
 
   return {
@@ -211,6 +233,9 @@ export function useAuth() {
     initiateSelfUnlock,
     verifySelfUnlock,
     getCategories,
+    getServices,
+    createCategory,
+    createServiceCatalog,
     createProviderService,
     getProviderServices,
     updateProviderService,
@@ -218,5 +243,6 @@ export function useAuth() {
     setProviderAvailability,
     getProviderAvailability,
     updateProviderAvailability,
+    deleteProviderAvailability,
   };
 }

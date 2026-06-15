@@ -1,0 +1,706 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  FlatList,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useProviderProfile } from "@/modules/provider-profile/hooks/useProviderProfile";
+import { AccountService, type UserAddress } from "@/modules/account/services/account.service";
+import { ServiceRequestsService } from "@/modules/service-requests/services/service-requests.service";
+import { useLocale, LocaleKeys } from "@/shared/locales";
+import { useToast } from "@/shared/hooks/useToast";
+import { useLoading } from "@/shared/hooks/useLoading";
+import { Toast } from "@/shared/components/Toast";
+import { theme } from "@/shared/constants";
+import { formatBRL } from "@/shared/utils/currency";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
+
+import styles from "./styles";
+import {
+  requestCreateSchema,
+  type RequestCreateFormValues,
+  type RequestCreateScreenParams,
+} from "./types";
+
+const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const PICKER_ITEM_HEIGHT = verticalScale(44);
+const PICKER_VISIBLE = 5;
+
+function formatScheduledDate(day: number, month: number, year: number): string {
+  return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+}
+
+function buildISODate(day: number, month: number, year: number): string {
+  const date = new Date(year, month, day, 12, 0, 0);
+  return date.toISOString();
+}
+
+type PickerColumnProps = {
+  data: string[];
+  selectedIndex: number;
+  onSelect: (index: number) => void;
+};
+
+function DatePickerColumn({ data, selectedIndex, onSelect }: PickerColumnProps) {
+  const listRef = useRef<FlatList>(null);
+  const padding = Math.floor(PICKER_VISIBLE / 2);
+  const paddedData = [
+    ...Array(padding).fill(''),
+    ...data,
+    ...Array(padding).fill(''),
+  ];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      listRef.current?.scrollToOffset({
+        offset: selectedIndex * PICKER_ITEM_HEIGHT,
+        animated: false,
+      });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [selectedIndex]);
+
+  return (
+    <View style={{ flex: 1, height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE, overflow: 'hidden' }}>
+      <FlatList
+        ref={listRef}
+        data={paddedData}
+        keyExtractor={(item, i) => `${item}-${i}`}
+        getItemLayout={(_, index) => ({
+          length: PICKER_ITEM_HEIGHT,
+          offset: PICKER_ITEM_HEIGHT * index,
+          index,
+        })}
+        snapToInterval={PICKER_ITEM_HEIGHT}
+        decelerationRate="fast"
+        showsVerticalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          const raw = Math.round(e.nativeEvent.contentOffset.y / PICKER_ITEM_HEIGHT);
+          const clamped = Math.min(Math.max(0, raw), data.length - 1);
+          onSelect(clamped);
+        }}
+        renderItem={({ item, index }) => {
+          const isSelected = index === selectedIndex + padding;
+          return (
+            <View style={styles.datePickerItem}>
+              <Text
+                style={isSelected ? styles.datePickerItemTextSelected : styles.datePickerItemText}
+              >
+                {item}
+              </Text>
+            </View>
+          );
+        }}
+      />
+    </View>
+  );
+}
+
+type PickerMode = "service" | "address" | "paymentMethod" | "date" | null;
+
+export default function RequestCreateScreen() {
+  const insets = useSafeAreaInsets();
+  const { serviceRequests } = useLocale<LocaleKeys>();
+  const { providerId, providerName } = useLocalSearchParams<RequestCreateScreenParams>();
+  const { toast, toastOpacity, showToast } = useToast();
+  const { showLoading, hideLoading, isLoading } = useLoading();
+
+  const { data: profile, isLoading: profileLoading } = useProviderProfile(providerId ?? "");
+
+  const today = new Date();
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [pickerMode, setPickerMode] = useState<PickerMode>(null);
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
+  const [serviceHours, setServiceHours] = useState<Record<string, number>>({});
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
+  const [scheduledDate, setScheduledDate] = useState<string | null>(null);
+  const [pickerDay, setPickerDay] = useState(today.getDate());
+  const [pickerMonth, setPickerMonth] = useState(today.getMonth());
+  const [pickerYear, setPickerYear] = useState(today.getFullYear());
+  const [showServiceError, setShowServiceError] = useState(false);
+
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RequestCreateFormValues>({
+    resolver: zodResolver(requestCreateSchema),
+  });
+
+  const selectedAddressId = watch("addressId");
+  const description = watch("description");
+
+  const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
+  const selectedServices = (profile?.services ?? []).filter((s) => selectedServiceIds.has(s.id));
+
+  useEffect(() => {
+    AccountService.listAddresses().then(setAddresses).catch(() => setAddresses([]));
+  }, []);
+
+  function toggleService(serviceId: string) {
+    setSelectedServiceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(serviceId)) {
+        next.delete(serviceId);
+        setServiceHours((hours) => {
+          const updated = { ...hours };
+          delete updated[serviceId];
+          return updated;
+        });
+      } else {
+        next.add(serviceId);
+        const service = profile?.services.find((s) => s.id === serviceId);
+        if (service?.unit === "hora") {
+          setServiceHours((hours) => ({ ...hours, [serviceId]: 1 }));
+        }
+      }
+      return next;
+    });
+    setShowServiceError(false);
+  }
+
+  function adjustHours(serviceId: string, delta: number) {
+    setServiceHours((prev) => ({
+      ...prev,
+      [serviceId]: Math.max(1, (prev[serviceId] ?? 1) + delta),
+    }));
+  }
+
+  let selectorLabel: string;
+  if (selectedServiceIds.size === 0) {
+    selectorLabel = serviceRequests.servicesPlaceholder;
+  } else if (selectedServiceIds.size === 1) {
+    selectorLabel = selectedServices[0]?.name ?? '';
+  } else {
+    selectorLabel = `${selectedServiceIds.size} ${serviceRequests.servicesSelected}`;
+  }
+
+  async function onSubmit(values: RequestCreateFormValues): Promise<void> {
+    if (!providerId) return;
+    if (selectedServiceIds.size === 0) {
+      setShowServiceError(true);
+      return;
+    }
+
+    showLoading();
+    try {
+      for (const serviceId of Array.from(selectedServiceIds)) {
+        const service = profile?.services.find((s) => s.id === serviceId);
+        const hours = serviceHours[serviceId] ?? 1;
+        const priceFinal = service?.unit === "hora" ? service.price * hours : undefined;
+
+        await ServiceRequestsService.create({
+          providerId,
+          serviceId,
+          addressId: values.addressId,
+          description: values.description,
+          priceFinal,
+          scheduledAt: scheduledDate ?? undefined,
+          paymentMethodTypeId: selectedPaymentMethodId ?? undefined,
+        });
+      }
+
+      const successMsg =
+        selectedServiceIds.size > 1
+          ? `${selectedServiceIds.size} ${serviceRequests.requestsSuccess}`
+          : serviceRequests.requestSuccess;
+
+      showToast(successMsg, "success");
+      setTimeout(() => router.replace("/(app)/service-requests" as any), 1500);
+    } catch {
+      showToast(serviceRequests.requestError, "error");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  const canSubmit = selectedServiceIds.size > 0 && !!selectedAddressId;
+
+  return (
+    <View style={styles.root}>
+      <View style={[styles.header, { paddingTop: insets.top + verticalScale(24) }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
+          <Ionicons name="arrow-back" size={moderateScale(24, 0.3)} color={theme.palette.neutral[0]} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{serviceRequests.createTitle}</Text>
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.providerCard}>
+          <View style={styles.providerAvatarPlaceholder}>
+            <Ionicons
+              name="person"
+              size={moderateScale(22, 0.3)}
+              color={theme.colors.primary.DEFAULT}
+            />
+          </View>
+          <View>
+            <Text style={styles.providerName}>{providerName}</Text>
+            <Text style={styles.providerSubtitle}>Prestador de serviços</Text>
+          </View>
+        </View>
+
+        {/* Services field */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{serviceRequests.servicesLabel}</Text>
+          <TouchableOpacity
+            style={[
+              styles.selectorButton,
+              selectedServiceIds.size > 0 && styles.selectorButtonSelected,
+            ]}
+            onPress={() => setPickerMode("service")}
+            disabled={profileLoading || isLoading}
+            testID="service-selector"
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.selectorText,
+                selectedServiceIds.size > 0 && styles.selectorTextSelected,
+              ]}
+              numberOfLines={1}
+            >
+              {selectorLabel}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={moderateScale(16, 0.3)}
+              color={theme.colors.text.secondary}
+            />
+          </TouchableOpacity>
+
+          {/* Selected services detail cards */}
+          {selectedServices.length > 0 && (
+            <View style={styles.selectedServicesList}>
+              {selectedServices.map((service) => {
+                const isHourly = service.unit === "hora";
+                const hours = serviceHours[service.id] ?? 1;
+                const estimated = isHourly ? service.price * hours : service.price;
+
+                return (
+                  <View key={service.id} style={styles.selectedServiceItem}>
+                    <View style={styles.selectedServiceHeader}>
+                      <Text style={styles.selectedServiceName} numberOfLines={1}>
+                        {service.name}
+                      </Text>
+                      <Text style={styles.selectedServiceUnit}>
+                        {formatBRL(service.price)}/{service.unit}
+                      </Text>
+                    </View>
+
+                    {isHourly && (
+                      <View style={styles.hoursRow}>
+                        <Text style={styles.hoursLabelText}>
+                          {serviceRequests.hoursLabel}
+                        </Text>
+                        <View style={styles.stepperRow}>
+                          <TouchableOpacity
+                            style={styles.stepperButton}
+                            onPress={() => adjustHours(service.id, -1)}
+                            testID={`hours-decrease-${service.id}`}
+                          >
+                            <Text style={styles.stepperButtonText}>−</Text>
+                          </TouchableOpacity>
+                          <Text style={styles.stepperValue}>{hours}h</Text>
+                          <TouchableOpacity
+                            style={styles.stepperButton}
+                            onPress={() => adjustHours(service.id, 1)}
+                            testID={`hours-increase-${service.id}`}
+                          >
+                            <Text style={styles.stepperButtonText}>+</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.estimatedRow}>
+                      <Text style={styles.estimatedText}>
+                        {serviceRequests.estimatedLabel}:{" "}
+                      </Text>
+                      <Text style={styles.estimatedPrice}>{formatBRL(estimated)}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {showServiceError && (
+            <Text style={styles.errorText}>{serviceRequests.serviceRequired}</Text>
+          )}
+        </View>
+
+        {/* Address field */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{serviceRequests.addressLabel}</Text>
+          <TouchableOpacity
+            style={[
+              styles.selectorButton,
+              selectedAddress && styles.selectorButtonSelected,
+            ]}
+            onPress={() => setPickerMode("address")}
+            disabled={isLoading}
+            testID="address-selector"
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.selectorText,
+                selectedAddress && styles.selectorTextSelected,
+              ]}
+              numberOfLines={1}
+            >
+              {selectedAddress
+                ? `${selectedAddress.street}, ${selectedAddress.number} — ${selectedAddress.city}`
+                : serviceRequests.addressPlaceholder}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={moderateScale(16, 0.3)}
+              color={theme.colors.text.secondary}
+            />
+          </TouchableOpacity>
+          {errors.addressId && (
+            <Text style={styles.errorText}>{serviceRequests.addressRequired}</Text>
+          )}
+        </View>
+
+        {/* Scheduled date field */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{serviceRequests.scheduledAtLabel}</Text>
+          <TouchableOpacity
+            style={[styles.selectorButton, !!scheduledDate && styles.selectorButtonSelected]}
+            onPress={() => setPickerMode("date")}
+            disabled={isLoading}
+            testID="date-selector"
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[styles.selectorText, !!scheduledDate && styles.selectorTextSelected]}
+              numberOfLines={1}
+            >
+              {scheduledDate
+                ? formatScheduledDate(pickerDay, pickerMonth, pickerYear)
+                : serviceRequests.scheduledAtPlaceholder}
+            </Text>
+            <Ionicons
+              name="calendar-outline"
+              size={moderateScale(16, 0.3)}
+              color={theme.colors.text.secondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Payment method field */}
+        {(profile?.paymentMethods ?? []).length > 0 && (
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>{serviceRequests.paymentMethodLabel}</Text>
+            <TouchableOpacity
+              style={[
+                styles.selectorButton,
+                !!selectedPaymentMethodId && styles.selectorButtonSelected,
+              ]}
+              onPress={() => setPickerMode("paymentMethod")}
+              disabled={isLoading}
+              testID="payment-method-selector"
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.selectorText,
+                  !!selectedPaymentMethodId && styles.selectorTextSelected,
+                ]}
+                numberOfLines={1}
+              >
+                {selectedPaymentMethodId
+                  ? ((profile?.paymentMethods ?? []).find(
+                      (method) => method.id === selectedPaymentMethodId,
+                    )?.label ?? serviceRequests.paymentMethodPlaceholder)
+                  : serviceRequests.paymentMethodPlaceholder}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={moderateScale(16, 0.3)}
+                color={theme.colors.text.secondary}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Description field */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{serviceRequests.descriptionLabel}</Text>
+          <TextInput
+            style={[styles.descriptionInput, descriptionFocused && styles.descriptionInputFocused]}
+            placeholder={serviceRequests.descriptionPlaceholder}
+            placeholderTextColor={theme.colors.text.tertiary}
+            value={description}
+            onChangeText={(text) => setValue("description", text)}
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
+            multiline
+            numberOfLines={4}
+            autoCorrect={false}
+            testID="description-input"
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            (!canSubmit || isSubmitting || isLoading) && styles.submitButtonDisabled,
+          ]}
+          onPress={handleSubmit(onSubmit)}
+          disabled={!canSubmit || isSubmitting || isLoading}
+          testID="submit-button"
+          activeOpacity={0.85}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? serviceRequests.requestingButton : serviceRequests.requestButton}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Service picker modal — multi-select */}
+      <Modal
+        visible={pickerMode === "service"}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerMode(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPickerMode(null)}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{serviceRequests.servicesLabel}</Text>
+            <ScrollView>
+              {(profile?.services ?? []).map((service) => {
+                const isSelected = selectedServiceIds.has(service.id);
+                return (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={[styles.optionItem, isSelected && styles.optionItemSelected]}
+                    onPress={() => toggleService(service.id)}
+                    testID={`service-option-${service.id}`}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.optionText}>{service.name}</Text>
+                      <Text style={styles.optionSubtext}>{service.unit}</Text>
+                    </View>
+                    <Text style={styles.optionPrice}>{formatBRL(service.price)}</Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={moderateScale(18, 0.3)}
+                        color={theme.colors.primary.DEFAULT}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalConfirmButton}
+              onPress={() => setPickerMode(null)}
+              testID="service-modal-confirm"
+            >
+              <Text style={styles.modalConfirmButtonText}>
+                {serviceRequests.modalConfirmButton}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Address picker modal */}
+      <Modal
+        visible={pickerMode === "address"}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerMode(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPickerMode(null)}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{serviceRequests.addressLabel}</Text>
+            <ScrollView>
+              {addresses.length === 0 ? (
+                <Text
+                  style={[
+                    styles.optionText,
+                    { paddingHorizontal: moderateScale(24, 0.5), paddingVertical: verticalScale(16) },
+                  ]}
+                >
+                  Nenhum endereço cadastrado
+                </Text>
+              ) : (
+                addresses.map((address) => (
+                  <TouchableOpacity
+                    key={address.id}
+                    style={[
+                      styles.optionItem,
+                      selectedAddressId === address.id && styles.optionItemSelected,
+                    ]}
+                    onPress={() => {
+                      setValue("addressId", address.id, { shouldValidate: true });
+                      setPickerMode(null);
+                    }}
+                    testID={`address-option-${address.id}`}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.optionText}>{address.label || address.street}</Text>
+                      <Text style={styles.optionSubtext}>
+                        {`${address.street}, ${address.number} — ${address.city}/${address.state}`}
+                      </Text>
+                    </View>
+                    {selectedAddressId === address.id && (
+                      <Ionicons
+                        name="checkmark"
+                        size={moderateScale(18, 0.3)}
+                        color={theme.colors.primary.DEFAULT}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Date picker modal */}
+      <Modal
+        visible={pickerMode === "date"}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerMode(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPickerMode(null)}
+        >
+          <View style={[styles.modalSheet, { paddingBottom: 24 }]}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{serviceRequests.scheduledAtLabel}</Text>
+
+            <View style={styles.datePickerRow}>
+              <View
+                pointerEvents="none"
+                style={[styles.datePickerHighlight, {
+                  top: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2),
+                }]}
+              />
+              <DatePickerColumn
+                data={Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'))}
+                selectedIndex={pickerDay - 1}
+                onSelect={(index) => setPickerDay(index + 1)}
+              />
+              <Text style={styles.datePickerSeparator}>/</Text>
+              <DatePickerColumn
+                data={MONTHS_PT}
+                selectedIndex={pickerMonth}
+                onSelect={setPickerMonth}
+              />
+              <Text style={styles.datePickerSeparator}>/</Text>
+              <DatePickerColumn
+                data={Array.from({ length: 3 }, (_, i) => String(today.getFullYear() + i))}
+                selectedIndex={pickerYear - today.getFullYear()}
+                onSelect={(index) => setPickerYear(today.getFullYear() + index)}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalConfirmButton}
+              onPress={() => {
+                setScheduledDate(buildISODate(pickerDay, pickerMonth, pickerYear));
+                setPickerMode(null);
+              }}
+              testID="date-confirm-button"
+            >
+              <Text style={styles.modalConfirmButtonText}>
+                {serviceRequests.modalConfirmButton}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Payment method picker modal */}
+      <Modal
+        visible={pickerMode === "paymentMethod"}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerMode(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPickerMode(null)}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{serviceRequests.paymentMethodLabel}</Text>
+            <ScrollView>
+              {(profile?.paymentMethods ?? []).map((method) => {
+                const isSelected = selectedPaymentMethodId === method.id;
+                return (
+                  <TouchableOpacity
+                    key={method.id}
+                    style={[styles.optionItem, isSelected && styles.optionItemSelected]}
+                    onPress={() => {
+                      setSelectedPaymentMethodId(method.id);
+                      setPickerMode(null);
+                    }}
+                    testID={`payment-method-option-${method.id}`}
+                  >
+                    <Ionicons
+                      name={(method.icon ?? "cash") as any}
+                      size={moderateScale(18, 0.3)}
+                      color={theme.colors.primary.DEFAULT}
+                      style={{ marginRight: moderateScale(8, 0.5) }}
+                    />
+                    <Text style={styles.optionText}>{method.label}</Text>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={moderateScale(18, 0.3)}
+                        color={theme.colors.primary.DEFAULT}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Toast toast={toast} opacity={toastOpacity} />
+    </View>
+  );
+}

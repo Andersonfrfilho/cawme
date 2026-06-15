@@ -8,6 +8,7 @@ export type UserProfileResponse = {
   fullName: string;
   status: string;
   type: string;
+  primaryPhone?: string;
 };
 
 export type UpdateNameServiceParams = {
@@ -39,6 +40,7 @@ export type ContactCheckServiceResult = {
 export type UserAddress = {
   id: string;
   label: string;
+  isPrimary: boolean;
   street: string;
   number: string;
   neighborhood: string;
@@ -52,6 +54,7 @@ export type UserAddress = {
 export type SaveAddressServiceParams = {
   id?: string;
   label: string;
+  isPrimary?: boolean;
   street: string;
   number: string;
   neighborhood: string;
@@ -64,6 +67,7 @@ export type SaveAddressServiceParams = {
 
 export type UploadAccountDocumentServiceParams = {
   documentType: DocumentType;
+  documentNumber?: string;
   file: { uri: string; name: string; type: string };
 };
 
@@ -71,6 +75,72 @@ export type UploadAccountDocumentServiceResult = {
   id: string;
   documentType: DocumentType;
   status: string;
+};
+
+export type AccountDocumentItem = {
+  id: string;
+  documentType: string;
+  documentNumber?: string;
+  status: string;
+  uploadedAt: string;
+  verifiedAt?: string | null;
+};
+
+export type ProviderServiceSummaryItem = {
+  id: string;
+  categoryName: string;
+  serviceName: string;
+  isActive: boolean;
+};
+
+export type ProviderAvailabilitySummaryItem = {
+  id: string;
+  dayOfWeek: number;
+  isActive: boolean;
+};
+
+export type PaymentMethodType = {
+  id: string;
+  name: string;
+  label: string;
+  icon: string | null;
+};
+
+export type PixKeyType = "cpf" | "cnpj" | "email" | "phone" | "random";
+
+export type PixDetails = {
+  pixKeyType: PixKeyType;
+  pixKey: string;
+};
+
+export type BankTransferDetails = {
+  bank: string;
+  agency: string;
+  account: string;
+  accountType: "checking" | "savings";
+};
+
+export type CardBrand = "visa" | "mastercard" | "elo" | "hipercard" | "amex";
+
+export type CardDetails = {
+  acceptedBrands: CardBrand[];
+};
+
+export type PaymentMethodDetails = PixDetails | BankTransferDetails | CardDetails;
+
+export type SetProviderPaymentMethodEntry = {
+  paymentMethodTypeId: string;
+  details: PaymentMethodDetails | null;
+};
+
+export type ProviderPaymentMethod = {
+  id: string;
+  paymentMethodTypeId: string;
+  name: string;
+  label: string;
+  icon: string | null;
+  isEnabled: boolean;
+  details: PaymentMethodDetails | null;
 };
 
 export const AccountService = {
@@ -92,21 +162,33 @@ export const AccountService = {
   async checkEmailAvailability(
     params: ContactCheckServiceParams,
   ): Promise<ContactCheckServiceResult> {
-    const response = await apiClient.post<ContactCheckServiceResult>(
-      AUTH_ENDPOINTS.ACCOUNT_EMAIL_CHECK,
-      { contact: params.contact },
-    );
-    return response.data;
+    try {
+      const response = await apiClient.post<ContactCheckServiceResult>(
+        AUTH_ENDPOINTS.ACCOUNT_EMAIL_CHECK,
+        { contact: params.contact },
+        { _skipGlobalError: true },
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 409) return { available: false };
+      throw error;
+    }
   },
 
   async checkPhoneAvailability(
     params: ContactCheckServiceParams,
   ): Promise<ContactCheckServiceResult> {
-    const response = await apiClient.post<ContactCheckServiceResult>(
-      AUTH_ENDPOINTS.ACCOUNT_PHONE_CHECK,
-      { contact: params.contact },
-    );
-    return response.data;
+    try {
+      const response = await apiClient.post<ContactCheckServiceResult>(
+        AUTH_ENDPOINTS.ACCOUNT_PHONE_CHECK,
+        { contact: params.contact },
+        { _skipGlobalError: true },
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 409) return { available: false };
+      throw error;
+    }
   },
 
   async initiateEmailChange(
@@ -115,6 +197,7 @@ export const AccountService = {
     const response = await apiClient.post<InitiateContactChangeServiceResult>(
       AUTH_ENDPOINTS.ACCOUNT_EMAIL_CHANGE,
       { contact: params.contact },
+      { _skipGlobalError: true },
     );
     return response.data;
   },
@@ -132,6 +215,7 @@ export const AccountService = {
     const response = await apiClient.post<InitiateContactChangeServiceResult>(
       AUTH_ENDPOINTS.ACCOUNT_PHONE_CHANGE,
       { contact: params.contact },
+      { _skipGlobalError: true },
     );
     return response.data;
   },
@@ -172,6 +256,7 @@ export const AccountService = {
   ): Promise<UploadAccountDocumentServiceResult> {
     const formData = new FormData();
     formData.append("documentType", params.documentType);
+    if (params.documentNumber) formData.append("documentNumber", params.documentNumber);
     formData.append("file", {
       uri: params.file.uri,
       name: params.file.name,
@@ -181,6 +266,68 @@ export const AccountService = {
       AUTH_ENDPOINTS.ACCOUNT_DOCUMENT_UPLOAD,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  async deleteDocument(documentId: string): Promise<void> {
+    await apiClient.delete(AUTH_ENDPOINTS.ACCOUNT_DOCUMENT_DELETE(documentId));
+  },
+
+  async listAccountDocuments(): Promise<AccountDocumentItem[]> {
+    const response = await apiClient.get<AccountDocumentItem[]>(
+      AUTH_ENDPOINTS.ACCOUNT_DOCUMENTS_LIST,
+    );
+    return response.data;
+  },
+
+  async listProviderServices(): Promise<ProviderServiceSummaryItem[]> {
+    const response = await apiClient.get<{ success: boolean; data: ProviderServiceSummaryItem[] }>(
+      AUTH_ENDPOINTS.PROVIDER_SERVICES,
+      { _skipGlobalError: true },
+    );
+    return response.data.data;
+  },
+
+  async listProviderAvailability(): Promise<ProviderAvailabilitySummaryItem[]> {
+    const response = await apiClient.get<{ success: boolean; data: ProviderAvailabilitySummaryItem[] }>(
+      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY,
+      { _skipGlobalError: true },
+    );
+    return response.data.data;
+  },
+
+  async listPaymentMethodTypes(): Promise<PaymentMethodType[]> {
+    const response = await apiClient.get<{ success: boolean; data: PaymentMethodType[] }>(
+      AUTH_ENDPOINTS.PAYMENT_METHOD_TYPES,
+      { _skipGlobalError: true },
+    );
+    return response.data.data;
+  },
+
+  async listProviderPaymentMethods(): Promise<ProviderPaymentMethod[]> {
+    const response = await apiClient.get<{ success: boolean; data: ProviderPaymentMethod[] }>(
+      AUTH_ENDPOINTS.PROVIDER_PAYMENT_METHODS,
+      { _skipGlobalError: true },
+    );
+    return response.data.data;
+  },
+
+  async setProviderPaymentMethods(methods: SetProviderPaymentMethodEntry[]): Promise<void> {
+    await apiClient.put(AUTH_ENDPOINTS.PROVIDER_PAYMENT_METHODS, { methods }, { _skipGlobalError: true });
+  },
+
+  async checkPixKeyAvailability(pixKey: string): Promise<{ available: boolean }> {
+    const response = await apiClient.get<{ available: boolean }>(
+      `${AUTH_ENDPOINTS.PROVIDER_PIX_KEY_CHECK}?key=${encodeURIComponent(pixKey)}`,
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async getDocumentUrl(documentId: string): Promise<{ url: string; expiresIn: number }> {
+    const response = await apiClient.get<{ url: string; expiresIn: number }>(
+      AUTH_ENDPOINTS.ACCOUNT_DOCUMENT_URL(documentId),
     );
     return response.data;
   },

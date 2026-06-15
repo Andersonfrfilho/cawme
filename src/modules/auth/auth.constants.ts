@@ -22,8 +22,8 @@ export const HEADERS = {
 };
 
 export const AUTH_ENDPOINTS = {
-  TOKEN: "/auth/token",
-  LOGOUT: "/auth/logout",
+  TOKEN: "/bff/auth/token",
+  LOGOUT: "/bff/auth/logout",
   FORGOT_PASSWORD: "/bff/auth/forgot-password",
   REGISTER: "/bff/onboarding/register",
   VERIFICATION_SEND: "/bff/onboarding/verification/send",
@@ -40,12 +40,15 @@ export const AUTH_ENDPOINTS = {
   ONBOARDING_STATUS: "/bff/onboarding/status",
   SELF_UNLOCK: (blockId: string) => `/bff/auth/account-block/${blockId}/self-unlock`,
   SELF_UNLOCK_VERIFY: (blockId: string) => `/bff/auth/account-block/${blockId}/self-unlock/verify`,
+  SERVICES: "/bff/auth/services",
   CATEGORIES: "/bff/auth/categories",
+  CATEGORIES_CREATE: "/bff/auth/categories",
+  SERVICES_CREATE: "/bff/auth/services",
   PROVIDER_SERVICES: "/bff/auth/providers/me/services",
   PROVIDER_SERVICE_UPDATE: (serviceId: string) => `/bff/auth/providers/me/services/${serviceId}`,
   PROVIDER_SERVICE_DELETE: (serviceId: string) => `/bff/auth/providers/me/services/${serviceId}`,
   PROVIDER_AVAILABILITY: "/bff/auth/providers/me/availability",
-  PROVIDER_AVAILABILITY_UPDATE: (dayOfWeek: number) => `/bff/auth/providers/me/availability/${dayOfWeek}`,
+  PROVIDER_AVAILABILITY_BY_ID: (id: string) => `/bff/auth/providers/me/availability/${id}`,
   ACCOUNT_PROFILE: "/bff/account/me",
   ACCOUNT_UPDATE_NAME: "/bff/account/me/name",
   ACCOUNT_EMAIL_CHANGE: "/bff/account/me/email/change",
@@ -57,6 +60,12 @@ export const AUTH_ENDPOINTS = {
   ACCOUNT_ADDRESS_UPDATE: "/bff/account/me/address",
   ACCOUNT_DOCUMENT_UPLOAD: "/bff/account/me/document",
   ACCOUNT_DOCUMENT_CHECK: "/bff/account/me/document/check",
+  ACCOUNT_DOCUMENTS_LIST: "/bff/account/me/documents",
+  ACCOUNT_DOCUMENT_URL: (id: string) => `/bff/account/me/documents/${id}/url`,
+  ACCOUNT_DOCUMENT_DELETE: (id: string) => `/bff/account/me/documents/${id}`,
+  PAYMENT_METHOD_TYPES: "/bff/auth/payment-method-types",
+  PROVIDER_PAYMENT_METHODS: "/bff/auth/providers/me/payment-methods",
+  PROVIDER_PIX_KEY_CHECK: "/bff/auth/providers/me/pix-key/check",
 };
 
 export const HERO_OVERLAY = {

@@ -7,6 +7,7 @@ export const providersLocale = {
     unavailable: "Indisponível",
     loadError: "Erro ao carregar profissionais.",
     empty: "Nenhum profissional encontrado.",
+    nextAvailable: "Próximo:",
   },
 };
 

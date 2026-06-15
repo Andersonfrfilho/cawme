@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import { KeycloakService } from "../services/keycloak.service";
 import { DocumentService, type DocumentStatus } from "../services/document.service";
 import { useAuthStore } from "../store/auth.store";
@@ -11,7 +12,7 @@ export type PendingVerificationStatus = {
   isLoading: boolean;
 };
 
-const DOCUMENT_PENDING_STATUSES: DocumentStatus[] = ["PENDING", "REJECTED"];
+const DOCUMENT_ACTIVE_STATUSES = new Set<DocumentStatus>(["PENDING", "VERIFIED", "APPROVED"]);
 
 export function usePendingVerification() {
   const [status, setStatus] = useState<PendingVerificationStatus>({
@@ -40,10 +41,9 @@ export function usePendingVerification() {
 
     try {
       const documents = await DocumentService.listDocuments();
-      // Sem documentos = usuário ainda não enviou nenhum → pendente
-      documentVerified =
-        documents.length > 0 &&
-        !documents.some((doc) => DOCUMENT_PENDING_STATUSES.includes(doc.status));
+      // Verificado se houver ao menos 1 documento PENDING ou VERIFIED (envio ativo)
+      // Mostra banner apenas quando não há nenhum envio ativo (sem docs ou todos REJECTED)
+      documentVerified = documents.some((doc) => DOCUMENT_ACTIVE_STATUSES.has(doc.status));
     } catch {
       documentVerified = false;
     }
@@ -67,6 +67,12 @@ export function usePendingVerification() {
   useEffect(() => {
     checkStatus();
   }, [checkStatus, localVerification]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkStatus();
+    }, [checkStatus]),
+  );
 
   const pendingItems = [
     !status.emailVerified && "email",

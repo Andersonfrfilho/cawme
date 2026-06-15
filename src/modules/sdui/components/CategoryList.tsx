@@ -15,38 +15,44 @@ interface Category {
 
 export default function CategoryList({ data, config, onItemPress }: SduiComponentProps) {
   const categories: Category[] = data || [];
+  const activeFilter: string | null = config?.activeFilter ?? null;
 
   return (
     <View style={styles.sectionContainer}>
       {config?.title && (
         <Text style={styles.sectionTitle}>{config.title}</Text>
       )}
-      
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryListContent}
       >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={styles.categoryChip}
-            onPress={() => onItemPress(category)}
-            activeOpacity={0.7}
-          >
-            {category.imageUrl ? (
-              <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
-            ) : (
-              <Ionicons
-                name={(category.icon as any) || 'apps-outline'}
-                size={moderateScale(20, 0.3)}
-                color={theme.colors.primary.DEFAULT}
-                style={styles.categoryIcon}
-              />
-            )}
-            <Text style={styles.categoryChipText}>{category.name}</Text>
-          </TouchableOpacity>
-        ))}
+        {categories.map((category) => {
+          const isActive = activeFilter === category.name;
+          return (
+            <TouchableOpacity
+              key={category.id}
+              style={[styles.categoryChip, isActive && { backgroundColor: theme.colors.primary.DEFAULT, borderColor: theme.colors.primary.DEFAULT }]}
+              onPress={() => onItemPress(category)}
+              activeOpacity={0.7}
+            >
+              {category.imageUrl ? (
+                <Image source={{ uri: category.imageUrl }} style={styles.categoryImage} />
+              ) : (
+                <Ionicons
+                  name={(category.icon as any) || 'apps-outline'}
+                  size={moderateScale(20, 0.3)}
+                  color={isActive ? theme.palette.neutral[0] : theme.colors.primary.DEFAULT}
+                  style={styles.categoryIcon}
+                />
+              )}
+              <Text style={[styles.categoryChipText, isActive && { color: theme.palette.neutral[0] }]}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );

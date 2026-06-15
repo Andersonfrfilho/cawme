@@ -126,10 +126,11 @@ tags:
 # Pula DocumentUploadSheet se aparecer
 - runFlow:
     when:
-      visible: ".*documento.*|.*Enviar depois.*"
+      visible:
+        id: "document-sheet-now-button"
     commands:
       - tapOn:
-          id: "document-upload-skip-button"
+          id: "document-sheet-later-button"
 
 - extendedWaitUntil:
     visible: ".*Início.*"

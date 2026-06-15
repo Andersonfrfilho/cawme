@@ -11,3 +11,4 @@
 import "@/modules/account/locales";
 import "@/modules/auth/locales";
 import "@/modules/company/locales";
+import "@/modules/service-requests/locales";

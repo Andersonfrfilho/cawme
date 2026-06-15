@@ -23,6 +23,7 @@ export type ConfirmContactChangeParams = {
   contactId: string;
   code: string;
   type: "email" | "phone";
+  newContact: string;
 };
 
 export type CheckContactAvailabilityParams = {
@@ -83,13 +84,13 @@ export function useAccount() {
           contactId: params.contactId,
           code: params.code,
         });
-        if (user) setUser({ ...user });
+        if (user) setUser({ ...user, email: params.newContact });
       } else {
         await AccountService.confirmPhoneChange({
           contactId: params.contactId,
           code: params.code,
         });
-        if (user) setUser({ ...user });
+        if (user) setUser({ ...user, phone: params.newContact });
       }
     } finally {
       hideLoading();
@@ -143,5 +144,8 @@ export function useAccount() {
     saveAddress,
     deleteAddress,
     uploadDocument,
+    listAccountDocuments: AccountService.listAccountDocuments,
+    getDocumentUrl: AccountService.getDocumentUrl,
+    deleteDocument: AccountService.deleteDocument,
   };
 }

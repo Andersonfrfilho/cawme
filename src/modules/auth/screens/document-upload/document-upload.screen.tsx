@@ -2,15 +2,13 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   Image,
   ScrollView,
   Alert,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -57,9 +55,65 @@ function resolveInitialDocumentType(raw?: string): DocumentType | null {
   return REGISTRATION_TYPE_MAP[raw.toLowerCase()] ?? null;
 }
 
+const DOCUMENT_MASKS: Partial<Record<DocumentType, string>> = {
+  CPF: "000.000.000-00",
+  CNPJ: "00.000.000/0000-00",
+  RG: "00.000.000-0",
+  CNH: "00000000000",
+};
+
+function applyNumericMask(raw: string, mask: string): string {
+  const digits = raw.replace(/\D/g, "");
+  let result = "";
+  let digitIndex = 0;
+  for (const char of mask) {
+    if (digitIndex >= digits.length) break;
+    if (char === "0") {
+      result += digits[digitIndex++];
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+function maskDocumentInput(raw: string, documentType: DocumentType | null): string {
+  if (documentType === "PASSPORT") {
+    return raw.replace(/[^A-Z0-9]/gi, "").toUpperCase().slice(0, 9);
+  }
+  const mask = documentType ? DOCUMENT_MASKS[documentType] : undefined;
+  return mask ? applyNumericMask(raw, mask) : raw;
+}
+
+function keyboardTypeForDocument(documentType: DocumentType | null): "numeric" | "default" {
+  if (documentType === "PASSPORT" || documentType === null) return "default";
+  return "numeric";
+}
+
+function maxLengthForDocument(documentType: DocumentType | null): number | undefined {
+  switch (documentType) {
+    case "CPF": return 14;
+    case "CNPJ": return 18;
+    case "RG": return 12;
+    case "CNH": return 11;
+    case "PASSPORT": return 9;
+    default: return undefined;
+  }
+}
+
+function placeholderForDocument(documentType: DocumentType | null): string {
+  switch (documentType) {
+    case "CPF": return "000.000.000-00";
+    case "CNPJ": return "00.000.000/0000-00";
+    case "RG": return "00.000.000-0";
+    case "CNH": return "00000000000";
+    case "PASSPORT": return "AB1234567";
+    default: return "Número do documento";
+  }
+}
+
 export default function DocumentUploadScreen() {
   const { auth } = useLocale<LocaleKeys>();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<DocumentUploadScreenParams>();
   const { uploadDocument, isUploading, error, uploadedDocument } =
     useDocumentUpload();
@@ -77,6 +131,8 @@ export default function DocumentUploadScreen() {
     resolveInitialDocumentType(params.documentType),
   );
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [numberFocused, setNumberFocused] = useState(false);
 
   const pickImage = async () => {
     // E2E test mode: use test image directly without picker
@@ -189,6 +245,7 @@ export default function DocumentUploadScreen() {
           selectedFile.name,
           selectedFile.type,
           selectedType,
+          documentNumber,
         );
       }
 
@@ -265,12 +322,12 @@ export default function DocumentUploadScreen() {
     return auth.documentStatusPending;
   };
 
-  const canSubmit = selectedType && selectedFile && !isUploading;
+  const canSubmit = selectedType && selectedFile && documentNumber.trim().length > 0 && !isUploading;
 
   return (
     <SafeAreaView
-      style={[styles.root, { paddingTop: insets.top }]}
-      edges={["bottom"]}
+      style={styles.root}
+      edges={["top", "bottom"]}
     >
       <ScrollView
         style={styles.container}
@@ -307,7 +364,7 @@ export default function DocumentUploadScreen() {
                   styles.documentTypeChip,
                   selectedType === type.key && styles.documentTypeChipSelected,
                 ]}
-                onPress={() => setSelectedType(type.key)}
+                onPress={() => { setSelectedType(type.key); setDocumentNumber(""); }}
                 activeOpacity={0.7}
               >
                 <Text
@@ -322,6 +379,25 @@ export default function DocumentUploadScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Número do documento */}
+        <View style={styles.numberSection}>
+          <Text style={styles.numberLabel}>{auth.documentUploadNumberLabel}</Text>
+          <TextInput
+            style={[styles.numberInput, numberFocused && styles.numberInputFocused]}
+            placeholder={placeholderForDocument(selectedType)}
+            placeholderTextColor={theme.colors.text.secondary}
+            value={documentNumber}
+            onChangeText={(text) => setDocumentNumber(maskDocumentInput(text, selectedType))}
+            onFocus={() => setNumberFocused(true)}
+            onBlur={() => setNumberFocused(false)}
+            autoCorrect={false}
+            autoCapitalize="characters"
+            keyboardType={keyboardTypeForDocument(selectedType)}
+            maxLength={maxLengthForDocument(selectedType)}
+            editable={!isUploading}
+          />
         </View>
 
         {/* Área de upload */}

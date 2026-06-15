@@ -106,7 +106,7 @@ export default function AvailabilityScreen() {
       router.push('/(auth)/provider-profile/review');
     } catch (error) {
       console.error('[availability] Failed to set availability:', error);
-      alert(t('auth.profileSetupValidationRequired'));
+      alert(t('auth.profileSetupErrorFinalizing'));
     } finally {
       hideLoading();
       setIsSubmitting(false);

@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   Image,
@@ -41,8 +42,10 @@ export default function DocumentChangeScreen() {
   const { uploadDocument } = useAccount();
 
   const [selectedType, setSelectedType] = useState<DocumentType | null>(null);
+  const [documentNumber, setDocumentNumber] = useState("");
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [numberFocused, setNumberFocused] = useState(false);
 
   async function handlePickImage(): Promise<void> {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -90,6 +93,7 @@ export default function DocumentChangeScreen() {
     try {
       await uploadDocument({
         documentType: selectedType,
+        documentNumber: documentNumber.trim() || undefined,
         file: { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.type },
       });
       Alert.alert("", account.documentSaveSuccess, [
@@ -134,6 +138,22 @@ export default function DocumentChangeScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{account.documentNumberLabel}</Text>
+          <TextInput
+            style={[styles.input, numberFocused && styles.inputFocused]}
+            placeholder={account.documentNumberPlaceholder}
+            placeholderTextColor={theme.colors.text.secondary}
+            value={documentNumber}
+            onChangeText={setDocumentNumber}
+            onFocus={() => setNumberFocused(true)}
+            onBlur={() => setNumberFocused(false)}
+            autoCorrect={false}
+            autoCapitalize="characters"
+            keyboardType="default"
+          />
         </View>
 
         <View style={styles.fieldGroup}>

@@ -1,6 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { theme } from '@/shared/constants';
 import { scale, verticalScale, moderateScale } from '@/shared/utils/scale';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const HORIZONTAL_PADDING = moderateScale(24, 0.5);
+const CARD_GAP = moderateScale(16, 0.5);
+const CATEGORY_CARD_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2;
 
 export default StyleSheet.create({
   root: {
@@ -12,7 +17,7 @@ export default StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: moderateScale(24, 0.5),
     paddingTop: verticalScale(24),
-    paddingBottom: verticalScale(120),
+    paddingBottom: verticalScale(24),
   },
 
   headerSection: {
@@ -39,7 +44,7 @@ export default StyleSheet.create({
   },
 
   categoryCard: {
-    width: '48%',
+    width: CATEGORY_CARD_WIDTH,
     aspectRatio: 1,
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.radii.lg,
@@ -92,11 +97,72 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    borderColor: theme.palette.neutral[200],
+    paddingHorizontal: moderateScale(12, 0.5),
+    height: verticalScale(48),
+    marginBottom: verticalScale(8),
+  },
+
+  searchInput: {
+    flex: 1,
+    fontSize: moderateScale(14, 0.3),
+    color: theme.colors.text.primary,
+    paddingVertical: 0,
+  },
+
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: moderateScale(8, 0.5),
+  },
+
+  addCategoryIconButton: {
+    width: verticalScale(48),
+    height: verticalScale(48),
+    borderRadius: theme.radii.md,
+    backgroundColor: theme.colors.primary.DEFAULT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+
+  addCategoryModal: {
+    backgroundColor: theme.colors.background.DEFAULT,
+    borderTopLeftRadius: theme.radii.xl,
+    borderTopRightRadius: theme.radii.xl,
+    padding: moderateScale(24, 0.5),
+    paddingBottom: verticalScale(40),
+  },
+
+  addCategoryModalHandle: {
+    width: scale(40),
+    height: verticalScale(4),
+    borderRadius: 2,
+    backgroundColor: theme.palette.neutral[200],
+    alignSelf: 'center',
+    marginBottom: verticalScale(20),
+  },
+
+  addCategoryModalTitle: {
+    fontSize: moderateScale(20, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: verticalScale(8),
+  },
+
   actionBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: theme.colors.background.DEFAULT,
     borderTopWidth: 1,
     borderTopColor: theme.palette.neutral[100],

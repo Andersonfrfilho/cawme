@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
     paddingTop: verticalScale(24),
     paddingBottom: verticalScale(24),
     paddingHorizontal: moderateScale(24, 0.5),
-    flexDirection: 'row',
+    flexDirection: "row",
     alignItems: "center",
   },
   backButton: {
@@ -30,10 +30,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: moderateScale(24, 0.5),
     paddingTop: verticalScale(32),
     paddingBottom: moderateScale(32, 0.5),
-    gap: moderateScale(32, 0.5),
+    gap: moderateScale(24, 0.5),
   },
   fieldGroup: {
-    gap: moderateScale(10, 0.5),
+    gap: moderateScale(8, 0.5),
   },
   sectionDivider: {
     height: 1,
@@ -45,6 +45,25 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  contactSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  showAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(4, 0.5),
+    paddingVertical: moderateScale(2, 0.5),
+    paddingHorizontal: moderateScale(8, 0.5),
+    borderRadius: 8,
+    backgroundColor: theme.colors.background.elevated,
+  },
+  showAllText: {
+    fontSize: moderateScale(11, 0.3),
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   input: {
     height: verticalScale(52),
@@ -64,21 +83,64 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: theme.colors.border.DEFAULT,
-    paddingHorizontal: moderateScale(16, 0.5),
+    paddingHorizontal: moderateScale(14, 0.5),
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: theme.colors.background.elevated,
+    gap: moderateScale(8, 0.5),
+  },
+  contactFlag: {
+    fontSize: moderateScale(16, 0.3),
   },
   contactValue: {
     fontSize: moderateScale(15, 0.3),
     color: theme.colors.text.primary,
     flex: 1,
   },
+  contactSubValue: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.text.secondary,
+    marginTop: moderateScale(2, 0.5),
+  },
+  contactValueWrapper: {
+    flex: 1,
+  },
+  contactAddressCount: {
+    fontSize: moderateScale(11, 0.3),
+    color: theme.colors.text.tertiary,
+    marginTop: moderateScale(3, 0.5),
+  },
+  contactRowTall: {
+    height: undefined,
+    minHeight: verticalScale(52),
+    paddingVertical: moderateScale(12, 0.5),
+  },
+  eyeButton: {
+    padding: moderateScale(4, 0.5),
+  },
+  chevronButton: {
+    padding: moderateScale(4, 0.5),
+  },
   contactChangeLabel: {
     fontSize: moderateScale(12, 0.3),
     color: theme.colors.primary.DEFAULT,
     fontWeight: theme.typography.fontWeight.medium,
+  },
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(4, 0.5),
+    backgroundColor: theme.colors.accent.yellow,
+    paddingHorizontal: moderateScale(8, 0.5),
+    paddingVertical: moderateScale(3, 0.5),
+    borderRadius: 6,
+    alignSelf: "flex-start",
+    marginTop: moderateScale(4, 0.5),
+  },
+  pendingBadgeText: {
+    fontSize: moderateScale(11, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.palette.neutral[0],
   },
   saveButton: {
     height: verticalScale(52),
@@ -86,7 +148,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: verticalScale(8),
   },
   saveButtonDisabled: {
     opacity: 0.6,

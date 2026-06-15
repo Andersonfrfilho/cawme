@@ -18,35 +18,66 @@ export function ProviderDashboardComponent() {
       </Text>
     );
 
+  const stats = [
+    {
+      label: "Avaliação",
+      value: data.averageRating > 0 ? data.averageRating.toFixed(1) : "—",
+      icon: "star-outline",
+    },
+    {
+      label: "Avaliações",
+      value: String(data.reviewCount),
+      icon: "chatbubble-outline",
+    },
+    {
+      label: "Ativos",
+      value: String(data.activeRequests?.length ?? 0),
+      icon: "calendar-outline",
+    },
+    {
+      label: "Pendentes",
+      value: String(data.incomingRequests?.length ?? 0),
+      icon: "time-outline",
+    },
+  ];
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.statsContainer}>
-        {data.stats.map((stat, index) => (
+        {stats.map((stat) => (
           <StatCard
-            key={index}
+            key={stat.label}
             label={stat.label}
             value={stat.value}
             icon={stat.icon as any}
           />
         ))}
       </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          {locale?.dashboard?.providerActiveTitle ??
-            "dashboard.providerActiveTitle"}
+          {locale?.dashboard?.providerActiveTitle ?? "Agenda Ativa"}
         </Text>
-        {data.activeSchedule.map((request) => (
-          <RequestItem key={request.id} item={request} />
-        ))}
+        {(data.activeRequests ?? []).length === 0 ? (
+          <Text style={styles.emptyText}>Nenhum agendamento ativo.</Text>
+        ) : (
+          (data.activeRequests ?? []).map((request) => (
+            <RequestItem key={request.id} item={request} />
+          ))
+        )}
       </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          {locale?.dashboard?.providerPendingTitle ??
-            "dashboard.providerPendingTitle"}
+          {locale?.dashboard?.providerPendingTitle ?? "Novas Solicitações"}
         </Text>
-        {data.pendingRequests.map((request) => (
-          <RequestItem key={request.id} item={request} />
-        ))}
+        {(data.incomingRequests ?? []).length === 0 ? (
+          <Text style={styles.emptyText}>Nenhuma solicitação pendente.</Text>
+        ) : (
+          (data.incomingRequests ?? []).map((request) => (
+            <RequestItem key={request.id} item={request} />
+          ))
+        )}
       </View>
     </ScrollView>
   );

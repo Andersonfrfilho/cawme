@@ -18,26 +18,58 @@ export function ContractorDashboardComponent() {
       </Text>
     );
 
+  const stats = [
+    {
+      label: "Ativos",
+      value: String(data.activeRequests?.length ?? 0),
+      icon: "calendar-outline",
+    },
+    {
+      label: "Pendentes",
+      value: String(data.pendingRequests?.length ?? 0),
+      icon: "time-outline",
+    },
+    {
+      label: "Histórico",
+      value: String(data.recentHistory?.length ?? 0),
+      icon: "checkmark-circle-outline",
+    },
+  ];
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.statsContainer}>
-        {data.stats.map((stat, index) => (
+        {stats.map((stat) => (
           <StatCard
-            key={index}
+            key={stat.label}
             label={stat.label}
             value={stat.value}
             icon={stat.icon as any}
           />
         ))}
       </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          {locale?.dashboard?.contractorTitle ?? "dashboard.contractorTitle"}
+          {locale?.dashboard?.contractorTitle ?? "Solicitações Recentes"}
         </Text>
-        {data.recentRequests.map((request) => (
-          <RequestItem key={request.id} item={request} />
-        ))}
+        {(data.activeRequests ?? []).length === 0 && (data.pendingRequests ?? []).length === 0 ? (
+          <Text style={styles.emptyText}>Nenhuma solicitação no momento.</Text>
+        ) : (
+          [...(data.activeRequests ?? []), ...(data.pendingRequests ?? [])].map((request) => (
+            <RequestItem key={request.id} item={request} />
+          ))
+        )}
       </View>
+
+      {(data.recentHistory ?? []).length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Histórico Recente</Text>
+          {(data.recentHistory ?? []).map((request) => (
+            <RequestItem key={request.id} item={request} />
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }

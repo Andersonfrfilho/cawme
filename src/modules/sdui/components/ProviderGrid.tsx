@@ -49,8 +49,24 @@ export default function ProviderGrid({ data, config, onItemPress }: SduiComponen
   const numColumns = gridConfig.columns || 2;
 
   const term = gridConfig.searchTerm?.trim().toLowerCase() ?? '';
+  const SORT_FILTERS = new Set(['top_rated', 'location']);
 
   const filtered: Provider[] = (data || []).filter((item: Provider) => {
+    const categoryFilter = gridConfig.activeFilter && !SORT_FILTERS.has(gridConfig.activeFilter)
+      ? gridConfig.activeFilter.toLowerCase()
+      : null;
+
+    if (categoryFilter) {
+      const serviceCategory = (item.serviceCategory || '').toLowerCase();
+      const primaryService = (item.primaryService || '').toLowerCase();
+      const serviceNames = (item.services || []).map((s) => s.name.toLowerCase());
+      const matchesCategory =
+        serviceCategory.includes(categoryFilter) ||
+        primaryService.includes(categoryFilter) ||
+        serviceNames.some((s) => s.includes(categoryFilter));
+      if (!matchesCategory) return false;
+    }
+
     if (!term) return true;
     const name = (item.name || item.businessName || item.title || item.displayName || '').toLowerCase();
     const service = (item.services?.[0]?.name || item.primaryService || item.serviceCategory || '').toLowerCase();

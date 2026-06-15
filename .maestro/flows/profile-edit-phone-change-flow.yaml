@@ -9,10 +9,10 @@ description: |
   5. Toca no campo telefone → tela "Alterar telefone"
   6. Digita novo telefone
   7. Toca "Enviar código"
-  8. Digita código QA: últimos 4 dígitos do novo número
+  8. Digita código QA: últimos 6 dígitos do novo número
   9. Toca "Confirmar"
   10. Alerta de sucesso → volta para edição de perfil
-  Código QA para telefone: últimos 4 dígitos do número
+  Código QA para telefone: últimos 6 dígitos do novo número
 tags:
   - account
   - profile-edit
@@ -21,7 +21,7 @@ tags:
   - e2e
 ---
 # Gera dados de cadastro E dados do novo telefone
-- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='193'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1]; output.NEWPHONE='194'+output.TS; var np=output.NEWPHONE; output.NPC0=np[np.length-4]; output.NPC1=np[np.length-3]; output.NPC2=np[np.length-2]; output.NPC3=np[np.length-1];}
+- evalScript: ${var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join(''); output.TS=Date.now().toString().slice(-8); output.PHONE='193'+output.TS; var ph=output.PHONE; output.PC0=ph[ph.length-4]; output.PC1=ph[ph.length-3]; output.PC2=ph[ph.length-2]; output.PC3=ph[ph.length-1]; output.NEWPHONE='194'+output.TS; var np=output.NEWPHONE; output.NEWPHONE_OTP=np.slice(-6);}
 
 - launchApp:
     clearState: true
@@ -132,10 +132,11 @@ tags:
 # Pula DocumentUploadSheet se aparecer
 - runFlow:
     when:
-      visible: ".*documento.*|.*Enviar depois.*"
+      visible:
+        id: "document-sheet-now-button"
     commands:
       - tapOn:
-          id: "document-upload-skip-button"
+          id: "document-sheet-later-button"
 
 - extendedWaitUntil:
     visible: ".*Início.*"
@@ -173,16 +174,14 @@ tags:
     id: "send-code-button"
 
 - extendedWaitUntil:
-    visible: ".*Código enviado.*|.*${output.NEWPHONE}.*"
+    visible:
+      id: "otp-input"
     timeout: 12000
 
-# ── 10. Digita código QA: últimos 4 dígitos do NOVO telefone ─────────────────
+# ── 10. Digita código QA: últimos 6 dígitos do NOVO telefone ─────────────────
 - tapOn:
     id: "otp-input"
-- inputText: "${output.NPC0}"
-- inputText: "${output.NPC1}"
-- inputText: "${output.NPC2}"
-- inputText: "${output.NPC3}"
+- inputText: "${output.NEWPHONE_OTP}"
 
 # ── 11. Confirma ─────────────────────────────────────────────────────────────
 - tapOn:

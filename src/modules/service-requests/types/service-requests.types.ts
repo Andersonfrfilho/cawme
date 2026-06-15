@@ -1,0 +1,42 @@
+export type ServiceRequestStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export type ServiceRequest = {
+  id: string;
+  contractorId: string;
+  providerId: string;
+  serviceId: string;
+  addressId: string;
+  status: ServiceRequestStatus;
+  contractorConfirmed: boolean;
+  providerConfirmed: boolean;
+  description?: string;
+  scheduledAt?: string;
+  priceFinal?: number;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type CreateServiceRequestServiceParams = {
+  providerId: string;
+  serviceId: string;
+  addressId: string;
+  description?: string;
+  scheduledAt?: string;
+  priceFinal?: number;
+  paymentMethodTypeId?: string;
+};
+
+export type CreateServiceRequestServiceResult = ServiceRequest;
+
+export type ListServiceRequestsServiceParams = {
+  userType?: "CUSTOMER" | "PROVIDER";
+};
+
+export type ListServiceRequestsServiceResult = ServiceRequest[];
+
+export type UpdateServiceRequestServiceResult = ServiceRequest;

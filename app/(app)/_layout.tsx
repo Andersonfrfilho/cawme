@@ -9,7 +9,7 @@ import { isTestEnvironment } from '@/shared/utils/test-environment';
 
 // Rotas em (app)/ gerenciadas pelo servidor (não aparecem como tabs por padrão).
 // Em test/dev mode, 'providers' fica visível no tab bar para permitir E2E nessa tela.
-const ALWAYS_HIDDEN_ROUTES = ['company', 'account'];
+const ALWAYS_HIDDEN_ROUTES = ['company', 'account', 'service-requests'];
 
 const DEFAULT_TABS = [
   { id: 'search', label: t('navigation.search'), icon: 'search-outline' },

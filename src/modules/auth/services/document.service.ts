@@ -12,9 +12,10 @@ export type UploadDocumentPayload = {
     type: string;
   };
   documentType: DocumentType;
+  documentNumber?: string;
 };
 
-export type DocumentStatus = "PENDING" | "VERIFIED" | "REJECTED";
+export type DocumentStatus = "PENDING" | "VERIFIED" | "APPROVED" | "REJECTED";
 
 export type UserDocument = {
   id: string;
@@ -48,6 +49,9 @@ export const DocumentService = {
       type: payload.file.type,
     });
     formData.append("documentType", payload.documentType);
+    if (payload.documentNumber) {
+      formData.append("documentNumber", payload.documentNumber);
+    }
 
     const response = await apiClient.post(
       AUTH_ENDPOINTS.DOCUMENT_UPLOAD,

@@ -80,4 +80,41 @@ export const styles = StyleSheet.create({
   badgeTextUnavailable: {
     color: theme.colors.text.tertiary,
   },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: moderateScale(32, 0.5),
+  },
+  centeredList: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: moderateScale(32, 0.5),
+  },
+  errorText: {
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.status.error,
+    textAlign: "center",
+  },
+  emptyText: {
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.text.secondary,
+    textAlign: "center",
+  },
+  nextAvailableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: verticalScale(4),
+    gap: moderateScale(4, 0.5),
+  },
+  nextAvailableLabel: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  nextAvailableDate: {
+    fontSize: moderateScale(12, 0.3),
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.primary.DEFAULT,
+  },
 });

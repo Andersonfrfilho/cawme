@@ -1,8 +1,6 @@
-import axios from "axios";
 import { apiClient } from '@/shared/services/api-client';
 import { TokenService } from "./token.service";
-import { AUTH_ENDPOINTS, CLIENT, HEADERS } from "../auth.constants";
-import { BASE_URL, FORM_HEADERS } from "./keycloak.constants";
+import { AUTH_ENDPOINTS, HEADERS } from "../auth.constants";
 import { decodeJwtPayload } from "@/shared/utils/jwt";
 import type {
   LoginServiceParams,
@@ -20,6 +18,11 @@ import type {
   SelfUnlockVerifyParams,
   SelfUnlockVerifyResult,
   GetCategoriesResult,
+  GetServicesResult,
+  CreateCategoryParams,
+  CreateCategoryResult,
+  CreateServiceCatalogParams,
+  CreateServiceCatalogResult,
   CreateProviderServiceParams,
   CreateProviderServiceResult,
   GetProviderServicesResult,
@@ -30,6 +33,7 @@ import type {
   GetProviderAvailabilityResult,
   UpdateProviderAvailabilityParams,
   UpdateProviderAvailabilityResult,
+  DeleteProviderAvailabilityResult,
 } from "./types";
 
 
@@ -39,24 +43,18 @@ export const KeycloakService = {
     username,
     password,
   }: LoginServiceParams): Promise<LoginServiceResult> {
-    const response = await axios.post(
-      `${BASE_URL}${AUTH_ENDPOINTS.TOKEN}`,
-      new URLSearchParams({
-        grant_type: HEADERS.GRANT_TYPE.PASSWORD,
-        client_id: CLIENT.ID,
-        client_secret: CLIENT.SECRET,
-        username,
-        password,
-      }).toString(),
-      { headers: FORM_HEADERS },
+    const response = await apiClient.post(
+      AUTH_ENDPOINTS.TOKEN,
+      { username, password },
+      { _skipGlobalError: true },
     );
 
     await TokenService.save({
-      accessToken: response.data.access_token,
-      refreshToken: response.data.refresh_token,
+      accessToken: response.data.accessToken,
+      refreshToken: response.data.refreshToken,
     });
 
-    const claims = decodeJwtPayload(response.data.access_token);
+    const claims = decodeJwtPayload(response.data.accessToken);
 
     // Extrai userType do JWT: tenta grupos Keycloak, roles e atributo customizado
     const groups: string[] = claims.groups ?? [];
@@ -80,20 +78,15 @@ export const KeycloakService = {
     if (!refreshToken) throw new Error("No refresh token available");
 
     try {
-      const response = await axios.post(
-        `${BASE_URL}${AUTH_ENDPOINTS.TOKEN}`,
-        new URLSearchParams({
-          grant_type: HEADERS.GRANT_TYPE.REFRESH_TOKEN,
-          client_id: CLIENT.ID,
-          client_secret: CLIENT.SECRET,
-          refresh_token: refreshToken,
-        }).toString(),
-        { headers: FORM_HEADERS },
+      const response = await apiClient.post(
+        AUTH_ENDPOINTS.TOKEN,
+        { grantType: HEADERS.GRANT_TYPE.REFRESH_TOKEN, refreshToken },
+        { _skipGlobalError: true },
       );
 
       await TokenService.save({
-        accessToken: response.data.access_token,
-        refreshToken: response.data.refresh_token,
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
       });
     } catch (error) {
       await TokenService.clear();
@@ -105,14 +98,10 @@ export const KeycloakService = {
     const refreshToken = await TokenService.getRefresh();
     if (refreshToken) {
       try {
-        await axios.post(
-          `${BASE_URL}${AUTH_ENDPOINTS.LOGOUT}`,
-          new URLSearchParams({
-            client_id: CLIENT.ID,
-            client_secret: CLIENT.SECRET,
-            refresh_token: refreshToken,
-          }).toString(),
-          { headers: FORM_HEADERS },
+        await apiClient.post(
+          AUTH_ENDPOINTS.LOGOUT,
+          { refreshToken },
+          { _skipGlobalError: true },
         );
       } catch {
         // logout failure is non-fatal
@@ -231,8 +220,23 @@ export const KeycloakService = {
     return response.data;
   },
 
+  async getServices(): Promise<GetServicesResult> {
+    const response = await apiClient.get(AUTH_ENDPOINTS.SERVICES, { _skipGlobalError: true });
+    return response.data;
+  },
+
+  async createCategory(params: CreateCategoryParams): Promise<CreateCategoryResult> {
+    const response = await apiClient.post(AUTH_ENDPOINTS.CATEGORIES_CREATE, params, { _skipGlobalError: true });
+    return response.data;
+  },
+
+  async createServiceCatalog(params: CreateServiceCatalogParams): Promise<CreateServiceCatalogResult> {
+    const response = await apiClient.post(AUTH_ENDPOINTS.SERVICES_CREATE, params, { _skipGlobalError: true });
+    return response.data;
+  },
+
   async getCategories(): Promise<GetCategoriesResult> {
-    const response = await apiClient.get(AUTH_ENDPOINTS.CATEGORIES);
+    const response = await apiClient.get(AUTH_ENDPOINTS.CATEGORIES, { _skipGlobalError: true });
     return response.data;
   },
 
@@ -246,7 +250,7 @@ export const KeycloakService = {
   },
 
   async getProviderServices(): Promise<GetProviderServicesResult> {
-    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_SERVICES);
+    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_SERVICES, { _skipGlobalError: true });
     return response.data;
   },
 
@@ -276,17 +280,24 @@ export const KeycloakService = {
   },
 
   async getProviderAvailability(): Promise<GetProviderAvailabilityResult> {
-    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_AVAILABILITY);
+    const response = await apiClient.get(AUTH_ENDPOINTS.PROVIDER_AVAILABILITY, { _skipGlobalError: true });
     return response.data;
   },
 
   async updateProviderAvailability(
-    dayOfWeek: number,
     params: UpdateProviderAvailabilityParams,
   ): Promise<UpdateProviderAvailabilityResult> {
     const response = await apiClient.put(
-      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY_UPDATE(dayOfWeek),
-      params,
+      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY_BY_ID(params.id),
+      { startTime: params.startTime, endTime: params.endTime },
+      { _skipGlobalError: true },
+    );
+    return response.data;
+  },
+
+  async deleteProviderAvailability(id: string): Promise<DeleteProviderAvailabilityResult> {
+    const response = await apiClient.delete(
+      AUTH_ENDPOINTS.PROVIDER_AVAILABILITY_BY_ID(id),
       { _skipGlobalError: true },
     );
     return response.data;

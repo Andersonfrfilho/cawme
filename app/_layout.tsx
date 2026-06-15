@@ -18,10 +18,8 @@ if (process.env.NODE_ENV === 'development') {
   LogBox.ignoreAllLogs();
 }
 
-// Set e2e flag for testing
-if (__DEV__) {
-  (globalThis as any).__e2e__ = true;
-}
+// __e2e__ is set only by Maestro runner via process.env.E2E_TEST=true
+// Do NOT set it here — it short-circuits all real API calls in development
 import * as Linking from "expo-linking";
 import { styles } from "@/shared/styles/root-layout.styles";
 import { useUIStore } from "@/shared/store/ui.store";

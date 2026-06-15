@@ -54,7 +54,37 @@
       "Bash(sysctl hw.memsize)",
       "Bash(awk '{printf \"RAM total: %.0f GB\\\\n\", $2/1024/1024/1024}')",
       "Bash(sort -k4 -rn)",
-      "Bash(awk 'NR<=15 {printf \"%s %s %s %s\\\\n\", $1, $3, $4, $11}')"
+      "Bash(awk 'NR<=15 {printf \"%s %s %s %s\\\\n\", $1, $3, $4, $11}')",
+      "Bash(xcrun simctl *)",
+      "Bash(rm -rf ~/Library/Developer/Xcode/DerivedData/Cawme-* && echo \"DerivedData limpo\")",
+      "Bash(plutil -p ~/Library/Developer/CoreSimulator/Devices/0B0EF70C-F41A-4274-A596-F93091E7FFF0/data/Containers/Bundle/Application/89C1C467-886A-440E-8355-CCCB652A51E5/Cawme.app/Info.plist)",
+      "Bash(plutil -p \"/Users/anderson.filho/Library/Developer/CoreSimulator/Devices/0B0EF70C-F41A-4274-A596-F93091E7FFF0/data/Containers/Bundle/Application/24B2DD89-3B18-48CD-B756-97EFB038A557/Cawme.app/Info.plist\")",
+      "Bash(/Users/anderson.filho/Documents/personal/domestic/cawme/node_modules/.bin/expo install *)",
+      "Bash(kill %1)",
+      "Bash(wait %1)",
+      "Bash(grep -v \"^$\\\\|^Timestamp\")",
+      "Bash(find /Users/anderson.filho/Documents/personal/domestic -name \"docker-compose*\" 2>/dev/null | grep -v node_modules | head -10)",
+      "Read(//Users/anderson.filho/Documents/personal/domestic/**)",
+      "Bash(rtk proxy *)",
+      "Bash(docker compose *)",
+      "Bash(PGPASSWORD=postgres1234 rtk proxy psql -h localhost -p 5433 -U postgres -d backend_database_postgres -c \"SELECT u.id, u.keycloak_id, u.name, pp.id as provider_profile_id FROM users u LEFT JOIN provider_profiles pp ON pp.user_id = u.id WHERE u.keycloak_id = 'ec3c6360-3acf-4455-bae1-cbcce83e651c';\")",
+      "Bash(PGPASSWORD=postgres1234 /opt/homebrew/opt/postgresql@17/bin/psql -h localhost -p 5433 -U postgres -d backend_database_postgres -c \"SELECT u.id, u.keycloak_id, u.name, pp.id as provider_profile_id FROM users u LEFT JOIN provider_profiles pp ON pp.user_id = u.id WHERE u.keycloak_id = 'ec3c6360-3acf-4455-bae1-cbcce83e651c';\")",
+      "Bash(find /opt/homebrew /usr/local -name \"psql\" 2>/dev/null | head -3)",
+      "Read(//opt/homebrew/**)",
+      "Bash(docker restart *)",
+      "Bash(xargs ls)",
+      "Bash(python3 -m json.tool)",
+      "Bash(docker cp *)",
+      "Bash(docker exec *)",
+      "Bash(docker port *)",
+      "Bash(docker stop *)",
+      "Bash(docker rm *)",
+      "Bash(docker network *)",
+      "Bash(docker inspect *)",
+      "Bash(python3 -c ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/anderson.filho/Library/Developer/Xcode/DerivedData"
     ]
   }
 }

@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { isTestEnvironment } from '@/shared/utils/test-environment';
 
 export function useHome() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, isPending, error, refetch } = useQuery({
     queryKey: ['home'],
     queryFn: async () => {
       if (isTestEnvironment()) {
@@ -28,5 +28,5 @@ export function useHome() {
     }
   }, [data, isLoading]);
 
-  return { data, isLoading, error, refetch };
+  return { data, isLoading: isLoading || isPending, error, refetch };
 }

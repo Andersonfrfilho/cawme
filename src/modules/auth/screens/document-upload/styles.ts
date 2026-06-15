@@ -11,6 +11,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: moderateScale(24, 0.5),
     paddingTop: verticalScale(24),
+    backgroundColor: theme.colors.background.DEFAULT,
   },
   header: {
     marginBottom: verticalScale(24),
@@ -71,6 +72,30 @@ export const styles = StyleSheet.create({
   documentTypeChipTextSelected: {
     color: theme.palette.neutral[0],
     fontWeight: theme.typography.fontWeight.bold,
+  },
+  numberSection: {
+    marginBottom: verticalScale(20),
+  },
+  numberLabel: {
+    fontSize: moderateScale(13, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: verticalScale(8),
+  },
+  numberInput: {
+    height: verticalScale(52),
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border.DEFAULT,
+    paddingHorizontal: moderateScale(16, 0.5),
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.text.primary,
+    backgroundColor: theme.colors.background.elevated,
+  },
+  numberInputFocused: {
+    borderColor: theme.colors.primary.DEFAULT,
   },
   uploadArea: {
     aspectRatio: 16 / 10,

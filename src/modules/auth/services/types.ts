@@ -132,6 +132,40 @@ export type GetCategoriesResult = {
   data: CategoryDto[];
 };
 
+export type ServiceDto = {
+  id: string;
+  name: string;
+  categoryId: string;
+  description: string | null;
+};
+
+export type GetServicesResult = {
+  data: ServiceDto[];
+};
+
+export type CreateCategoryParams = {
+  name: string;
+  slug: string;
+};
+
+export type CreateCategoryResult = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type CreateServiceCatalogParams = {
+  name: string;
+  categoryId: string;
+  description?: string;
+};
+
+export type CreateServiceCatalogResult = {
+  id: string;
+  name: string;
+  categoryId: string;
+};
+
 export type ProviderServiceDto = {
   id: string;
   serviceId: string;
@@ -183,12 +217,14 @@ export type ProviderAvailabilityDto = {
   startTime: string;
   endTime: string;
   isActive: boolean;
+  additionalPercentage: number;
 };
 
 export type SetProviderAvailabilityParams = {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  additionalPercentage?: number;
 };
 
 export type SetProviderAvailabilityResult = {
@@ -202,12 +238,17 @@ export type GetProviderAvailabilityResult = {
 };
 
 export type UpdateProviderAvailabilityParams = {
-  dayOfWeek: number;
+  id: string;
   startTime: string;
   endTime: string;
+  additionalPercentage?: number;
 };
 
 export type UpdateProviderAvailabilityResult = {
   success: boolean;
   data: ProviderAvailabilityDto;
+};
+
+export type DeleteProviderAvailabilityResult = {
+  success: boolean;
 };

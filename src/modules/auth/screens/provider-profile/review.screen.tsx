@@ -1,17 +1,11 @@
-import React, { useState, useLayoutEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-} from 'react-native';
+import React, { useLayoutEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
-import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { useProviderProfileStore } from '@/modules/auth/store/provider-profile.store';
-import { useLoading } from '@/shared/hooks/useLoading';
 import { theme } from '@/shared/constants';
+import { formatBRL } from '@/shared/utils/currency';
 import { moderateScale, scale, verticalScale } from '@/shared/utils/scale';
 import { t } from '@/shared/locales';
 import { DAY_LABELS } from './types';
@@ -19,9 +13,6 @@ import styles from './styles';
 
 export default function ReviewScreen() {
   const { selectedCategories, services, availability, reset } = useProviderProfileStore();
-  const { createProviderService, setProviderAvailability } = useAuth();
-  const { showLoading, hideLoading } = useLoading();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
@@ -36,8 +27,14 @@ export default function ReviewScreen() {
           <Ionicons name="chevron-back" size={moderateScale(22, 0.3)} color={theme.colors.text.primary} />
         </TouchableOpacity>
       ),
-      headerTitle: '',
+      headerTitle: t('auth.profileSetupReviewTitle'),
+      headerTitleStyle: {
+        fontSize: moderateScale(16, 0.3),
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.text.primary,
+      },
       headerShadowVisible: false,
+      headerStyle: { backgroundColor: theme.colors.background.DEFAULT },
     });
   }, [navigation]);
 
@@ -46,46 +43,17 @@ export default function ReviewScreen() {
     services: services.filter((s) => s.categoryId === category.id),
   }));
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    showLoading();
-    try {
-      for (const service of services) {
-        await createProviderService({
-          serviceId: service.serviceId,
-          estimatedDurationMinutes: service.estimatedDurationMinutes,
-          pricePerHour: service.pricePerHour,
-          priceBase: service.priceBase,
-          priceType: service.priceType,
-        });
-      }
-
-      for (const slot of availability) {
-        await setProviderAvailability({
-          dayOfWeek: slot.dayOfWeek,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        });
-      }
-
-      reset();
-      router.replace('/(app)/home');
-    } catch (error) {
-      console.error('[review] Failed to finalize:', error);
-      alert(t('auth.profileSetupValidationRequired'));
-    } finally {
-      hideLoading();
-      setIsSubmitting(false);
-    }
+  const handleSubmit = () => {
+    reset();
+    router.replace('/(app)/home');
   };
 
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerSection}>
-          <Text style={styles.title}>{t('auth.profileSetupReviewTitle')}</Text>
-          <Text style={styles.subtitle}>{t('auth.profileSetupReviewSubtitle')}</Text>
-        </View>
+        <Text style={[styles.subtitle, { marginBottom: verticalScale(24) }]}>
+          {t('auth.profileSetupReviewSubtitle')}
+        </Text>
 
         <View style={styles.reviewSection}>
           <Text style={styles.reviewTitle}>{t('auth.profileSetupReviewCategories')}</Text>
@@ -120,7 +88,7 @@ export default function ReviewScreen() {
                     <View key={service.id} style={styles.reviewItem}>
                       <Text style={styles.reviewItemTitle}>{service.serviceName}</Text>
                       <Text style={styles.reviewItemContent}>
-                        {service.estimatedDurationMinutes}min • R${service.pricePerHour?.toFixed(2)}
+                        {service.estimatedDurationMinutes}min • {service.pricePerHour == null ? '' : formatBRL(service.pricePerHour)}
                       </Text>
                     </View>
                   ))}
@@ -140,8 +108,8 @@ export default function ReviewScreen() {
               return daySlots.length > 0 ? (
                 <View key={day} style={styles.reviewItem}>
                   <Text style={styles.reviewItemTitle}>{DAY_LABELS[day]}</Text>
-                  {daySlots.map((slot, idx) => (
-                    <Text key={idx} style={styles.reviewItemContent}>
+                  {daySlots.map((slot) => (
+                    <Text key={`${slot.dayOfWeek}-${slot.startTime}`} style={styles.reviewItemContent}>
                       {slot.startTime} - {slot.endTime}
                     </Text>
                   ))}
@@ -154,9 +122,8 @@ export default function ReviewScreen() {
 
       <View style={styles.actionBar}>
         <TouchableOpacity
-          style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+          style={styles.nextButton}
           onPress={handleSubmit}
-          disabled={isSubmitting}
           activeOpacity={0.85}
           testID="action-bar-submit-button"
         >

@@ -55,9 +55,21 @@ export const styles = StyleSheet.create({
     gap: moderateScale(6, 0.5),
   },
   addressLabel: {
+    flexShrink: 1,
     fontSize: moderateScale(14, 0.3),
     fontWeight: theme.typography.fontWeight.bold,
     color: theme.colors.text.primary,
+  },
+  primaryBadge: {
+    backgroundColor: theme.colors.primary.surface,
+    borderRadius: 6,
+    paddingHorizontal: moderateScale(6, 0.5),
+    paddingVertical: moderateScale(2, 0.5),
+  },
+  primaryBadgeText: {
+    fontSize: moderateScale(10, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.primary.DEFAULT,
   },
   addressText: {
     fontSize: moderateScale(13, 0.3),
@@ -66,6 +78,9 @@ export const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: moderateScale(4, 0.5),
+  },
+  deleteButtonDisabled: {
+    opacity: 0.35,
   },
   addButton: {
     height: verticalScale(52),

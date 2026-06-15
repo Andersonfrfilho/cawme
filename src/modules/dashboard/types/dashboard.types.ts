@@ -13,14 +13,19 @@ export interface ServiceRequestSummary {
 }
 
 export interface ContractorDashboardResponse {
-  stats: DashboardStats[];
-  recentRequests: ServiceRequestSummary[];
+  activeRequests: ServiceRequestSummary[];
+  pendingRequests: ServiceRequestSummary[];
+  recentHistory: ServiceRequestSummary[];
+  unreadNotifications: number;
 }
 
 export interface ProviderDashboardResponse {
-  stats: DashboardStats[];
-  activeSchedule: ServiceRequestSummary[];
-  pendingRequests: ServiceRequestSummary[];
+  incomingRequests: ServiceRequestSummary[];
+  activeRequests: ServiceRequestSummary[];
+  averageRating: number;
+  reviewCount: number;
+  verificationStatus: string;
+  unreadNotifications: number;
 }
 
 export type GetContractorDashboardResult = Promise<ContractorDashboardResponse>;

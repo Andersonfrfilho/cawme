@@ -11,7 +11,8 @@ export function useDocumentUpload() {
     fileUri: string,
     fileName: string,
     fileType: string,
-    documentType: DocumentType
+    documentType: DocumentType,
+    documentNumber?: string,
   ): Promise<void> {
     setIsUploading(true);
     setError(null);
@@ -24,6 +25,7 @@ export function useDocumentUpload() {
           type: fileType,
         },
         documentType,
+        documentNumber: documentNumber?.trim() || undefined,
       };
 
       const result = await DocumentService.uploadDocument(payload);

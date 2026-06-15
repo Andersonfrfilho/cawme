@@ -29,6 +29,8 @@ function parseDistanceKm(distance?: string): number {
   return parseFloat(match[0].replace(',', '.'));
 }
 
+const SORT_FILTERS = new Set(['top_rated', 'location']);
+
 function sortProviders(providers: ProviderItem[], filter: string | null): ProviderItem[] {
   if (!filter) return providers;
   const list = [...providers];
@@ -78,13 +80,21 @@ export default function ProviderList({ config, data, onItemPress }: SduiComponen
   const rawProviders: ProviderItem[] = listConfig.providers ?? (data as any)?.providers ?? [];
 
   const term = listConfig.searchTerm?.trim().toLowerCase() ?? '';
-  const filtered = term
-    ? rawProviders.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          (p.category?.toLowerCase().includes(term) ?? false),
-      )
-    : rawProviders;
+  const categoryFilter =
+    listConfig.activeFilter && !SORT_FILTERS.has(listConfig.activeFilter)
+      ? listConfig.activeFilter.toLowerCase()
+      : null;
+
+  const filtered = rawProviders.filter((p) => {
+    if (categoryFilter && !(p.category?.toLowerCase().includes(categoryFilter) ?? false)) {
+      return false;
+    }
+    if (!term) return true;
+    return (
+      p.name.toLowerCase().includes(term) ||
+      (p.category?.toLowerCase().includes(term) ?? false)
+    );
+  });
 
   const providers = sortProviders(filtered, listConfig.activeFilter ?? null);
 

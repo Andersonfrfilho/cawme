@@ -44,14 +44,14 @@ export function SduiRenderer({ layout, activeFilter, searchTerm, onFilterChange 
           const Component = COMPONENT_MAP[component.type];
           if (!Component) return null;
 
-          if (component.type === 'search_filters') {
+          if (component.type === 'search_filters' || component.type === 'category_list') {
             return (
               <Component
                 key={component.id}
                 data={component.data}
                 config={{ ...component.config, activeFilter }}
                 onItemPress={(item) => {
-                  const filterId = item?.filterId as string | undefined;
+                  const filterId = (item?.filterId ?? item?.name) as string | undefined;
                   onFilterChange?.(filterId === activeFilter ? null : (filterId ?? null));
                 }}
               />

@@ -38,6 +38,19 @@ export const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+  input: {
+    height: verticalScale(52),
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border.DEFAULT,
+    paddingHorizontal: moderateScale(16, 0.5),
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.text.primary,
+    backgroundColor: theme.colors.background.elevated,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary.DEFAULT,
+  },
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
+import * as Crypto from 'expo-crypto';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { useProviderProfileStore } from '@/modules/auth/store/provider-profile.store';
 import { useLoading } from '@/shared/hooks/useLoading';
 import { theme } from '@/shared/constants';
+import { formatBRL } from '@/shared/utils/currency';
 import { moderateScale, scale } from '@/shared/utils/scale';
 import { t } from '@/shared/locales';
 import { isTestEnvironment } from '@/shared/utils/test-environment';
@@ -29,7 +31,7 @@ export default function ServicesScreen() {
   const [showModal, setShowModal] = useState(false);
   const [formValues, setFormValues] = useState({
     serviceName: '',
-    estimatedDurationMinutes: '60',
+    estimatedDurationMinutes: '',
     pricePerHour: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,13 +67,15 @@ export default function ServicesScreen() {
     setIsSubmitting(true);
     showLoading();
     try {
-      const serviceInternalId = `${activeCategory}-${Date.now()}`;
+      const serviceInternalId = Crypto.randomUUID();
+      const durationMinutes = Number.parseInt(formValues.estimatedDurationMinutes, 10) || 60;
+      const pricePerHour = Number.parseFloat(formValues.pricePerHour);
 
       if (!isTestEnvironment()) {
         await createProviderService({
           serviceId: serviceInternalId,
-          estimatedDurationMinutes: parseInt(formValues.estimatedDurationMinutes, 10),
-          pricePerHour: parseFloat(formValues.pricePerHour),
+          estimatedDurationMinutes: durationMinutes,
+          pricePerHour,
         });
       }
 
@@ -81,12 +85,12 @@ export default function ServicesScreen() {
         categoryId: activeCategory,
         categoryName: selectedCategories.find((cat) => cat.id === activeCategory)?.name ?? '',
         serviceName: formValues.serviceName,
-        estimatedDurationMinutes: parseInt(formValues.estimatedDurationMinutes, 10),
-        pricePerHour: parseFloat(formValues.pricePerHour),
+        estimatedDurationMinutes: durationMinutes,
+        pricePerHour,
         isActive: true,
       });
 
-      setFormValues({ serviceName: '', estimatedDurationMinutes: '60', pricePerHour: '' });
+      setFormValues({ serviceName: '', estimatedDurationMinutes: '', pricePerHour: '' });
       setShowModal(false);
     } catch (error) {
       console.error('[services] Failed to add service:', error);
@@ -167,7 +171,7 @@ export default function ServicesScreen() {
                   <View style={styles.serviceInfo}>
                     <Text style={styles.serviceName} testID="service-card-name">{service.serviceName}</Text>
                     <Text style={styles.serviceDetails}>
-                      {service.estimatedDurationMinutes}min • R${service.pricePerHour?.toFixed(2)}
+                      {service.estimatedDurationMinutes}min • {service.pricePerHour == null ? '' : formatBRL(service.pricePerHour)}
                     </Text>
                   </View>
                   <View style={styles.serviceActions}>
@@ -202,7 +206,7 @@ export default function ServicesScreen() {
         visible={showModal}
         transparent
         animationType="slide"
-        onRequestClose={() => { setFormValues({ serviceName: '', estimatedDurationMinutes: '60', pricePerHour: '' }); setShowModal(false); }}
+        onRequestClose={() => { setFormValues({ serviceName: '', estimatedDurationMinutes: '', pricePerHour: '' }); setShowModal(false); }}
       >
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -216,31 +220,34 @@ export default function ServicesScreen() {
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: moderateScale(20, 0.5) }}>
                 <Text style={styles.title}>{t('auth.profileSetupAddServiceTitle')}</Text>
-                <TouchableOpacity onPress={() => { setFormValues({ serviceName: '', estimatedDurationMinutes: '60', pricePerHour: '' }); setShowModal(false); }} testID="modal-close-button">
+                <TouchableOpacity onPress={() => { setFormValues({ serviceName: '', estimatedDurationMinutes: '', pricePerHour: '' }); setShowModal(false); }} testID="modal-close-button">
                   <Ionicons name="close" size={scale(24)} color={theme.colors.text.primary} />
                 </TouchableOpacity>
               </View>
 
+              <Text style={styles.timePickerLabel}>{t('auth.profileSetupServiceNameLabel')}</Text>
               <TextInput
                 placeholder={t('auth.profileSetupServiceNamePlaceholder')}
                 value={formValues.serviceName}
                 onChangeText={(text) => setFormValues({ ...formValues, serviceName: text })}
-                style={[styles.timeInput, { marginBottom: moderateScale(16, 0.5) }]}
+                style={[styles.timeInput, { marginBottom: moderateScale(20, 0.5) }]}
                 placeholderTextColor={theme.colors.text.secondary}
                 returnKeyType="next"
                 testID="service-name-input"
               />
 
+              <Text style={styles.timePickerLabel}>{t('auth.profileSetupDurationLabel')}</Text>
               <TextInput
                 placeholder={t('auth.profileSetupDurationPlaceholder')}
                 value={formValues.estimatedDurationMinutes}
                 onChangeText={(text) => setFormValues({ ...formValues, estimatedDurationMinutes: text })}
                 keyboardType="number-pad"
-                style={[styles.timeInput, { marginBottom: moderateScale(16, 0.5) }]}
+                style={[styles.timeInput, { marginBottom: moderateScale(20, 0.5) }]}
                 placeholderTextColor={theme.colors.text.secondary}
                 testID="duration-input"
               />
 
+              <Text style={styles.timePickerLabel}>{t('auth.profileSetupPricePerHourLabel')}</Text>
               <TextInput
                 placeholder={t('auth.profileSetupPricePerHourPlaceholder')}
                 value={formValues.pricePerHour}

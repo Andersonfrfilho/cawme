@@ -131,10 +131,11 @@ tags:
 # Pula DocumentUploadSheet se aparecer
 - runFlow:
     when:
-      visible: ".*documento.*|.*Enviar depois.*"
+      visible:
+        id: "document-sheet-now-button"
     commands:
       - tapOn:
-          id: "document-upload-skip-button"
+          id: "document-sheet-later-button"
 
 - extendedWaitUntil:
     visible: ".*Início.*"
@@ -172,7 +173,8 @@ tags:
     id: "send-code-button"
 
 - extendedWaitUntil:
-    visible: ".*Código enviado.*|.*newemail.*"
+    visible:
+      id: "otp-input"
     timeout: 12000
 
 # ── 10. Digita código QA: 0000 ────────────────────────────────────────────────
