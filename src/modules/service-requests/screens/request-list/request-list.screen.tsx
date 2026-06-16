@@ -514,6 +514,26 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                       </TouchableOpacity>
                     </View>
                   )}
+
+                  {!isProvider && detailRequest.status === "COMPLETED" && (
+                    <View style={styles.cardActions}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.completeButton]}
+                        onPress={() => {
+                          setDetailRequest(null);
+                          router.push({
+                            pathname: "/(app)/service-requests/review" as any,
+                            params: {
+                              serviceRequestId: detailRequest.id,
+                              serviceName: detailRequest.service?.name ?? "",
+                            },
+                          });
+                        }}
+                      >
+                        <Text style={styles.completeButtonText}>{serviceRequests.reviewButton}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               )}
             </ScrollView>

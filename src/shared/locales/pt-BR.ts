@@ -535,6 +535,14 @@ export const ptBR = {
     scheduleTitle: "Agenda",
     scheduleSelectedDay: "Agendamentos de",
     scheduleEmpty: "Nenhum agendamento neste dia",
+    reviewTitle: "Avaliar serviço",
+    reviewRatingLabel: "Como foi o serviço?",
+    reviewCommentLabel: "Comentário (opcional)",
+    reviewCommentPlaceholder: "Conte como foi sua experiência...",
+    reviewSubmitButton: "Enviar avaliação",
+    reviewSuccess: "Avaliação enviada! Obrigado.",
+    reviewError: "Não foi possível enviar a avaliação. Tente novamente.",
+    reviewButton: "Avaliar",
   },
 };
 

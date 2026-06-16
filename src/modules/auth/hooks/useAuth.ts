@@ -3,6 +3,7 @@ import { useRegisterStore } from "@/modules/auth/store/register.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
 import { AccountService } from "@/modules/account/services/account.service";
 import { useRegistrationResume } from "@/modules/auth/hooks/useRegistrationResume";
+import { PushTokenService } from "@/modules/notifications/services/push-token.service";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { router } from "expo-router";
 import { userAction } from "@/shared/utils/logger";
@@ -110,6 +111,7 @@ export function useAuth() {
       }
 
       await checkVerificationStatusAndRedirect(id, name, email, type);
+      PushTokenService.registerDeviceToken().catch(() => null);
     } catch (error) {
       userAction('login.error', 'Login failed');
       throw error;
