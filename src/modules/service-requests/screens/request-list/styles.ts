@@ -65,9 +65,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  cardHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(8, 0.5),
+  },
+  cardAvatar: {
+    width: moderateScale(36, 0.5),
+    height: moderateScale(36, 0.5),
+    borderRadius: 18,
+    backgroundColor: theme.colors.primary.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardDate: {
     fontSize: moderateScale(12, 0.3),
     color: theme.colors.text.secondary,
+  },
+  cardCode: {
+    fontSize: moderateScale(11, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
+    marginTop: 2,
   },
   statusBadge: {
     borderRadius: 20,
@@ -110,6 +129,46 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     gap: verticalScale(4),
+  },
+  cardServiceName: {
+    fontSize: moderateScale(14, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+  },
+  cardProviderName: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  cardAddress: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.text.secondary,
+    marginTop: 2,
+  },
+  cardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: verticalScale(4),
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border.DEFAULT,
+  },
+  cardMetaLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: moderateScale(8, 0.5),
+  },
+  cardMetaText: {
+    fontSize: moderateScale(15, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
+  },
+  cardPaymentMethod: {
+    fontSize: moderateScale(12, 0.3),
+    color: theme.colors.text.secondary,
+    backgroundColor: theme.colors.background.elevated,
+    paddingHorizontal: moderateScale(8, 0.5),
+    paddingVertical: verticalScale(2),
+    borderRadius: 6,
   },
   cardServiceId: {
     fontSize: moderateScale(13, 0.3),
@@ -167,6 +226,90 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(13, 0.3),
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.palette.neutral[0],
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: theme.colors.background.DEFAULT,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(32),
+    maxHeight: "80%" as unknown as number,
+  },
+  modalHandle: {
+    width: moderateScale(40, 0.5),
+    height: verticalScale(4),
+    borderRadius: 2,
+    backgroundColor: theme.colors.border.DEFAULT,
+    alignSelf: "center",
+    marginBottom: verticalScale(16),
+  },
+  modalContent: {
+    paddingHorizontal: moderateScale(24, 0.5),
+    gap: verticalScale(12),
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: verticalScale(4),
+  },
+  modalTitle: {
+    fontSize: moderateScale(18, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: verticalScale(6),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border.DEFAULT,
+  },
+  detailLabel: {
+    fontSize: moderateScale(13, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  detailValue: {
+    fontSize: moderateScale(13, 0.3),
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.text.primary,
+    maxWidth: "60%",
+    textAlign: "right",
+  },
+  detailSection: {
+    paddingTop: verticalScale(4),
+  },
+  detailSectionTitle: {
+    fontSize: moderateScale(13, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: verticalScale(4),
+  },
+  detailDescription: {
+    fontSize: moderateScale(15, 0.3),
+    color: theme.colors.text.primary,
+    lineHeight: moderateScale(24, 0.3),
+    backgroundColor: theme.colors.background.elevated,
+    borderRadius: 10,
+    padding: moderateScale(12, 0.5),
+  },
+  detailMapContainer: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: verticalScale(4),
+  },
+  detailMap: {
+    width: "100%",
+    height: verticalScale(150),
+    borderRadius: 12,
   },
 });
 

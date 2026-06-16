@@ -1,6 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { DashboardService } from '@/modules/dashboard/services/dashboard.service';
 import { isTestEnvironment } from '@/shared/utils/test-environment';
+import type { ServiceRequestSummary } from '@/modules/dashboard/types/dashboard.types';
+
+const mockRequest: ServiceRequestSummary = {
+  id: '1',
+  title: 'Limpeza Completa',
+  status: 'PENDING',
+  date: '30/05/2026 09:00',
+  priceFinal: 150,
+  serviceName: 'Limpeza Completa',
+  contractorName: 'Anderson Filho',
+  paymentMethod: 'Pix',
+  scheduledAt: '2026-05-30T12:00:00Z',
+  createdAt: '2026-05-29T10:00:00Z',
+  description: 'Preciso de limpeza completa no apartamento.',
+  address: {
+    street: 'Rua das Flores',
+    number: '123',
+    city: 'São Paulo',
+    state: 'SP',
+    neighborhood: 'Jardins',
+  },
+};
 
 export function useContractorDashboard() {
   const { data, isLoading, isPending, error } = useQuery({
@@ -8,12 +30,8 @@ export function useContractorDashboard() {
     queryFn: async () => {
       if (isTestEnvironment()) {
         return {
-          activeRequests: [
-            { id: '1', title: 'Limpeza Completa', status: 'accepted' as const, date: '29/05/2026' },
-          ],
-          pendingRequests: [
-            { id: '2', title: 'Desentupimento Urgente', status: 'pending' as const, date: '30/05/2026' },
-          ],
+          activeRequests: [{ ...mockRequest, status: 'ACCEPTED' as const }],
+          pendingRequests: [{ ...mockRequest, status: 'PENDING' as const }],
           recentHistory: [],
           unreadNotifications: 0,
         };
@@ -26,17 +44,13 @@ export function useContractorDashboard() {
 }
 
 export function useProviderDashboard() {
-  const { data, isLoading, isPending, error } = useQuery({
+  const query = useQuery({
     queryKey: ['dashboard', 'provider'],
     queryFn: async () => {
       if (isTestEnvironment()) {
         return {
-          incomingRequests: [
-            { id: '2', title: 'Desentupimento Urgente', status: 'pending' as const, date: '30/05/2026 09:00' },
-          ],
-          activeRequests: [
-            { id: '1', title: 'Limpeza Residencial', status: 'accepted' as const, date: '29/05/2026 10:00' },
-          ],
+          incomingRequests: [{ ...mockRequest, status: 'PENDING' as const }],
+          activeRequests: [{ ...mockRequest, status: 'ACCEPTED' as const }],
           averageRating: 4.9,
           reviewCount: 47,
           verificationStatus: 'VERIFIED',
@@ -47,5 +61,5 @@ export function useProviderDashboard() {
     },
     staleTime: 60 * 1000,
   });
-  return { data, isLoading: isLoading || isPending, error };
+  return { data: query.data, isLoading: query.isLoading || query.isPending, error: query.error, refetch: () => query.refetch() };
 }

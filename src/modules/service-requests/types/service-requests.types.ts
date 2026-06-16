@@ -19,6 +19,11 @@ export type ServiceRequest = {
   priceFinal?: number;
   createdAt: string;
   updatedAt?: string;
+  paymentMethodTypeId?: string;
+  service?: { id: string; name: string };
+  provider?: { id: string; businessName: string };
+  paymentMethodType?: { id: string; name: string; label: string };
+  address?: { id: string; street: string; number: string; city: string; state: string; neighborhood: string; latitude?: string; longitude?: string };
 };
 
 export type CreateServiceRequestServiceParams = {

@@ -12,51 +12,57 @@ export const styles = StyleSheet.create({
     gap: verticalScale(12),
   },
   card: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: theme.colors.background.card,
-    borderRadius: theme.radii.lg,
-    padding: moderateScale(16, 0.5),
-    ...theme.shadows.sm,
+    borderRadius: 14,
+    padding: moderateScale(14, 0.5),
+    borderWidth: 1,
+    borderColor: theme.colors.border.DEFAULT,
+    gap: verticalScale(10),
+  },
+  cardMain: {
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   cardAvatar: {
-    width: moderateScale(48, 0.5),
-    height: moderateScale(48, 0.5),
-    borderRadius: moderateScale(24, 0.5),
+    width: moderateScale(44, 0.5),
+    height: moderateScale(44, 0.5),
+    borderRadius: 22,
     backgroundColor: theme.colors.primary.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: moderateScale(12, 0.5),
+    marginRight: moderateScale(10, 0.5),
   },
   cardContent: {
     flex: 1,
   },
+  cardRight: {
+    alignItems: "flex-end",
+    gap: verticalScale(6),
+  },
   cardName: {
-    fontSize: moderateScale(16, 0.3),
+    fontSize: moderateScale(15, 0.3),
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text.primary,
-    marginBottom: verticalScale(4),
+    marginBottom: verticalScale(3),
   },
   cardRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: verticalScale(6),
+    marginBottom: 2,
+    gap: 3,
   },
   cardRating: {
-    fontSize: moderateScale(14, 0.3),
+    fontSize: moderateScale(13, 0.3),
     fontWeight: theme.typography.fontWeight.semibold,
     color: theme.colors.text.primary,
-    marginLeft: moderateScale(4, 0.5),
   },
   cardReviews: {
-    fontSize: moderateScale(13, 0.3),
+    fontSize: moderateScale(12, 0.3),
     color: theme.colors.text.secondary,
-    marginLeft: moderateScale(2, 0.5),
   },
   cardLocation: {
-    fontSize: moderateScale(13, 0.3),
+    fontSize: moderateScale(12, 0.3),
     color: theme.colors.text.tertiary,
-    marginLeft: moderateScale(4, 0.5),
   },
   badge: {
     alignSelf: "flex-start",
@@ -65,20 +71,50 @@ export const styles = StyleSheet.create({
     borderRadius: theme.radii.full,
   },
   badgeAvailable: {
-    backgroundColor: theme.colors.accent.greenLight,
+    backgroundColor: "#DCFCE7",
   },
   badgeUnavailable: {
     backgroundColor: theme.palette.neutral[100],
   },
   badgeText: {
-    fontSize: moderateScale(12, 0.3),
+    fontSize: moderateScale(11, 0.3),
     fontWeight: theme.typography.fontWeight.medium,
   },
   badgeTextAvailable: {
-    color: theme.colors.accent.greenDark,
+    color: "#15803D",
   },
   badgeTextUnavailable: {
     color: theme.colors.text.tertiary,
+  },
+  servicesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: moderateScale(6, 0.5),
+  },
+  serviceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.background.elevated,
+    borderRadius: 8,
+    paddingHorizontal: moderateScale(8, 0.5),
+    paddingVertical: verticalScale(4),
+    gap: moderateScale(4, 0.5),
+    maxWidth: "48%",
+  },
+  serviceChipText: {
+    fontSize: moderateScale(11, 0.3),
+    color: theme.colors.text.secondary,
+    flexShrink: 1,
+  },
+  serviceChipPrice: {
+    fontSize: moderateScale(11, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
+  },
+  serviceMore: {
+    fontSize: moderateScale(11, 0.3),
+    color: theme.colors.text.tertiary,
+    alignSelf: "center",
   },
   centered: {
     flex: 1,
@@ -105,16 +141,10 @@ export const styles = StyleSheet.create({
   nextAvailableRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: verticalScale(4),
     gap: moderateScale(4, 0.5),
-  },
-  nextAvailableLabel: {
-    fontSize: moderateScale(12, 0.3),
-    color: theme.colors.text.secondary,
   },
   nextAvailableDate: {
     fontSize: moderateScale(12, 0.3),
-    fontWeight: theme.typography.fontWeight.medium,
     color: theme.colors.primary.DEFAULT,
   },
 });

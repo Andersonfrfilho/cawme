@@ -39,6 +39,7 @@ export type ContactCheckServiceResult = {
 
 export type UserAddress = {
   id: string;
+  addressId: string;
   label: string;
   isPrimary: boolean;
   street: string;

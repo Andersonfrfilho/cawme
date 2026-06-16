@@ -1,10 +1,12 @@
 import { StyleSheet } from "react-native";
 import { theme } from "@/shared/constants";
+import { moderateScale, verticalScale } from "@/shared/utils/scale";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background.DEFAULT,
+    paddingTop: theme.spacing[4],
   },
   scrollContent: {
     flexGrow: 1,
@@ -43,12 +45,28 @@ export const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: theme.spacing[6],
+    gap: theme.spacing[3],
+    marginBottom: theme.spacing[8],
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSize.lg,
+    fontSize: theme.typography.fontSize.sm,
     fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing[4],
+    color: theme.colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: theme.spacing[3],
+  },
+  sectionBadge: {
+    backgroundColor: theme.colors.primary.DEFAULT + "15",
+    paddingHorizontal: moderateScale(8, 0.5),
+    paddingVertical: verticalScale(2),
+    borderRadius: 10,
+    marginLeft: theme.spacing[2],
+  },
+  sectionBadgeText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
   },
   emptyState: {
     padding: theme.spacing[10],

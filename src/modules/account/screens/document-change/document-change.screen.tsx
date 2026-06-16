@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Alert,
   ScrollView,
@@ -33,8 +33,32 @@ const DOCUMENT_TYPES: { key: DocumentType; labelKey: keyof ReturnType<typeof use
   { key: "RG", labelKey: "documentTypeRG" },
   { key: "CNH", labelKey: "documentTypeCNH" },
   { key: "CPF", labelKey: "documentTypeCPF" },
+  { key: "CNPJ", labelKey: "documentTypeCNPJ" },
   { key: "PASSPORT", labelKey: "documentTypePassport" },
 ];
+
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function formatCnpj(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
+function applyMask(value: string, type: DocumentType | null): string {
+  if (type === "CPF") return formatCpf(value);
+  if (type === "CNPJ") return formatCnpj(value);
+  return value;
+}
 
 export default function DocumentChangeScreen() {
   const insets = useSafeAreaInsets();
@@ -46,6 +70,11 @@ export default function DocumentChangeScreen() {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [numberFocused, setNumberFocused] = useState(false);
+
+  const handleNumberChange = useCallback(
+    (text: string) => setDocumentNumber(applyMask(text, selectedType)),
+    [selectedType],
+  );
 
   async function handlePickImage(): Promise<void> {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -147,12 +176,12 @@ export default function DocumentChangeScreen() {
             placeholder={account.documentNumberPlaceholder}
             placeholderTextColor={theme.colors.text.secondary}
             value={documentNumber}
-            onChangeText={setDocumentNumber}
+            onChangeText={handleNumberChange}
             onFocus={() => setNumberFocused(true)}
             onBlur={() => setNumberFocused(false)}
             autoCorrect={false}
             autoCapitalize="characters"
-            keyboardType="default"
+            keyboardType={selectedType === "CPF" || selectedType === "CNPJ" ? "numeric" : "default"}
           />
         </View>
 

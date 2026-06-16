@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   FlatList,
+  Image,
   Modal,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -15,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useProviderProfile } from "@/modules/provider-profile/hooks/useProviderProfile";
-import { AccountService, type UserAddress } from "@/modules/account/services/account.service";
+import { AccountService, type UserAddress, type PaymentMethodType } from "@/modules/account/services/account.service";
 import { ServiceRequestsService } from "@/modules/service-requests/services/service-requests.service";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { useToast } from "@/shared/hooks/useToast";
@@ -35,15 +37,15 @@ import {
 const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const PICKER_ITEM_HEIGHT = verticalScale(44);
-const PICKER_VISIBLE = 5;
+const PICKER_VISIBLE = 4;
 
-function formatScheduledDate(day: number, month: number, year: number): string {
-  return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+function formatScheduledDate(day: number, month: number, year: number, hour: number, minute: number): string {
+  return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year} às ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
-function buildISODate(day: number, month: number, year: number): string {
-  const date = new Date(year, month, day, 12, 0, 0);
-  return date.toISOString();
+function buildISODate(day: number, month: number, year: number, hour: number, minute: number): string {
+  const date = new Date(year, month, day, hour, minute, 0);
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 type PickerColumnProps = {
@@ -129,7 +131,10 @@ export default function RequestCreateScreen() {
   const [pickerDay, setPickerDay] = useState(today.getDate());
   const [pickerMonth, setPickerMonth] = useState(today.getMonth());
   const [pickerYear, setPickerYear] = useState(today.getFullYear());
+  const [pickerHour, setPickerHour] = useState(12);
+  const [pickerMinute, setPickerMinute] = useState(0);
   const [showServiceError, setShowServiceError] = useState(false);
+  const [allPaymentMethodTypes, setAllPaymentMethodTypes] = useState<PaymentMethodType[]>([]);
 
   const {
     handleSubmit,
@@ -143,12 +148,23 @@ export default function RequestCreateScreen() {
   const selectedAddressId = watch("addressId");
   const description = watch("description");
 
-  const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
+  const selectedAddress = addresses.find((address) => address.addressId === selectedAddressId);
   const selectedServices = (profile?.services ?? []).filter((s) => selectedServiceIds.has(s.id));
 
   useEffect(() => {
     AccountService.listAddresses().then(setAddresses).catch(() => setAddresses([]));
   }, []);
+
+  useEffect(() => {
+    AccountService.listPaymentMethodTypes()
+      .then(setAllPaymentMethodTypes)
+      .catch(() => setAllPaymentMethodTypes([]));
+  }, []);
+
+  const paymentMethodOptions: Array<{ id: string; name: string; label: string; icon: string | null }> =
+    (profile?.paymentMethods ?? []).length > 0
+      ? profile!.paymentMethods
+      : allPaymentMethodTypes;
 
   function toggleService(serviceId: string) {
     setSelectedServiceIds((prev) => {
@@ -244,13 +260,17 @@ export default function RequestCreateScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.providerCard}>
-          <View style={styles.providerAvatarPlaceholder}>
-            <Ionicons
-              name="person"
-              size={moderateScale(22, 0.3)}
-              color={theme.colors.primary.DEFAULT}
-            />
-          </View>
+          {profile?.avatarUrl ? (
+            <Image source={{ uri: profile.avatarUrl }} style={styles.providerAvatar} />
+          ) : (
+            <View style={styles.providerAvatarPlaceholder}>
+              <Ionicons
+                name="person"
+                size={moderateScale(22, 0.3)}
+                color={theme.colors.primary.DEFAULT}
+              />
+            </View>
+          )}
           <View>
             <Text style={styles.providerName}>{providerName}</Text>
             <Text style={styles.providerSubtitle}>Prestador de serviços</Text>
@@ -397,7 +417,7 @@ export default function RequestCreateScreen() {
               numberOfLines={1}
             >
               {scheduledDate
-                ? formatScheduledDate(pickerDay, pickerMonth, pickerYear)
+                ? formatScheduledDate(pickerDay, pickerMonth, pickerYear, pickerHour, pickerMinute)
                 : serviceRequests.scheduledAtPlaceholder}
             </Text>
             <Ionicons
@@ -409,7 +429,7 @@ export default function RequestCreateScreen() {
         </View>
 
         {/* Payment method field */}
-        {(profile?.paymentMethods ?? []).length > 0 && (
+        {paymentMethodOptions.length > 0 && (
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{serviceRequests.paymentMethodLabel}</Text>
             <TouchableOpacity
@@ -430,7 +450,7 @@ export default function RequestCreateScreen() {
                 numberOfLines={1}
               >
                 {selectedPaymentMethodId
-                  ? ((profile?.paymentMethods ?? []).find(
+                  ? (paymentMethodOptions.find(
                       (method) => method.id === selectedPaymentMethodId,
                     )?.label ?? serviceRequests.paymentMethodPlaceholder)
                   : serviceRequests.paymentMethodPlaceholder}
@@ -563,10 +583,10 @@ export default function RequestCreateScreen() {
                     key={address.id}
                     style={[
                       styles.optionItem,
-                      selectedAddressId === address.id && styles.optionItemSelected,
+                      selectedAddressId === address.addressId && styles.optionItemSelected,
                     ]}
                     onPress={() => {
-                      setValue("addressId", address.id, { shouldValidate: true });
+                      setValue("addressId", address.addressId, { shouldValidate: true });
                       setPickerMode(null);
                     }}
                     testID={`address-option-${address.id}`}
@@ -577,7 +597,7 @@ export default function RequestCreateScreen() {
                         {`${address.street}, ${address.number} — ${address.city}/${address.state}`}
                       </Text>
                     </View>
-                    {selectedAddressId === address.id && (
+                    {selectedAddressId === address.addressId && (
                       <Ionicons
                         name="checkmark"
                         size={moderateScale(18, 0.3)}
@@ -599,11 +619,8 @@ export default function RequestCreateScreen() {
         animationType="slide"
         onRequestClose={() => setPickerMode(null)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setPickerMode(null)}
-        >
+        <View style={styles.modalOverlay}>
+          <Pressable style={{ flex: 1 }} onPress={() => setPickerMode(null)} />
           <View style={[styles.modalSheet, { paddingBottom: 24 }]}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>{serviceRequests.scheduledAtLabel}</Text>
@@ -620,13 +637,21 @@ export default function RequestCreateScreen() {
                 selectedIndex={pickerDay - 1}
                 onSelect={(index) => setPickerDay(index + 1)}
               />
-              <Text style={styles.datePickerSeparator}>/</Text>
+              <View style={{ height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE, paddingTop: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2) }}>
+                <View style={{ height: PICKER_ITEM_HEIGHT, justifyContent: "center", alignItems: "center" }}>
+                  <Text style={styles.datePickerSeparator}>/</Text>
+                </View>
+              </View>
               <DatePickerColumn
                 data={MONTHS_PT}
                 selectedIndex={pickerMonth}
                 onSelect={setPickerMonth}
               />
-              <Text style={styles.datePickerSeparator}>/</Text>
+              <View style={{ height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE, paddingTop: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2) }}>
+                <View style={{ height: PICKER_ITEM_HEIGHT, justifyContent: "center", alignItems: "center" }}>
+                  <Text style={styles.datePickerSeparator}>/</Text>
+                </View>
+              </View>
               <DatePickerColumn
                 data={Array.from({ length: 3 }, (_, i) => String(today.getFullYear() + i))}
                 selectedIndex={pickerYear - today.getFullYear()}
@@ -634,10 +659,38 @@ export default function RequestCreateScreen() {
               />
             </View>
 
+            <Text style={[styles.datePickerSeparator, { textAlign: "center", marginVertical: 8, fontSize: moderateScale(13, 0.3) }]}>
+              às
+            </Text>
+
+            <View style={styles.datePickerRow}>
+              <View
+                pointerEvents="none"
+                style={[styles.datePickerHighlight, {
+                  top: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2),
+                }]}
+              />
+              <DatePickerColumn
+                data={Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))}
+                selectedIndex={pickerHour}
+                onSelect={setPickerHour}
+              />
+              <View style={{ height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE, paddingTop: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2) }}>
+                <View style={{ height: PICKER_ITEM_HEIGHT, justifyContent: "center", alignItems: "center" }}>
+                  <Text style={styles.datePickerSeparator}>:</Text>
+                </View>
+              </View>
+              <DatePickerColumn
+                data={Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))}
+                selectedIndex={pickerMinute / 5}
+                onSelect={(index) => setPickerMinute(index * 5)}
+              />
+            </View>
+
             <TouchableOpacity
               style={styles.modalConfirmButton}
               onPress={() => {
-                setScheduledDate(buildISODate(pickerDay, pickerMonth, pickerYear));
+                setScheduledDate(buildISODate(pickerDay, pickerMonth, pickerYear, pickerHour, pickerMinute));
                 setPickerMode(null);
               }}
               testID="date-confirm-button"
@@ -647,7 +700,7 @@ export default function RequestCreateScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
       {/* Payment method picker modal */}
@@ -666,7 +719,7 @@ export default function RequestCreateScreen() {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>{serviceRequests.paymentMethodLabel}</Text>
             <ScrollView>
-              {(profile?.paymentMethods ?? []).map((method) => {
+              {paymentMethodOptions.map((method) => {
                 const isSelected = selectedPaymentMethodId === method.id;
                 return (
                   <TouchableOpacity

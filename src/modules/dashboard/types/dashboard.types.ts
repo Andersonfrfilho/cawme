@@ -7,9 +7,28 @@ export interface DashboardStats {
 export interface ServiceRequestSummary {
   id: string;
   title: string;
-  status: 'pending' | 'accepted' | 'completed' | 'canceled';
+  status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
   date: string;
-  price?: number;
+  priceFinal?: number;
+  priceType?: string;
+  priceBase?: number;
+  description?: string | null;
+  serviceName?: string;
+  providerName?: string;
+  providerAvatar?: string;
+  contractorName?: string;
+  paymentMethod?: string;
+  scheduledAt?: string | null;
+  createdAt?: string;
+  address?: {
+    street: string;
+    number: string;
+    city: string;
+    state: string;
+    neighborhood: string;
+    latitude?: string;
+    longitude?: string;
+  };
 }
 
 export interface ContractorDashboardResponse {

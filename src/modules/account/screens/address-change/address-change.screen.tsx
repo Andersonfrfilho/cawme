@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import MapView from "react-native-maps";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAccount } from "@/modules/account/hooks/useAccount";
+import { AccountService } from "@/modules/account/services/account.service";
 import { AddressService } from "@/modules/auth/services/address.service";
 import type { AddressSuggestion } from "@/modules/auth/services/address.service";
 import { useLocale, LocaleKeys } from "@/shared/locales";
@@ -89,6 +90,28 @@ export default function AddressChangeScreen() {
       400,
     );
   }
+
+  // Carrega localização atual para exibir o mapa com pin ao abrir a tela
+  useEffect(() => {
+    if (isEditing) return; // já tem coordenadas dos params
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const loc = await Location.getCurrentPositionAsync({});
+      setLatitude(loc.coords.latitude);
+      setLongitude(loc.coords.longitude);
+      // delay para o MapView montar antes do animate
+      setTimeout(() => animateMapTo(loc.coords.latitude, loc.coords.longitude), 500);
+    })().catch(() => {});
+  }, []);
+
+  // Ativa flag "endereço principal" automaticamente se for o primeiro endereço
+  useEffect(() => {
+    if (isEditing) return;
+    AccountService.listAddresses()
+      .then((list) => { if (list.length === 0) setIsPrimary(true); })
+      .catch(() => {});
+  }, []);
 
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);

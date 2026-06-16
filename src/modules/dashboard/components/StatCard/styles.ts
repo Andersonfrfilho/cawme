@@ -5,10 +5,11 @@ export const styles = StyleSheet.create({
   statCard: {
     alignItems: 'center',
     padding: theme.spacing[3],
-    width: 110,
+    width: '47%',
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.radii.lg,
-    ...theme.shadows.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border.DEFAULT,
   },
   statValue: {
     fontSize: theme.typography.fontSize.xl,

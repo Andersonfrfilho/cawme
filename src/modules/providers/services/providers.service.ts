@@ -9,6 +9,7 @@ type BffSearchProviderItem = {
   averageRating: number;
   reviewCount: number;
   workLocations: BffSearchWorkLocation[];
+  services: Array<{ name: string; priceBase: number; priceType: string }>;
   isAvailable: boolean;
   nextAvailableDate: string | null;
 };
@@ -33,6 +34,7 @@ export const ProvidersService = {
         state: primaryLocation?.state ?? '',
         isAvailable: provider.isAvailable,
         nextAvailableDate: provider.nextAvailableDate ?? null,
+        services: provider.services ?? [],
       };
     });
   },

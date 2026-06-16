@@ -47,6 +47,7 @@ export const accountLocale = {
     documentTypeRG: "RG",
     documentTypeCNH: "CNH",
     documentTypeCPF: "CPF",
+    documentTypeCNPJ: "CNPJ",
     documentTypePassport: "Passaporte",
     documentUploadLabel: "Arquivo do documento",
     documentUploadButton: "Selecionar arquivo",

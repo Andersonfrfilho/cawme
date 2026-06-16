@@ -81,7 +81,9 @@
       "Bash(docker rm *)",
       "Bash(docker network *)",
       "Bash(docker inspect *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Read(//proc/4843/**)",
+      "Bash(ps -p 4843 -o pid,comm,args)"
     ],
     "additionalDirectories": [
       "/Users/anderson.filho/Library/Developer/Xcode/DerivedData"

@@ -103,8 +103,8 @@ export default function ProviderProfileScreen() {
         {profile.reviews.length === 0 ? (
           <Text style={styles.bio}>{t("profile.noReviews")}</Text>
         ) : (
-          profile.reviews.map((review) => (
-            <View key={`${review.contractorName}-${review.createdAt}`} style={styles.reviewItem}>
+          profile.reviews.map((review, index) => (
+            <View key={`${review.contractorName}-${review.createdAt}-${index}`} style={styles.reviewItem}>
               <View style={styles.reviewHeader}>
                 <View style={styles.reviewStars}>
                   {[1, 2, 3, 4, 5].map((star) => (

@@ -52,6 +52,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  providerAvatar: {
+    width: moderateScale(44, 0.5),
+    height: moderateScale(44, 0.5),
+    borderRadius: 22,
+  },
   providerName: {
     fontSize: moderateScale(16, 0.3),
     fontWeight: theme.typography.fontWeight.semibold,

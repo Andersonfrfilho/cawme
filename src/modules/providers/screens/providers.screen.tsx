@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocale, LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, scale } from "@/shared/utils/scale";
+import { formatBRL } from "@/shared/utils/currency";
 import { useProviders } from "@/modules/providers/hooks/useProviders";
 import type { ProviderListItem } from "@/modules/providers/types/providers.types";
 import { styles } from "./styles";
@@ -17,6 +18,12 @@ function formatNextAvailable(isoDate: string): string {
   return `${dow}, ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
 }
 
+const PRICE_TYPE_LABEL: Record<string, string> = {
+  HOUR: '/h',
+  DAY: '/dia',
+  FIXED: '',
+};
+
 export default function ProvidersScreen() {
   const { providers } = useLocale<LocaleKeys>();
   const { data, isLoading, isError, refetch, isRefetching } = useProviders();
@@ -29,40 +36,56 @@ export default function ProvidersScreen() {
       testID="provider-card"
       accessibilityLabel={item.businessName}
     >
-      <View style={styles.cardAvatar}>
-        <Ionicons name="person" size={scale(28)} color={theme.colors.primary.DEFAULT} />
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.cardName} testID="provider-card-name">{item.businessName}</Text>
-        <View style={styles.cardRow}>
-          <Ionicons name="star" size={moderateScale(14, 0.3)} color={theme.colors.accent.yellow} />
-          <Text style={styles.cardRating}>{item.averageRating.toFixed(1)}</Text>
-          <Text style={styles.cardReviews}>({item.reviewCount})</Text>
-          {item.city ? (
-            <>
-              <Ionicons
-                name="location-outline"
-                size={moderateScale(14, 0.3)}
-                color={theme.colors.text.tertiary}
-                style={{ marginLeft: moderateScale(8, 0.5) }}
-              />
-              <Text style={styles.cardLocation}>{item.city}, {item.state}</Text>
-            </>
-          ) : null}
+      <View style={styles.cardMain}>
+        <View style={styles.cardAvatar}>
+          <Ionicons name="person" size={scale(28)} color={theme.colors.primary.DEFAULT} />
         </View>
-        <View style={[styles.badge, item.isAvailable ? styles.badgeAvailable : styles.badgeUnavailable]}>
-          <Text style={[styles.badgeText, item.isAvailable ? styles.badgeTextAvailable : styles.badgeTextUnavailable]}>
-            {item.isAvailable ? providers.available : providers.unavailable}
-          </Text>
-        </View>
-        {item.nextAvailableDate ? (
-          <View style={styles.nextAvailableRow}>
-            <Text style={styles.nextAvailableLabel}>{providers.nextAvailable}</Text>
-            <Text style={styles.nextAvailableDate}>{formatNextAvailable(item.nextAvailableDate)}</Text>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardName}>{item.businessName}</Text>
+          <View style={styles.cardRow}>
+            <Ionicons name="star" size={moderateScale(14, 0.3)} color={theme.colors.accent.yellow} />
+            <Text style={styles.cardRating}>{item.averageRating > 0 ? item.averageRating.toFixed(1) : "—"}</Text>
+            <Text style={styles.cardReviews}>({item.reviewCount})</Text>
           </View>
-        ) : null}
+          <View style={styles.cardRow}>
+            <Ionicons name="location-outline" size={moderateScale(14, 0.3)} color={theme.colors.text.tertiary} />
+            <Text style={styles.cardLocation}>{item.city}, {item.state}</Text>
+          </View>
+        </View>
+        <View style={styles.cardRight}>
+          <View style={[styles.badge, item.isAvailable ? styles.badgeAvailable : styles.badgeUnavailable]}>
+            <Text style={[styles.badgeText, item.isAvailable ? styles.badgeTextAvailable : styles.badgeTextUnavailable]}>
+              {item.isAvailable ? providers.available : providers.unavailable}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={moderateScale(18, 0.3)} color={theme.colors.text.tertiary} />
+        </View>
       </View>
-      <Ionicons name="chevron-forward" size={moderateScale(20, 0.3)} color={theme.colors.text.tertiary} />
+
+      {item.services.length > 0 && (
+        <View style={styles.servicesRow}>
+          {item.services.slice(0, 3).map((svc, i) => (
+            <View key={i} style={styles.serviceChip}>
+              <Text style={styles.serviceChipText} numberOfLines={1}>
+                {svc.name}
+              </Text>
+              <Text style={styles.serviceChipPrice}>
+                {formatBRL(svc.priceBase)}{PRICE_TYPE_LABEL[svc.priceType] ?? ''}
+              </Text>
+            </View>
+          ))}
+          {item.services.length > 3 && (
+            <Text style={styles.serviceMore}>+{item.services.length - 3}</Text>
+          )}
+        </View>
+      )}
+
+      {item.nextAvailableDate ? (
+        <View style={styles.nextAvailableRow}>
+          <Ionicons name="calendar-outline" size={moderateScale(13, 0.3)} color={theme.colors.text.secondary} />
+          <Text style={styles.nextAvailableDate}>{formatNextAvailable(item.nextAvailableDate)}</Text>
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 
