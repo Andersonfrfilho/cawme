@@ -1,3 +1,14 @@
+export interface ProviderAvailabilitySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface ProviderBusySlot {
+  scheduledAt: string;
+  estimatedHours: number;
+}
+
 export interface ProviderProfile {
   id: string;
   name: string;
@@ -17,6 +28,7 @@ export interface ProviderProfile {
     name: string;
     price: number;
     unit: string;
+    estimatedDurationMinutes: number | null;
   }>;
   paymentMethods: Array<{
     id: string;
@@ -32,6 +44,7 @@ export interface ProviderProfile {
     serviceName: string;
     createdAt: string;
   }>;
+  availability: ProviderAvailabilitySlot[];
 }
 
 export interface GetProviderProfileParams {

@@ -54,12 +54,12 @@ export function useAuth() {
           emailVerified: effectiveEmailVerified,
           phoneVerified: effectivePhoneVerified,
         });
-        const storedPhone = useAuthStore.getState().user?.phone ?? "";
+        setUser({ id: userId, name, email, type: userType });
         router.replace({
           pathname: "/(auth)/verification" as any,
           params: {
             email,
-            phone: storedPhone,
+            phone: "",
             mode: "post-login",
             emailVerified: effectiveEmailVerified ? "true" : "false",
             phoneVerified: effectivePhoneVerified ? "true" : "false",
@@ -69,19 +69,23 @@ export function useAuth() {
       }
 
       let primaryPhone: string | undefined;
+      let dbUserId: string | undefined;
       try {
         const profile = await AccountService.getProfile();
         primaryPhone = profile.primaryPhone;
+        dbUserId = profile.id;
       } catch {
         primaryPhone = useAuthStore.getState().user?.phone;
       }
-      setUser({ id: userId, name, email, type: userType, phone: primaryPhone });
+      setUser({ id: userId, dbUserId, name, email, type: userType, phone: primaryPhone });
       router.replace("/(app)/home");
     } catch (error) {
       // Se falhar a checagem, usa o estado local para decidir
       const local = useAuthStore.getState().verificationStatus;
-      const storedPhone = useAuthStore.getState().user?.phone ?? undefined;
-      setUser({ id: userId, name, email, type: userType, phone: storedPhone });
+      const storedUser = useAuthStore.getState().user;
+      const storedPhone = storedUser?.phone ?? undefined;
+      const storedDbUserId = storedUser?.id === userId ? storedUser?.dbUserId : undefined;
+      setUser({ id: userId, dbUserId: storedDbUserId, name, email, type: userType, phone: storedPhone });
       if (local.emailVerified && local.phoneVerified) {
         router.replace("/(app)/home");
       } else {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SduiComponentProps } from '@/modules/sdui/types/sdui.types';
 import { theme } from '@/shared/constants';
@@ -12,7 +12,7 @@ interface ProviderItem {
   rating?: number;
   reviewCount?: number;
   distance?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 }
 
 interface ProviderListConfig {
@@ -48,7 +48,11 @@ function ProviderCard({ provider, onPress }: { provider: ProviderItem; onPress: 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.avatar}>
-        <Ionicons name="person-outline" size={scale(28)} color={theme.colors.text.tertiary} />
+        {provider.avatarUrl ? (
+          <Image source={{ uri: provider.avatarUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        ) : (
+          <Ionicons name="person-outline" size={scale(28)} color={theme.colors.text.tertiary} />
+        )}
       </View>
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{provider.name}</Text>
@@ -138,13 +142,18 @@ const styles = StyleSheet.create({
     padding: moderateScale(theme.spacing[3], 0.5),
     gap: moderateScale(theme.spacing[3], 0.5),
     borderWidth: 1,
-    borderColor: theme.colors.border.DEFAULT,
-    ...theme.shadows.sm,
+    borderColor: theme.palette.neutral[300],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   avatar: {
     width: scale(theme.metrics.avatarSize.md),
     height: scale(theme.metrics.avatarSize.md),
     borderRadius: theme.radii.full,
+    overflow: 'hidden',
     backgroundColor: theme.colors.background.elevated,
     alignItems: 'center',
     justifyContent: 'center',

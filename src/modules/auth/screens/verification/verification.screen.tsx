@@ -10,6 +10,7 @@ import { useVerification } from "@/modules/auth/hooks/useVerification";
 import { useAuthStore } from "@/modules/auth/store/auth.store";
 import { useRegisterStore } from "@/modules/auth/store/register.store";
 import { KeycloakService } from "@/modules/auth/services/keycloak.service";
+import { AccountService } from "@/modules/account/services/account.service";
 import { useLoading } from "@/shared/hooks/useLoading";
 import { logger } from "@/shared/utils/logger";
 import { DocumentUploadSheet } from "@/modules/auth/components/DocumentUploadSheet";
@@ -250,6 +251,20 @@ export default function VerificationScreen() {
       } finally {
         hideLoading();
       }
+    }
+
+    try {
+      const profile = await AccountService.getProfile();
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({
+          ...currentUser,
+          dbUserId: profile.id,
+          phone: profile.primaryPhone,
+        });
+      }
+    } catch {
+      // falha não crítica, usuário já tem dados básicos do login
     }
 
     router.replace("/(app)/home" as any);

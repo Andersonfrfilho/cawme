@@ -64,7 +64,7 @@ function maskPhone(raw: string): string {
 
 export default function ProfileEditScreen() {
   const insets = useSafeAreaInsets();
-  const { account } = useLocale<LocaleKeys>();
+  const { account, company } = useLocale<LocaleKeys>();
   const user = useAuthStore((state) => state.user);
   const { updateName } = useAccount();
   const { toast, toastOpacity, showToast } = useToast();
@@ -249,6 +249,22 @@ export default function ProfileEditScreen() {
             </Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity
+          style={styles.contactRow}
+          onPress={() => router.push("/(app)/company/list" as any)}
+          activeOpacity={0.7}
+          testID="my-companies-button"
+        >
+          <View style={styles.contactValueWrapper}>
+            <Text style={styles.contactValue}>{company.companyList.title}</Text>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={moderateScale(16, 0.3)}
+            color={theme.colors.primary.DEFAULT}
+          />
+        </TouchableOpacity>
 
         <View style={styles.sectionDivider} />
 
@@ -487,6 +503,32 @@ export default function ProfileEditScreen() {
                     <Text style={styles.contactValue}>{account.tapToChange}</Text>
                   )}
                 </View>
+                <Ionicons name="chevron-forward" size={moderateScale(16, 0.3)} color={theme.colors.primary.DEFAULT} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>{account.providerBioLabel}</Text>
+              <TouchableOpacity
+                style={styles.contactRow}
+                onPress={() => router.push("/(app)/account/provider-bio" as any)}
+                activeOpacity={0.7}
+                testID="provider-bio-button"
+              >
+                <Text style={styles.contactValue}>{account.tapToChange}</Text>
+                <Ionicons name="chevron-forward" size={moderateScale(16, 0.3)} color={theme.colors.primary.DEFAULT} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>{account.providerWorkLocationsLabel}</Text>
+              <TouchableOpacity
+                style={styles.contactRow}
+                onPress={() => router.push("/(app)/account/provider-work-locations" as any)}
+                activeOpacity={0.7}
+                testID="provider-work-locations-button"
+              >
+                <Text style={styles.contactValue}>{account.tapToChange}</Text>
                 <Ionicons name="chevron-forward" size={moderateScale(16, 0.3)} color={theme.colors.primary.DEFAULT} />
               </TouchableOpacity>
             </View>

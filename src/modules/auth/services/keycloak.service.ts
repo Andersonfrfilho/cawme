@@ -46,7 +46,7 @@ export const KeycloakService = {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.TOKEN,
       { username, password },
-      { _skipGlobalError: true },
+      { _skipGlobalError: true, _skipRefresh: true },
     );
 
     await TokenService.save({
@@ -81,7 +81,7 @@ export const KeycloakService = {
       const response = await apiClient.post(
         AUTH_ENDPOINTS.TOKEN,
         { grantType: HEADERS.GRANT_TYPE.REFRESH_TOKEN, refreshToken },
-        { _skipGlobalError: true },
+        { _skipGlobalError: true, _skipRefresh: true },
       );
 
       await TokenService.save({
@@ -139,7 +139,7 @@ export const KeycloakService = {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.VERIFICATION_SEND,
       params,
-      { _skipGlobalError: true },
+      { _skipGlobalError: true, _skipRefresh: true },
     );
     return response.data;
   },
@@ -153,7 +153,7 @@ export const KeycloakService = {
     const response = await apiClient.post(
       AUTH_ENDPOINTS.VERIFICATION_VERIFY,
       params,
-      { _skipGlobalError: true },
+      { _skipGlobalError: true, _skipRefresh: true },
     );
     return response.data;
   },
@@ -163,7 +163,7 @@ export const KeycloakService = {
     phoneVerified: boolean;
     status: string;
   }> {
-    const response = await apiClient.get(AUTH_ENDPOINTS.VERIFICATION_STATUS);
+    const response = await apiClient.get(AUTH_ENDPOINTS.VERIFICATION_STATUS, { _skipGlobalError: true, _skipRefresh: true });
     return response.data;
   },
 

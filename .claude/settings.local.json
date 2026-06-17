@@ -83,10 +83,19 @@
       "Bash(docker inspect *)",
       "Bash(python3 -c ' *)",
       "Read(//proc/4843/**)",
-      "Bash(ps -p 4843 -o pid,comm,args)"
+      "Bash(ps -p 4843 -o pid,comm,args)",
+      "Bash(mkdir -p /Users/anderson.filho/Documents/personal/domestic/cawme/src/modules/company/screens/company-list *)",
+      "Bash(xargs cat -n)",
+      "Bash(PGPASSWORD=domestic123 /opt/homebrew/bin/psql -h localhost -U domestic_api -d backend_database_postgres -c ' *)",
+      "Bash(which psql *)",
+      "Read(//usr/**)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
+      "Bash(python3 -c \"import sys; print\\(sys.stdin.read\\(\\)[:200]\\)\")"
     ],
     "additionalDirectories": [
-      "/Users/anderson.filho/Library/Developer/Xcode/DerivedData"
+      "/Users/anderson.filho/Library/Developer/Xcode/DerivedData",
+      "/Users/anderson.filho/Documents/personal/domestic/cawme/app/(app)/company"
     ]
   }
 }

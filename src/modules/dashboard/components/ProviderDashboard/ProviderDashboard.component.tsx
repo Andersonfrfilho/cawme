@@ -11,6 +11,7 @@ import { useLocale, type LocaleKeys } from "@/shared/locales";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { useServiceRequests } from "@/modules/service-requests/hooks/useServiceRequests";
+import { useLoading } from "@/shared/hooks/useLoading";
 
 export function ProviderDashboardComponent() {
   const locale = useLocale<LocaleKeys>();
@@ -23,6 +24,7 @@ export function ProviderDashboardComponent() {
     setRefreshing(false);
   }, [refetch]);
 
+  const { showLoading } = useLoading();
   const { acceptRequest, rejectRequest, completeRequest } = useServiceRequests();
   const [providerPaymentMethods, setProviderPaymentMethods] = useState<ProviderPaymentMethod[]>([]);
   const [hasCheckedPaymentMethods, setHasCheckedPaymentMethods] = useState(false);
@@ -156,7 +158,7 @@ export function ProviderDashboardComponent() {
           borderWidth: 1,
           borderColor: theme.colors.primary.DEFAULT + "30",
         }}
-        onPress={() => router.push("/(app)/service-requests" as any)}
+        onPress={() => { showLoading(); router.push("/(app)/service-requests" as any); }}
         activeOpacity={0.7}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

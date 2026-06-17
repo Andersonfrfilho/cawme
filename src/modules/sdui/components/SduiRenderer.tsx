@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, RefreshControl } from 'react-native';
 import { ScreenComponentData, ComponentType, SduiComponentProps } from '@/modules/sdui/types/sdui.types';
 import { resolveSduiAction } from '@/shared/utils/sdui-action';
 import { styles } from './styles';
@@ -29,15 +29,30 @@ const COMPONENT_MAP: Record<ComponentType, React.ComponentType<SduiComponentProp
 };
 
 interface SduiRendererProps {
-  layout: ScreenComponentData[];
-  activeFilter?: string | null;
-  searchTerm?: string;
-  onFilterChange?: (filterId: string | null) => void;
+  readonly layout: ScreenComponentData[];
+  readonly activeFilter?: string | null;
+  readonly searchTerm?: string;
+  readonly onFilterChange?: (filterId: string | null) => void;
+  readonly onRefresh?: () => void;
+  readonly refreshing?: boolean;
 }
 
-export function SduiRenderer({ layout, activeFilter, searchTerm, onFilterChange }: SduiRendererProps) {
+export function SduiRenderer({ layout, activeFilter, searchTerm, onFilterChange, onRefresh, refreshing }: SduiRendererProps) {
   return (
-    <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.scrollView}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl
+            refreshing={refreshing ?? false}
+            onRefresh={onRefresh}
+            colors={['#1A45E8']}
+            tintColor="#1A45E8"
+          />
+        ) : undefined
+      }
+    >
       {layout
         .sort((a, b) => a.order - b.order)
         .map((component) => {

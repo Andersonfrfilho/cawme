@@ -13,7 +13,7 @@ export default function AuthLayout() {
       <Stack.Screen name="map-picker" />
       <Stack.Screen name="forgot-password/index" />
       <Stack.Screen name="document-upload" />
-      <Stack.Screen name="provider-profile/index" />
+      <Stack.Screen name="provider-profile" />
     </Stack>
   );
 }

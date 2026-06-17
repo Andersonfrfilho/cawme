@@ -44,6 +44,7 @@ export type UserAddress = {
   isPrimary: boolean;
   street: string;
   number: string;
+  complement?: string;
   neighborhood: string;
   city: string;
   state: string;
@@ -142,6 +143,45 @@ export type ProviderPaymentMethod = {
   icon: string | null;
   isEnabled: boolean;
   details: PaymentMethodDetails | null;
+};
+
+export type ProviderProfileMe = {
+  id: string;
+  businessName: string | null;
+  description: string | null;
+  isAvailable: boolean;
+  avatarUrl: string | null;
+  averageRating: number;
+};
+
+export type UpdateProviderProfileParams = {
+  businessName?: string;
+  description?: string;
+  isAvailable?: boolean;
+};
+
+export type WorkLocation = {
+  id: string;
+  addressId: string;
+  name: string | null;
+  isPrimary: boolean;
+  city: string;
+  state: string;
+  street: string;
+  neighborhood: string;
+};
+
+export type AddWorkLocationParams = {
+  addressId: string;
+  name?: string;
+  isPrimary?: boolean;
+};
+
+export type VerificationStatus = {
+  status: string | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
 };
 
 export const AccountService = {
@@ -329,6 +369,49 @@ export const AccountService = {
   async getDocumentUrl(documentId: string): Promise<{ url: string; expiresIn: number }> {
     const response = await apiClient.get<{ url: string; expiresIn: number }>(
       AUTH_ENDPOINTS.ACCOUNT_DOCUMENT_URL(documentId),
+    );
+    return response.data;
+  },
+
+  async getProviderProfileMe(): Promise<ProviderProfileMe> {
+    const response = await apiClient.get<ProviderProfileMe>(AUTH_ENDPOINTS.PROVIDER_PROFILE_ME);
+    return response.data;
+  },
+
+  async updateProviderProfile(params: UpdateProviderProfileParams): Promise<ProviderProfileMe> {
+    const response = await apiClient.put<ProviderProfileMe>(
+      AUTH_ENDPOINTS.PROVIDER_PROFILE_ME,
+      params,
+    );
+    return response.data;
+  },
+
+  async listWorkLocations(): Promise<WorkLocation[]> {
+    const response = await apiClient.get<WorkLocation[]>(AUTH_ENDPOINTS.PROVIDER_WORK_LOCATIONS);
+    return response.data;
+  },
+
+  async addWorkLocation(params: AddWorkLocationParams): Promise<WorkLocation> {
+    const response = await apiClient.post<WorkLocation>(
+      AUTH_ENDPOINTS.PROVIDER_WORK_LOCATIONS,
+      params,
+    );
+    return response.data;
+  },
+
+  async removeWorkLocation(locationId: string): Promise<void> {
+    await apiClient.delete(AUTH_ENDPOINTS.PROVIDER_WORK_LOCATION_DELETE(locationId));
+  },
+
+  async getVerificationStatus(): Promise<VerificationStatus> {
+    const response = await apiClient.get<VerificationStatus>(AUTH_ENDPOINTS.PROVIDER_VERIFICATION);
+    return response.data;
+  },
+
+  async submitVerification(): Promise<VerificationStatus> {
+    const response = await apiClient.post<VerificationStatus>(
+      AUTH_ENDPOINTS.PROVIDER_VERIFICATION_SUBMIT,
+      {},
     );
     return response.data;
   },

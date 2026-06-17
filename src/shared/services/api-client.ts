@@ -17,12 +17,14 @@ declare module 'axios' {
     _retry?: boolean;
     _skipLog?: boolean;
     _requestId?: string;
+    _skipRefresh?: boolean;
   }
   interface AxiosRequestConfig {
     _skipGlobalError?: boolean;
     _retry?: boolean;
     _skipLog?: boolean;
     _requestId?: string;
+    _skipRefresh?: boolean;
   }
 }
 
@@ -115,6 +117,11 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      if (originalRequest._skipRefresh) {
+        return Promise.reject(error);
+      }
+
       const refreshToken = await TokenService.getRefresh();
       if (refreshToken) {
         try {
@@ -125,6 +132,7 @@ apiClient.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return apiClient.request(originalRequest);
           }
+          return Promise.reject(error);
         } catch (refreshError) {
           await TokenService.clear();
           useAuthStore.getState().logout();

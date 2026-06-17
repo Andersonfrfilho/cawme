@@ -66,6 +66,12 @@ export const AUTH_ENDPOINTS = {
   PAYMENT_METHOD_TYPES: "/bff/auth/payment-method-types",
   PROVIDER_PAYMENT_METHODS: "/bff/auth/providers/me/payment-methods",
   PROVIDER_PIX_KEY_CHECK: "/bff/auth/providers/me/pix-key/check",
+  PROVIDER_PROFILE_ME: "/bff/auth/providers/me/profile",
+  PROVIDER_WORK_LOCATIONS: "/bff/auth/providers/me/work-locations",
+  PROVIDER_WORK_LOCATION_DELETE: (locationId: string) =>
+    `/bff/auth/providers/me/work-locations/${locationId}`,
+  PROVIDER_VERIFICATION: "/bff/auth/providers/me/verification",
+  PROVIDER_VERIFICATION_SUBMIT: "/bff/auth/providers/me/verification/submit",
 };
 
 export const HERO_OVERLAY = {

@@ -1,45 +1,55 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SduiComponentProps } from '@/modules/sdui/types/sdui.types';
-import { styles } from './styles';
+import { styles as sduiStyles } from './styles';
 import { theme } from '@/shared/constants';
 import { moderateScale, verticalScale } from '@/shared/utils/scale';
+import { formatBRL } from '@/shared/utils/currency';
+
+const WEEK_DAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+function formatNextDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return `${WEEK_DAYS_SHORT[date.getDay()]}, ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+}
+
+interface PaymentMethod {
+  id: string;
+  name: string;
+  label: string;
+  icon: string | null;
+}
+
+interface ProviderService {
+  name: string;
+  priceBase?: number;
+  priceType?: string;
+}
 
 interface Provider {
   id: string;
   name?: string;
   businessName?: string;
   title?: string;
-  fullName?: string;
   displayName?: string;
   rating?: number;
   averageRating?: number;
   reviewCount?: number;
+  avatarUrl?: string | null;
   imageUrl?: string;
-  profileImageUrl?: string;
-  photoUrl?: string;
-  location?: string;
   city?: string;
   state?: string;
-  latitude?: string;
-  longitude?: string;
-  distance?: number;
-  distanceKm?: number;
-  services?: Array<{
-    name: string;
-    priceBase?: number;
-    priceType?: string;
-  }>;
-  primaryService?: string;
-  serviceCategory?: string;
+  isAvailable?: boolean;
+  nextAvailableDate?: string | null;
+  services?: ProviderService[];
+  paymentMethods?: PaymentMethod[];
 }
 
 interface ProviderGridConfig {
   columns?: number;
   title?: string;
-  showRating?: boolean;
-  showLocation?: boolean;
   searchTerm?: string;
   activeFilter?: string | null;
 }
@@ -52,165 +62,107 @@ export default function ProviderGrid({ data, config, onItemPress }: SduiComponen
   const SORT_FILTERS = new Set(['top_rated', 'location']);
 
   const filtered: Provider[] = (data || []).filter((item: Provider) => {
-    const categoryFilter = gridConfig.activeFilter && !SORT_FILTERS.has(gridConfig.activeFilter)
-      ? gridConfig.activeFilter.toLowerCase()
-      : null;
+    const categoryFilter =
+      gridConfig.activeFilter && !SORT_FILTERS.has(gridConfig.activeFilter)
+        ? gridConfig.activeFilter.toLowerCase()
+        : null;
 
     if (categoryFilter) {
-      const serviceCategory = (item.serviceCategory || '').toLowerCase();
-      const primaryService = (item.primaryService || '').toLowerCase();
       const serviceNames = (item.services || []).map((s) => s.name.toLowerCase());
-      const matchesCategory =
-        serviceCategory.includes(categoryFilter) ||
-        primaryService.includes(categoryFilter) ||
-        serviceNames.some((s) => s.includes(categoryFilter));
-      if (!matchesCategory) return false;
+      if (!serviceNames.some((s) => s.includes(categoryFilter))) return false;
     }
 
     if (!term) return true;
     const name = (item.name || item.businessName || item.title || item.displayName || '').toLowerCase();
-    const service = (item.services?.[0]?.name || item.primaryService || item.serviceCategory || '').toLowerCase();
+    const service = (item.services?.[0]?.name || '').toLowerCase();
     const location = (item.city || '').toLowerCase();
     return name.includes(term) || service.includes(term) || location.includes(term);
   });
 
-  const providers: Provider[] = (() => {
-    const list = [...filtered];
-    if (gridConfig.activeFilter === 'top_rated') {
-      return list.sort((a, b) => (b.averageRating ?? b.rating ?? 0) - (a.averageRating ?? a.rating ?? 0));
-    }
-    if (gridConfig.activeFilter === 'location') {
-      return list.sort((a, b) => (a.distanceKm ?? a.distance ?? Infinity) - (b.distanceKm ?? b.distance ?? Infinity));
-    }
-    return list;
-  })();
-
-  // Debug log (opcional - remova em produção)
-  // if (__DEV__ && providers.length > 0) {
-  //   console.log('[ProviderGrid] === DADOS RECEBIDOS ===');
-  //   console.log('[ProviderGrid] Count:', providers.length);
-  //   console.log('[ProviderGrid] Primeiro item:', JSON.stringify(providers[0], null, 2));
-  // }
-
-  // Função para calcular distância (Haversine formula)
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Raio da Terra em km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
-  // Pega localização do usuário (se disponível)
-  const userLat = 0; // TODO: Pegar do GPS ou store
-  const userLon = 0; // TODO: Pegar do GPS ou store
+  const providers: Provider[] = gridConfig.activeFilter === 'top_rated'
+    ? [...filtered].sort((a, b) => (b.averageRating ?? b.rating ?? 0) - (a.averageRating ?? a.rating ?? 0))
+    : filtered;
 
   const renderProvider = ({ item }: { item: Provider }) => {
-    // Mapeia campos da API para o formato esperado
-    const displayName = 
-      item.name || 
-      item.businessName ||
-      item.title || 
-      item.fullName || 
-      item.displayName ||
-      'Profissional';
-
-    const rating = item.rating || item.averageRating;
-    const reviewCount = item.reviewCount || 0;
-    
-    // Monta localização a partir de city/state se não vier location direto
-    const location = 
-      item.location || 
-      (item.city && item.state ? `${item.city}, ${item.state}` : item.city) || 
-      null;
-
-    // Calcula distância se tiver coordenadas
-    let distanceValue = item.distance || item.distanceKm;
-    
-    // Se não tiver distância pronta mas tiver coordenadas, calcula
-    if (!distanceValue && item.latitude && item.longitude && userLat !== 0 && userLon !== 0) {
-      const providerLat = parseFloat(item.latitude);
-      const providerLon = parseFloat(item.longitude);
-      if (!isNaN(providerLat) && !isNaN(providerLon)) {
-        distanceValue = calculateDistance(userLat, userLon, providerLat, providerLon);
-      }
-    }
-    
-    const distanceText = distanceValue 
-      ? `${distanceValue.toFixed(1)} km`
-      : (item.latitude && item.longitude ? 'Próximo' : null);
-
-    // Pega o serviço principal
-    const primaryService = 
-      item.primaryService ||
-      item.serviceCategory ||
-      (item.services && item.services.length > 0 ? item.services[0].name : null);
-
-    // Tenta encontrar foto em vários campos
-    const imageUrl = item.imageUrl || item.profileImageUrl || item.photoUrl;
+    const displayName = item.name || item.businessName || item.title || item.displayName || 'Profissional';
+    const rating = item.averageRating ?? item.rating ?? 0;
+    const reviewCount = item.reviewCount ?? 0;
+    const imageUrl = item.avatarUrl || item.imageUrl;
+    const location = item.city && item.state ? `${item.city}, ${item.state}` : item.city ?? null;
+    const services = item.services ?? [];
 
     return (
       <TouchableOpacity
-        style={[styles.providerCard, { flex: 1 / numColumns }]}
+        style={[cardStyles.card, { flex: 1 / numColumns }]}
         onPress={() => onItemPress(item)}
         activeOpacity={0.7}
       >
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.providerImage} />
-        ) : (
-          <View style={styles.providerImagePlaceholder}>
-            <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary.light} />
-          </View>
-        )}
-        
-        <View style={styles.providerContent}>
-          <Text style={styles.providerName} numberOfLines={2}>
-            {displayName}
-          </Text>
-          
-          {primaryService && (
-            <View style={styles.providerService}>
-              <Ionicons name="briefcase-outline" size={12} color={theme.colors.text.secondary} />
-              <Text style={styles.providerServiceText} numberOfLines={1}>
-                {primaryService}
-              </Text>
+        <View style={cardStyles.imageContainer}>
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={cardStyles.image} resizeMode="cover" />
+          ) : (
+            <View style={cardStyles.imagePlaceholder}>
+              <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary.light} />
             </View>
           )}
-          
-          {gridConfig.showRating !== false && rating && (
-            <View style={styles.providerRating}>
-              <Ionicons name="star" size={14} color={theme.colors.accent.yellow} />
-              <Text style={styles.providerRatingText}>
-                {typeof rating === 'number' ? rating.toFixed(1) : rating} ({reviewCount})
-              </Text>
+          <View style={[cardStyles.availBadge, item.isAvailable ? cardStyles.availBadgeOn : cardStyles.availBadgeOff]}>
+            <Text style={[cardStyles.availBadgeText, item.isAvailable ? cardStyles.availBadgeTextOn : cardStyles.availBadgeTextOff]}>
+              {item.isAvailable ? 'Disponível' : 'Indisp.'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={cardStyles.content}>
+          <Text style={cardStyles.name} numberOfLines={1}>{displayName}</Text>
+
+          <View style={cardStyles.row}>
+            <Ionicons name="star" size={moderateScale(12, 0.3)} color={theme.colors.accent.yellow} />
+            <Text style={cardStyles.rating}>{rating > 0 ? Number(rating).toFixed(1) : '—'}</Text>
+            <Text style={cardStyles.reviews}>({reviewCount})</Text>
+          </View>
+
+          {location && (
+            <View style={cardStyles.row}>
+              <Ionicons name="location-outline" size={moderateScale(11, 0.3)} color={theme.colors.text.tertiary} />
+              <Text style={cardStyles.location} numberOfLines={1}>{location}</Text>
             </View>
           )}
-          
-          <View style={styles.providerMeta}>
-            {distanceText && (
-              <View style={styles.providerMetaItem}>
-                <Ionicons name="navigate-outline" size={12} color={theme.colors.text.secondary} />
-                <Text style={styles.providerMetaText} numberOfLines={1}>
-                  {distanceText}
-                </Text>
-              </View>
-            )}
-            
-            {location && (
-              <View style={styles.providerMetaItem}>
-                <Ionicons name="location-outline" size={12} color={theme.colors.text.secondary} />
-                <Text style={styles.providerMetaText} numberOfLines={1}>
-                  {location}
-                </Text>
-              </View>
-            )}
-          </View>
+
+          {services.length > 0 && (
+            <View style={cardStyles.servicesRow}>
+              {services.slice(0, 2).map((svc, i) => (
+                <View key={i} style={cardStyles.serviceChip}>
+                  <Text style={cardStyles.serviceChipName} numberOfLines={1}>{svc.name}</Text>
+                  {svc.priceBase != null && svc.priceBase > 0 && (
+                    <Text style={cardStyles.serviceChipPrice}>{formatBRL(svc.priceBase)}</Text>
+                  )}
+                </View>
+              ))}
+              {services.length > 2 && (
+                <Text style={cardStyles.serviceMore}>+{services.length - 2}</Text>
+              )}
+            </View>
+          )}
+
+          {item.nextAvailableDate && (
+            <View style={cardStyles.row}>
+              <Ionicons name="calendar-outline" size={moderateScale(10, 0.3)} color={theme.colors.primary.DEFAULT} />
+              <Text style={cardStyles.nextDate}>{formatNextDate(item.nextAvailableDate)}</Text>
+            </View>
+          )}
+
+          {item.paymentMethods && item.paymentMethods.length > 0 && (
+            <View style={cardStyles.paymentRow}>
+              {item.paymentMethods.slice(0, 2).map((pm) => (
+                <View key={pm.id} style={cardStyles.paymentChip}>
+                  <Text style={cardStyles.paymentChipText} numberOfLines={1}>{pm.label}</Text>
+                </View>
+              ))}
+              {item.paymentMethods.length > 2 && (
+                <Text style={cardStyles.paymentMore}>+{item.paymentMethods.length - 2}</Text>
+              )}
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -218,33 +170,156 @@ export default function ProviderGrid({ data, config, onItemPress }: SduiComponen
 
   if (providers.length === 0) {
     return (
-      <View style={styles.sectionContainer}>
-        {gridConfig.title && (
-          <Text style={styles.sectionTitle}>{gridConfig.title}</Text>
-        )}
-        <View style={styles.providerImagePlaceholder}>
-          <Ionicons name="people-outline" size={64} color={theme.colors.text.secondary} />
-          <Text style={styles.providerName}>Nenhum profissional disponível</Text>
+      <View style={sduiStyles.sectionContainer}>
+        {gridConfig.title && <Text style={sduiStyles.sectionTitle}>{gridConfig.title}</Text>}
+        <View style={[sduiStyles.providerImagePlaceholder, { height: verticalScale(80) }]}>
+          <Ionicons name="people-outline" size={40} color={theme.colors.text.secondary} />
+          <Text style={sduiStyles.providerName}>Nenhum profissional disponível</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.sectionContainer}>
-      {gridConfig.title && (
-        <Text style={styles.sectionTitle}>{gridConfig.title}</Text>
-      )}
-      
+    <View style={sduiStyles.sectionContainer}>
+      {gridConfig.title && <Text style={sduiStyles.sectionTitle}>{gridConfig.title}</Text>}
       <FlatList
+        key={`grid-${numColumns}`}
         data={providers}
         renderItem={renderProvider}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
-        contentContainerStyle={styles.providerGridContent}
-        columnWrapperStyle={styles.providerGridRow}
+        contentContainerStyle={sduiStyles.providerGridContent}
+        columnWrapperStyle={numColumns > 1 ? sduiStyles.providerGridRow : undefined}
         scrollEnabled={false}
       />
     </View>
   );
 }
+
+const cardStyles = StyleSheet.create({
+  card: {
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.radii.lg,
+    marginRight: theme.spacing[3],
+    borderWidth: 1,
+    borderColor: theme.palette.neutral[300],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: moderateScale(110, 0.5),
+    backgroundColor: theme.palette.neutral[100],
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: moderateScale(110, 0.5),
+    backgroundColor: theme.palette.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  availBadge: {
+    position: 'absolute',
+    top: verticalScale(6),
+    right: moderateScale(6, 0.5),
+    paddingHorizontal: moderateScale(6, 0.5),
+    paddingVertical: verticalScale(2),
+    borderRadius: 20,
+  },
+  availBadgeOn: { backgroundColor: '#DCFCE7' },
+  availBadgeOff: { backgroundColor: 'rgba(0,0,0,0.35)' },
+  availBadgeText: { fontSize: moderateScale(9, 0.3), fontWeight: theme.typography.fontWeight.semibold },
+  availBadgeTextOn: { color: '#15803D' },
+  availBadgeTextOff: { color: '#fff' },
+  content: {
+    padding: theme.spacing[3],
+    gap: verticalScale(3),
+  },
+  name: {
+    fontSize: moderateScale(13, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: moderateScale(3, 0.3),
+  },
+  rating: {
+    fontSize: moderateScale(11, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+  },
+  reviews: {
+    fontSize: moderateScale(10, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  location: {
+    fontSize: moderateScale(10, 0.3),
+    color: theme.colors.text.tertiary,
+    flex: 1,
+  },
+  servicesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: moderateScale(3, 0.3),
+    marginTop: verticalScale(2),
+  },
+  serviceChip: {
+    backgroundColor: theme.colors.background.elevated,
+    borderRadius: 6,
+    paddingHorizontal: moderateScale(5, 0.5),
+    paddingVertical: verticalScale(2),
+    maxWidth: '48%',
+  },
+  serviceChipName: {
+    fontSize: moderateScale(9, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  serviceChipPrice: {
+    fontSize: moderateScale(9, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
+  },
+  serviceMore: {
+    fontSize: moderateScale(9, 0.3),
+    color: theme.colors.text.tertiary,
+    alignSelf: 'center',
+  },
+  nextDate: {
+    fontSize: moderateScale(9, 0.3),
+    color: theme.colors.primary.DEFAULT,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: moderateScale(3, 0.3),
+    marginTop: verticalScale(2),
+  },
+  paymentChip: {
+    paddingHorizontal: moderateScale(5, 0.5),
+    paddingVertical: verticalScale(2),
+    borderRadius: 4,
+    backgroundColor: theme.colors.background.elevated,
+    borderWidth: 1,
+    borderColor: theme.colors.border.DEFAULT,
+  },
+  paymentChipText: {
+    fontSize: moderateScale(9, 0.3),
+    color: theme.colors.text.secondary,
+  },
+  paymentMore: {
+    fontSize: moderateScale(9, 0.3),
+    color: theme.colors.text.tertiary,
+    alignSelf: 'center',
+  },
+});

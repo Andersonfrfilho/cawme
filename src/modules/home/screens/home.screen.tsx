@@ -16,11 +16,19 @@ import { moderateScale } from "@/shared/utils/scale";
 export default function HomeScreen() {
   const { home } = useLocale<LocaleKeys>();
   const { data, isLoading, error, refetch } = useHome();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const pendingOnboarding = useRegisterStore((s) => s.pendingOnboarding);
   const { logout } = useAuth();
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+
+  const isProvider = useAuthStore((s) => s.user?.type === "provider");
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -28,6 +36,16 @@ export default function HomeScreen() {
       headerRight: () =>
         isSignedIn ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: moderateScale(4, 0.5) }}>
+            {isProvider && (
+              <TouchableOpacity
+                onPress={() => router.push("/(app)/service-requests/schedule" as any)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ marginRight: moderateScale(8, 0.5) }}
+                accessibilityLabel="Agenda"
+              >
+                <Ionicons name="calendar-outline" size={22} color={theme.colors.primary.DEFAULT} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={() => router.push("/(app)/account/profile-edit" as any)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -59,7 +77,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ),
     });
-  }, [navigation, isSignedIn, logout]);
+  }, [navigation, isSignedIn, isProvider, logout]);
 
 
   if (isLoading) {
@@ -144,6 +162,8 @@ export default function HomeScreen() {
         layout={data?.layout ?? []}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}
       />
     </View>
   );

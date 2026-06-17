@@ -14,6 +14,7 @@ export type SaveTokensResult = Promise<void>;
 
 export type UserProfile = {
   id: string;
+  dbUserId?: string;
   email: string;
   name: string;
   type: "contractor" | "provider";

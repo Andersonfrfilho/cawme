@@ -147,8 +147,13 @@ export const styles = StyleSheet.create({
     borderRadius: 14,
     padding: moderateScale(14, 0.5),
     borderWidth: 1,
-    borderColor: theme.colors.border.DEFAULT,
+    borderColor: theme.palette.neutral[300],
     gap: verticalScale(8),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   cardMain: {
     flexDirection: "row",
@@ -158,6 +163,7 @@ export const styles = StyleSheet.create({
     width: moderateScale(44, 0.5),
     height: moderateScale(44, 0.5),
     borderRadius: 22,
+    overflow: "hidden",
     backgroundColor: theme.colors.primary.surface,
     justifyContent: "center",
     alignItems: "center",
@@ -250,6 +256,26 @@ export const styles = StyleSheet.create({
   nextDate: {
     fontSize: moderateScale(12, 0.3),
     color: theme.colors.primary.DEFAULT,
+  },
+
+  // Payment methods
+  paymentRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: moderateScale(4, 0.5),
+    marginTop: verticalScale(2),
+  },
+  paymentChip: {
+    paddingHorizontal: moderateScale(7, 0.5),
+    paddingVertical: verticalScale(3),
+    borderRadius: 6,
+    backgroundColor: theme.colors.background.elevated,
+    borderWidth: 1,
+    borderColor: theme.colors.border.DEFAULT,
+  },
+  paymentChipText: {
+    fontSize: moderateScale(10, 0.3),
+    color: theme.colors.text.secondary,
   },
 
   // States

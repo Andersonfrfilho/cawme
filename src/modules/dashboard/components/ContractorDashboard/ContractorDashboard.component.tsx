@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { ScrollView, View, Text, ActivityIndicator, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useContractorDashboard } from "@/modules/dashboard/hooks/useDashboard";
@@ -7,12 +7,14 @@ import StatCard from "@/modules/dashboard/components/StatCard";
 import RequestItem from "@/modules/dashboard/components/RequestItem";
 import { styles } from "@/modules/dashboard/screens/styles";
 import { useLocale, type LocaleKeys } from "@/shared/locales";
+import { useLoading } from "@/shared/hooks/useLoading";
 import { theme } from "@/shared/constants";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 
 export function ContractorDashboardComponent() {
   const locale = useLocale<LocaleKeys>();
-  const { data, isLoading, error } = useContractorDashboard();
+  const { data, isLoading, isRefetching, error, refetch } = useContractorDashboard();
+  const { showLoading } = useLoading();
 
   if (isLoading) return <ActivityIndicator style={styles.loader} />;
   if (error || !data)
@@ -43,7 +45,17 @@ export function ContractorDashboardComponent() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          colors={[theme.colors.primary.DEFAULT]}
+          tintColor={theme.colors.primary.DEFAULT}
+        />
+      }
+    >
       <View style={styles.statsContainer}>
         {stats.map((stat) => (
           <StatCard
@@ -69,7 +81,7 @@ export function ContractorDashboardComponent() {
           borderWidth: 1,
           borderColor: theme.colors.primary.DEFAULT + "30",
         }}
-        onPress={() => router.push("/(app)/service-requests" as any)}
+        onPress={() => { showLoading(); router.push("/(app)/service-requests" as any); }}
         activeOpacity={0.7}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

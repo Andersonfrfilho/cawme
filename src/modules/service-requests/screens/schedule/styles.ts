@@ -149,13 +149,54 @@ export const styles = StyleSheet.create({
     fontSize: moderateScale(11, 0.3),
     fontWeight: theme.typography.fontWeight.semibold,
   },
-  appointmentId: {
-    fontSize: moderateScale(12, 0.3),
+  appointmentAvatar: {
+    width: moderateScale(20, 0.3),
+    height: moderateScale(20, 0.3),
+    borderRadius: theme.radii.full,
+  },
+  appointmentAvatarFallback: {
+    width: moderateScale(20, 0.3),
+    height: moderateScale(20, 0.3),
+    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary.surface,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  appointmentAvatarInitial: {
+    fontSize: moderateScale(9, 0.3),
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary.DEFAULT,
+  },
+  appointmentInfoRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: moderateScale(6, 0.5),
+  },
+  appointmentServiceName: {
+    fontSize: moderateScale(14, 0.3),
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.text.primary,
+    flex: 1,
+  },
+  appointmentInfoText: {
+    fontSize: moderateScale(13, 0.3),
     color: theme.colors.text.secondary,
+    flex: 1,
+  },
+  appointmentPriceRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  appointmentPriceText: {
+    fontSize: moderateScale(14, 0.3),
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.accent.green,
   },
   appointmentDescription: {
     fontSize: moderateScale(13, 0.3),
-    color: theme.colors.text.primary,
+    color: theme.colors.text.secondary,
     lineHeight: moderateScale(20, 0.3),
+    fontStyle: "italic" as const,
   },
 });

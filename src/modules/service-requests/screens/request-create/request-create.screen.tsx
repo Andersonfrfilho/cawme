@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   FlatList,
@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useProviderProfile } from "@/modules/provider-profile/hooks/useProviderProfile";
+import { ProviderProfileService } from "@/modules/provider-profile/services/provider-profile.service";
 import { AccountService, type UserAddress, type PaymentMethodType } from "@/modules/account/services/account.service";
 import { ServiceRequestsService } from "@/modules/service-requests/services/service-requests.service";
 import { useLocale, LocaleKeys } from "@/shared/locales";
@@ -33,17 +34,19 @@ import {
   type RequestCreateFormValues,
   type RequestCreateScreenParams,
 } from "./types";
+import { generateAvailableSlots, filterSlotsByDurationAndBusy } from "./utils";
 
 const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const PICKER_ITEM_HEIGHT = verticalScale(44);
 const PICKER_VISIBLE = 4;
 
-function formatScheduledDate(day: number, month: number, year: number, hour: number, minute: number): string {
-  return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year} às ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+function formatScheduledDate(day: number, month: number, year: number, slot: string): string {
+  return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year} às ${slot}`;
 }
 
-function buildISODate(day: number, month: number, year: number, hour: number, minute: number): string {
+function buildISODate(day: number, month: number, year: number, slot: string): string {
+  const [hour, minute] = slot.split(':').map(Number);
   const date = new Date(year, month, day, hour, minute, 0);
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
@@ -131,9 +134,80 @@ export default function RequestCreateScreen() {
   const [pickerDay, setPickerDay] = useState(today.getDate());
   const [pickerMonth, setPickerMonth] = useState(today.getMonth());
   const [pickerYear, setPickerYear] = useState(today.getFullYear());
-  const [pickerHour, setPickerHour] = useState(12);
-  const [pickerMinute, setPickerMinute] = useState(0);
+  const [pickerSlot, setPickerSlot] = useState('09:00');
+
+  const selectedDayOfWeek = useMemo(
+    () => new Date(pickerYear, pickerMonth, pickerDay).getDay(),
+    [pickerYear, pickerMonth, pickerDay],
+  );
+
+  const availabilityForDay = useMemo(() => {
+    const slots = profile?.availability ?? [];
+    if (!slots.length) return null;
+    return slots.find((slot) => slot.dayOfWeek === selectedDayOfWeek) ?? null;
+  }, [profile?.availability, selectedDayOfWeek]);
+
+  const availableSlotLabels = useMemo(
+    () => generateAvailableSlots(availabilityForDay ?? null, (profile?.availability?.length ?? 0) > 0),
+    [availabilityForDay, profile?.availability],
+  );
+
+  const isUnavailableDay = availableSlotLabels.length === 0;
+
+  const totalDurationMinutes = useMemo(() => {
+    if (selectedServiceIds.size === 0) return 60;
+    return [...selectedServiceIds].reduce((sum, id) => {
+      const service = profile?.services.find((s) => s.id === id);
+      if (!service) return sum;
+      if (service.estimatedDurationMinutes) return sum + service.estimatedDurationMinutes;
+      if (service.unit === 'hora') return sum + (serviceHours[id] ?? 1) * 60;
+      return sum + 60;
+    }, 0);
+  }, [selectedServiceIds, profile?.services, serviceHours]);
+
+  const [busySlots, setBusySlots] = useState<Array<{ scheduledAt: string; estimatedHours: number }>>([]);
+
+  useEffect(() => {
+    if (!providerId || isUnavailableDay) {
+      setBusySlots([]);
+      return;
+    }
+    const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(pickerDay).padStart(2, '0')}`;
+    void ProviderProfileService.getBusySlots(providerId, dateStr)
+      .then(setBusySlots)
+      .catch(() => setBusySlots([]));
+  }, [providerId, pickerDay, pickerMonth, pickerYear, isUnavailableDay]);
+
+  const filteredSlotLabels = useMemo(
+    () => filterSlotsByDurationAndBusy(
+      availableSlotLabels,
+      totalDurationMinutes,
+      availabilityForDay?.endTime ?? '24:00',
+      busySlots,
+    ),
+    [availableSlotLabels, totalDurationMinutes, busySlots, availabilityForDay],
+  );
+
+  useEffect(() => {
+    if (filteredSlotLabels.length > 0 && !filteredSlotLabels.includes(pickerSlot)) {
+      setPickerSlot(filteredSlotLabels[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredSlotLabels]);
+
+  const prevDurationRef = useRef(totalDurationMinutes);
+  useEffect(() => {
+    if (prevDurationRef.current !== totalDurationMinutes) {
+      prevDurationRef.current = totalDurationMinutes;
+      setScheduledDate(null);
+    }
+  }, [totalDurationMinutes]);
+
   const [showServiceError, setShowServiceError] = useState(false);
+  const [showDateError, setShowDateError] = useState(false);
+  const [showPaymentError, setShowPaymentError] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingValues, setPendingValues] = useState<RequestCreateFormValues | null>(null);
   const [allPaymentMethodTypes, setAllPaymentMethodTypes] = useState<PaymentMethodType[]>([]);
 
   const {
@@ -204,14 +278,25 @@ export default function RequestCreateScreen() {
     selectorLabel = `${selectedServiceIds.size} ${serviceRequests.servicesSelected}`;
   }
 
-  async function onSubmit(values: RequestCreateFormValues): Promise<void> {
+  function onValidated(values: RequestCreateFormValues): void {
     if (!providerId) return;
-    if (selectedServiceIds.size === 0) {
-      setShowServiceError(true);
-      return;
-    }
+
+    let hasError = false;
+    if (selectedServiceIds.size === 0) { setShowServiceError(true); hasError = true; }
+    if (!scheduledDate) { setShowDateError(true); hasError = true; }
+    if (paymentMethodOptions.length > 0 && !selectedPaymentMethodId) { setShowPaymentError(true); hasError = true; }
+    if (hasError) return;
+
+    setPendingValues(values);
+    setShowConfirmModal(true);
+  }
+
+  async function executeSubmit(): Promise<void> {
+    if (!pendingValues || !providerId) return;
+    setShowConfirmModal(false);
 
     showLoading();
+    let didNavigate = false;
     try {
       for (const serviceId of Array.from(selectedServiceIds)) {
         const service = profile?.services.find((s) => s.id === serviceId);
@@ -221,29 +306,30 @@ export default function RequestCreateScreen() {
         await ServiceRequestsService.create({
           providerId,
           serviceId,
-          addressId: values.addressId,
-          description: values.description,
+          addressId: pendingValues.addressId,
+          description: pendingValues.description,
           priceFinal,
           scheduledAt: scheduledDate ?? undefined,
           paymentMethodTypeId: selectedPaymentMethodId ?? undefined,
+          estimatedHours: hours,
         });
       }
 
-      const successMsg =
-        selectedServiceIds.size > 1
-          ? `${selectedServiceIds.size} ${serviceRequests.requestsSuccess}`
-          : serviceRequests.requestSuccess;
-
-      showToast(successMsg, "success");
-      setTimeout(() => router.replace("/(app)/service-requests" as any), 1500);
+      didNavigate = true;
+      router.replace("/(app)/service-requests" as any);
     } catch {
       showToast(serviceRequests.requestError, "error");
     } finally {
-      hideLoading();
+      if (!didNavigate) hideLoading();
     }
   }
 
-  const canSubmit = selectedServiceIds.size > 0 && !!selectedAddressId;
+  const hasPaymentRequired = paymentMethodOptions.length > 0;
+  const canSubmit =
+    selectedServiceIds.size > 0 &&
+    !!selectedAddressId &&
+    !!scheduledDate &&
+    (!hasPaymentRequired || !!selectedPaymentMethodId);
 
   return (
     <View style={styles.root}>
@@ -406,7 +492,11 @@ export default function RequestCreateScreen() {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>{serviceRequests.scheduledAtLabel}</Text>
           <TouchableOpacity
-            style={[styles.selectorButton, !!scheduledDate && styles.selectorButtonSelected]}
+            style={[
+              styles.selectorButton,
+              !!scheduledDate && styles.selectorButtonSelected,
+              showDateError && { borderColor: theme.colors.status.error },
+            ]}
             onPress={() => setPickerMode("date")}
             disabled={isLoading}
             testID="date-selector"
@@ -417,7 +507,7 @@ export default function RequestCreateScreen() {
               numberOfLines={1}
             >
               {scheduledDate
-                ? formatScheduledDate(pickerDay, pickerMonth, pickerYear, pickerHour, pickerMinute)
+                ? formatScheduledDate(pickerDay, pickerMonth, pickerYear, pickerSlot)
                 : serviceRequests.scheduledAtPlaceholder}
             </Text>
             <Ionicons
@@ -426,6 +516,9 @@ export default function RequestCreateScreen() {
               color={theme.colors.text.secondary}
             />
           </TouchableOpacity>
+          {showDateError && (
+            <Text style={styles.errorText}>{serviceRequests.scheduledAtRequired}</Text>
+          )}
         </View>
 
         {/* Payment method field */}
@@ -436,6 +529,7 @@ export default function RequestCreateScreen() {
               style={[
                 styles.selectorButton,
                 !!selectedPaymentMethodId && styles.selectorButtonSelected,
+                showPaymentError && { borderColor: theme.colors.status.error },
               ]}
               onPress={() => setPickerMode("paymentMethod")}
               disabled={isLoading}
@@ -461,6 +555,9 @@ export default function RequestCreateScreen() {
                 color={theme.colors.text.secondary}
               />
             </TouchableOpacity>
+            {showPaymentError && (
+              <Text style={styles.errorText}>{serviceRequests.paymentMethodRequired}</Text>
+            )}
           </View>
         )}
 
@@ -487,7 +584,7 @@ export default function RequestCreateScreen() {
             styles.submitButton,
             (!canSubmit || isSubmitting || isLoading) && styles.submitButtonDisabled,
           ]}
-          onPress={handleSubmit(onSubmit)}
+          onPress={handleSubmit(onValidated)}
           disabled={!canSubmit || isSubmitting || isLoading}
           testID="submit-button"
           activeOpacity={0.85}
@@ -659,40 +756,53 @@ export default function RequestCreateScreen() {
               />
             </View>
 
-            <Text style={[styles.datePickerSeparator, { textAlign: "center", marginVertical: 8, fontSize: moderateScale(13, 0.3) }]}>
-              às
-            </Text>
-
-            <View style={styles.datePickerRow}>
-              <View
-                pointerEvents="none"
-                style={[styles.datePickerHighlight, {
-                  top: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2),
-                }]}
-              />
-              <DatePickerColumn
-                data={Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))}
-                selectedIndex={pickerHour}
-                onSelect={setPickerHour}
-              />
-              <View style={{ height: PICKER_ITEM_HEIGHT * PICKER_VISIBLE, paddingTop: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2) }}>
-                <View style={{ height: PICKER_ITEM_HEIGHT, justifyContent: "center", alignItems: "center" }}>
-                  <Text style={styles.datePickerSeparator}>:</Text>
-                </View>
+            {isUnavailableDay ? (
+              <View style={{ paddingHorizontal: moderateScale(24, 0.5), paddingVertical: verticalScale(16), alignItems: "center" }}>
+                <Ionicons name="ban-outline" size={moderateScale(32, 0.3)} color={theme.colors.status.error} />
+                <Text style={{ color: theme.colors.status.error, marginTop: verticalScale(8), fontSize: moderateScale(14, 0.3), textAlign: "center" }}>
+                  {serviceRequests.scheduledAtUnavailableDay}
+                </Text>
               </View>
-              <DatePickerColumn
-                data={Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))}
-                selectedIndex={pickerMinute / 5}
-                onSelect={(index) => setPickerMinute(index * 5)}
-              />
-            </View>
+            ) : (
+              <>
+                <Text style={[styles.datePickerSeparator, { textAlign: "center", marginVertical: 8, fontSize: moderateScale(13, 0.3) }]}>
+                  às
+                </Text>
+
+                {totalDurationMinutes > 0 && (
+                  <Text style={{ textAlign: "center", color: theme.colors.text.secondary, fontSize: moderateScale(12, 0.3), marginBottom: verticalScale(4) }}>
+                    {serviceRequests.estimatedDurationLabel}: {totalDurationMinutes >= 60 ? `${Math.floor(totalDurationMinutes / 60)}h${totalDurationMinutes % 60 > 0 ? `${totalDurationMinutes % 60}min` : ''}` : `${totalDurationMinutes}min`}
+                  </Text>
+                )}
+
+                <View style={[styles.datePickerRow, { justifyContent: "center" }]}>
+                  <View
+                    pointerEvents="none"
+                    style={[styles.datePickerHighlight, {
+                      top: PICKER_ITEM_HEIGHT * Math.floor(PICKER_VISIBLE / 2),
+                    }]}
+                  />
+                  <DatePickerColumn
+                    data={filteredSlotLabels.length > 0 ? filteredSlotLabels : [serviceRequests.noAvailableSlots]}
+                    selectedIndex={Math.max(0, filteredSlotLabels.indexOf(pickerSlot))}
+                    onSelect={(index) => {
+                      const slot = filteredSlotLabels[index];
+                      if (slot) setPickerSlot(slot);
+                    }}
+                  />
+                </View>
+              </>
+            )}
 
             <TouchableOpacity
-              style={styles.modalConfirmButton}
+              style={[styles.modalConfirmButton, (isUnavailableDay || filteredSlotLabels.length === 0) && { opacity: 0.4 }]}
               onPress={() => {
-                setScheduledDate(buildISODate(pickerDay, pickerMonth, pickerYear, pickerHour, pickerMinute));
+                if (isUnavailableDay || filteredSlotLabels.length === 0) return;
+                setScheduledDate(buildISODate(pickerDay, pickerMonth, pickerYear, pickerSlot));
+                setShowDateError(false);
                 setPickerMode(null);
               }}
+              disabled={isUnavailableDay || filteredSlotLabels.length === 0}
               testID="date-confirm-button"
             >
               <Text style={styles.modalConfirmButtonText}>
@@ -727,6 +837,7 @@ export default function RequestCreateScreen() {
                     style={[styles.optionItem, isSelected && styles.optionItemSelected]}
                     onPress={() => {
                       setSelectedPaymentMethodId(method.id);
+                      setShowPaymentError(false);
                       setPickerMode(null);
                     }}
                     testID={`payment-method-option-${method.id}`}
@@ -750,6 +861,106 @@ export default function RequestCreateScreen() {
               })}
             </ScrollView>
           </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Confirmation modal */}
+      <Modal
+        visible={showConfirmModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowConfirmModal(false)}
+        >
+          <TouchableOpacity style={styles.modalSheet} activeOpacity={1} onPress={() => {}}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{serviceRequests.confirmTitle}</Text>
+            <ScrollView>
+              <View style={{ paddingHorizontal: moderateScale(24, 0.5), paddingBottom: verticalScale(16) }}>
+
+                <Text style={[styles.label, { marginTop: verticalScale(8) }]}>
+                  {serviceRequests.confirmServicesLabel}
+                </Text>
+                {selectedServices.map((service) => {
+                  const hours = serviceHours[service.id] ?? 1;
+                  const estimated = service.unit === "hora" ? service.price * hours : service.price;
+                  return (
+                    <View key={service.id} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: verticalScale(4) }}>
+                      <Text style={styles.optionText} numberOfLines={1}>
+                        {service.name}{service.unit === "hora" ? ` (${hours}h)` : ""}
+                      </Text>
+                      <Text style={styles.optionPrice}>{formatBRL(estimated)}</Text>
+                    </View>
+                  );
+                })}
+
+                {selectedAddress && (
+                  <>
+                    <Text style={[styles.label, { marginTop: verticalScale(12) }]}>
+                      {serviceRequests.confirmAddressLabel}
+                    </Text>
+                    <Text style={styles.optionSubtext}>
+                      {`${selectedAddress.street}, ${selectedAddress.number} — ${selectedAddress.city}`}
+                    </Text>
+                  </>
+                )}
+
+                {scheduledDate && (
+                  <>
+                    <Text style={[styles.label, { marginTop: verticalScale(12) }]}>
+                      {serviceRequests.confirmDateLabel}
+                    </Text>
+                    <Text style={styles.optionSubtext}>
+                      {formatScheduledDate(pickerDay, pickerMonth, pickerYear, pickerSlot)}
+                    </Text>
+                  </>
+                )}
+
+                {selectedPaymentMethodId && (
+                  <>
+                    <Text style={[styles.label, { marginTop: verticalScale(12) }]}>
+                      {serviceRequests.confirmPaymentLabel}
+                    </Text>
+                    <Text style={styles.optionSubtext}>
+                      {paymentMethodOptions.find((m) => m.id === selectedPaymentMethodId)?.label ?? "—"}
+                    </Text>
+                  </>
+                )}
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: verticalScale(16), paddingTop: verticalScale(12), borderTopWidth: 1, borderTopColor: "#E2E8F0" }}>
+                  <Text style={[styles.label, { marginTop: 0 }]}>{serviceRequests.confirmTotalLabel}</Text>
+                  <Text style={[styles.optionPrice, { fontSize: moderateScale(15, 0.3) }]}>
+                    {formatBRL(selectedServices.reduce((sum, service) => {
+                      const hours = serviceHours[service.id] ?? 1;
+                      return sum + (service.unit === "hora" ? service.price * hours : service.price);
+                    }, 0))}
+                  </Text>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={{ paddingHorizontal: moderateScale(24, 0.5), gap: verticalScale(8) }}>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={executeSubmit}
+                testID="confirm-submit-button"
+              >
+                <Text style={styles.modalConfirmButtonText}>{serviceRequests.confirmButton}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmButton, { backgroundColor: "transparent", borderWidth: 1, borderColor: "#CBD5E1" }]}
+                onPress={() => setShowConfirmModal(false)}
+              >
+                <Text style={[styles.modalConfirmButtonText, { color: "#0F172A" }]}>
+                  {serviceRequests.confirmCancelButton}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 

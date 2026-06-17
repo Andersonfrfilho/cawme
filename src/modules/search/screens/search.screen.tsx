@@ -7,6 +7,8 @@ import {
   FlatList,
   TextInput,
   ScrollView,
+  RefreshControl,
+  Image,
 } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,55 +21,103 @@ import { theme } from "@/shared/constants";
 import { formatBRL } from "@/shared/utils/currency";
 import { moderateScale, verticalScale } from "@/shared/utils/scale";
 import { apiClient } from "@/shared/services/api-client";
-import type { SearchProviderItem } from "@/modules/search/types/search.types";
+import type { PaymentMethodType, SearchProviderItem } from "@/modules/search/types/search.types";
 
 type CategoryItem = { id: string; name: string; slug: string };
 
-const MAX_PRICE = 1000;
+const WEEK_DAYS = [
+  { label: "Dom", value: 0 },
+  { label: "Seg", value: 1 },
+  { label: "Ter", value: 2 },
+  { label: "Qua", value: 3 },
+  { label: "Qui", value: 4 },
+  { label: "Sex", value: 5 },
+  { label: "Sáb", value: 6 },
+];
 
-function RangeSlider({ min, max, onMinChange, onMaxChange }: {
+function PriceRangeFilter({ min, max, onCommit }: {
   min: number;
   max: number;
-  onMinChange: (v: number) => void;
-  onMaxChange: (v: number) => void;
+  onCommit: (min: number, max: number) => void;
 }) {
-  const pctMin = (min / MAX_PRICE) * 100;
-  const pctMax = ((max > 0 ? max : MAX_PRICE) / MAX_PRICE) * 100;
+  const [minText, setMinText] = useState(min > 0 ? String(min) : "");
+  const [maxText, setMaxText] = useState(max > 0 ? String(max) : "");
+
+  const handleApply = () => {
+    const parsedMin = Number(minText.replace(/\D/g, "")) || 0;
+    const parsedMax = Number(maxText.replace(/\D/g, "")) || 0;
+    onCommit(parsedMin, parsedMax);
+  };
+
+  const hasFilter = min > 0 || max > 0;
 
   return (
-    <View style={{ paddingHorizontal: 4, marginTop: verticalScale(8) }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ fontSize: moderateScale(11, 0.3), color: theme.colors.text.secondary }}>
-          R$ {min || 0}
-        </Text>
-        <Text style={{ fontSize: moderateScale(11, 0.3), color: theme.colors.text.secondary }}>
-          R$ {max || MAX_PRICE}
-        </Text>
-      </View>
-      <View style={{ height: 34, justifyContent: "center" }}>
-        <View style={{ height: 6, backgroundColor: theme.colors.border.DEFAULT, borderRadius: 3 }}>
-          <View style={{ position: "absolute", left: (pctMin + "%") as any, right: ((100 - pctMax) + "%") as any, height: 6, backgroundColor: theme.colors.primary.DEFAULT, borderRadius: 3 }} />
-          <View style={{ position: "absolute", left: (pctMin + "%") as any, marginLeft: -10, top: -7, width: 20, height: 20, borderRadius: 10, backgroundColor: theme.colors.primary.DEFAULT, borderWidth: 2, borderColor: "#fff" }} />
-          <View style={{ position: "absolute", left: (pctMax + "%") as any, marginLeft: -10, top: -7, width: 20, height: 20, borderRadius: 10, backgroundColor: theme.colors.primary.DEFAULT, borderWidth: 2, borderColor: "#fff" }} />
+    <View style={{ gap: verticalScale(6) }}>
+      <Text style={{ fontSize: moderateScale(12, 0.3), color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium }}>
+        Faixa de preço
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: moderateScale(8, 0.5) }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.colors.background.card, borderWidth: 1, borderColor: theme.colors.border.DEFAULT, borderRadius: 10, paddingHorizontal: moderateScale(10, 0.5), paddingVertical: verticalScale(8) }}>
+          <Text style={{ fontSize: moderateScale(12, 0.3), color: theme.colors.text.tertiary, marginRight: 4 }}>R$</Text>
+          <TextInput
+            style={{ flex: 1, fontSize: moderateScale(14, 0.3), color: theme.colors.text.primary, paddingVertical: 0 }}
+            placeholder="Mín"
+            placeholderTextColor={theme.colors.text.tertiary}
+            value={minText}
+            onChangeText={setMinText}
+            keyboardType="numeric"
+            returnKeyType="next"
+          />
         </View>
+        <Text style={{ color: theme.colors.text.tertiary, fontSize: moderateScale(13, 0.3) }}>—</Text>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: theme.colors.background.card, borderWidth: 1, borderColor: theme.colors.border.DEFAULT, borderRadius: 10, paddingHorizontal: moderateScale(10, 0.5), paddingVertical: verticalScale(8) }}>
+          <Text style={{ fontSize: moderateScale(12, 0.3), color: theme.colors.text.tertiary, marginRight: 4 }}>R$</Text>
+          <TextInput
+            style={{ flex: 1, fontSize: moderateScale(14, 0.3), color: theme.colors.text.primary, paddingVertical: 0 }}
+            placeholder="Máx"
+            placeholderTextColor={theme.colors.text.tertiary}
+            value={maxText}
+            onChangeText={setMaxText}
+            keyboardType="numeric"
+            returnKeyType="done"
+            onSubmitEditing={handleApply}
+          />
+        </View>
+        <TouchableOpacity
+          onPress={handleApply}
+          style={{ backgroundColor: theme.colors.primary.DEFAULT, paddingHorizontal: moderateScale(14, 0.5), paddingVertical: verticalScale(9), borderRadius: 10 }}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontSize: moderateScale(13, 0.3), color: theme.palette.neutral[0], fontWeight: theme.typography.fontWeight.semibold }}>OK</Text>
+        </TouchableOpacity>
       </View>
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-        <TextInput style={{ flex: 1, backgroundColor: theme.colors.background.card, borderWidth: 1, borderColor: theme.colors.border.DEFAULT, borderRadius: 8, paddingVertical: verticalScale(8), paddingHorizontal: 8, fontSize: moderateScale(13, 0.3), color: theme.colors.text.primary, textAlign: "center" }} placeholder="R$ mín" placeholderTextColor={theme.colors.text.tertiary} value={min > 0 ? String(min) : ""} onChangeText={(t) => onMinChange(Number(t) || 0)} keyboardType="numeric" />
-        <Text style={{ alignSelf: "center", color: theme.colors.text.tertiary, fontSize: moderateScale(12, 0.3) }}>até</Text>
-        <TextInput style={{ flex: 1, backgroundColor: theme.colors.background.card, borderWidth: 1, borderColor: theme.colors.border.DEFAULT, borderRadius: 8, paddingVertical: verticalScale(8), paddingHorizontal: 8, fontSize: moderateScale(13, 0.3), color: theme.colors.text.primary, textAlign: "center" }} placeholder="R$ máx" placeholderTextColor={theme.colors.text.tertiary} value={max > 0 ? String(max) : ""} onChangeText={(t) => onMaxChange(Number(t) || 0)} keyboardType="numeric" />
-      </View>
+      {hasFilter && (
+        <TouchableOpacity onPress={() => { setMinText(""); setMaxText(""); onCommit(0, 0); }}>
+          <Text style={{ fontSize: moderateScale(11, 0.3), color: theme.colors.primary.DEFAULT }}>Limpar faixa de preço</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
+const PRICE_TYPE_LABEL: Record<string, string> = { HOUR: "/h", HOURLY: "/h", DAY: "/dia", FIXED: "" };
+
 const WEEK_DAYS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const PRICE_TYPE_LABEL: Record<string, string> = { HOUR: "/h", DAY: "/dia", FIXED: "" };
 
 function formatNextAvailable(isoDate: string): string {
   const [year, month, day] = isoDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   const dow = WEEK_DAYS_SHORT[date.getDay()];
   return `${dow}, ${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`;
+}
+
+function getNextOccurrenceDate(dayOfWeek: number): string {
+  const today = new Date();
+  const todayDow = today.getDay();
+  const daysUntil = (dayOfWeek - todayDow + 7) % 7;
+  const target = new Date(today);
+  target.setDate(today.getDate() + daysUntil);
+  return target.toISOString().slice(0, 10);
 }
 
 export default function SearchScreen() {
@@ -100,6 +150,9 @@ export default function SearchScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(0);
+  const [paymentMethodTypes, setPaymentMethodTypes] = useState<PaymentMethodType[]>([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
+  const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(null);
 
   useEffect(() => {
     apiClient.get<{ data: CategoryItem[] }>("/bff/auth/categories", { _skipGlobalError: true })
@@ -107,7 +160,9 @@ export default function SearchScreen() {
       .catch(() => {});
   }, []);
 
-  const activeFilterCount = (availableOnly ? 1 : 0) + (minRating > 0 ? 1 : 0) + (city.trim() ? 1 : 0) + (state.trim() ? 1 : 0) + (selectedCategoryId ? 1 : 0);
+  const activeFilterCount = (availableOnly ? 1 : 0) + (minRating > 0 ? 1 : 0) + (city.trim() ? 1 : 0) + (state.trim() ? 1 : 0) + (selectedCategoryId ? 1 : 0) + (selectedPaymentMethodId ? 1 : 0) + (selectedDayOfWeek !== null ? 1 : 0) + (priceMin > 0 || priceMax > 0 ? 1 : 0);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data,
@@ -126,15 +181,34 @@ export default function SearchScreen() {
     categoryId: selectedCategoryId || undefined,
     priceMin: priceMin > 0 ? priceMin : undefined,
     priceMax: priceMax > 0 ? priceMax : undefined,
+    paymentMethodId: selectedPaymentMethodId || undefined,
+    dayOfWeek: selectedDayOfWeek !== null ? selectedDayOfWeek : undefined,
   });
 
   const allItems = data?.pages.flatMap((page) => page.data ?? []) ?? [];
+
+  useEffect(() => {
+    if (data?.pages[0]?.paymentMethodTypes && data.pages[0].paymentMethodTypes.length > 0 && paymentMethodTypes.length === 0) {
+      setPaymentMethodTypes(data.pages[0].paymentMethodTypes);
+    }
+  }, [data]);
 
   const handleSearch = () => {
     refetch();
   };
 
-  const renderProvider = ({ item }: { item: SearchProviderItem }) => (
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
+  const renderProvider = ({ item }: { item: SearchProviderItem }) => {
+    const filteredDayDate = selectedDayOfWeek !== null ? getNextOccurrenceDate(selectedDayOfWeek) : null;
+    const displayDate = filteredDayDate ?? item.nextAvailableDate;
+    const isFilteredDay = filteredDayDate !== null;
+
+    return (
     <TouchableOpacity
       style={styles.card}
       onPress={() => router.push(`/providers/${item.id}` as any)}
@@ -142,7 +216,15 @@ export default function SearchScreen() {
     >
       <View style={styles.cardMain}>
         <View style={styles.cardAvatar}>
-          <Ionicons name="person" size={moderateScale(22, 0.3)} color={theme.colors.primary.DEFAULT} />
+          {item.avatarUrl ? (
+            <Image
+              source={{ uri: item.avatarUrl }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="person" size={moderateScale(22, 0.3)} color={theme.colors.primary.DEFAULT} />
+          )}
         </View>
         <View style={styles.cardContent}>
           <Text style={styles.cardName} numberOfLines={1}>{item.businessName}</Text>
@@ -182,14 +264,31 @@ export default function SearchScreen() {
         </View>
       )}
 
-      {item.nextAvailableDate && (
-        <View style={styles.nextRow}>
-          <Ionicons name="calendar-outline" size={moderateScale(12, 0.3)} color={theme.colors.text.secondary} />
-          <Text style={styles.nextDate}>Próx: {formatNextAvailable(item.nextAvailableDate)}</Text>
+      {displayDate && (
+        <View style={[styles.nextRow, isFilteredDay && { backgroundColor: theme.colors.primary.surface, borderRadius: 8, paddingHorizontal: moderateScale(8, 0.5), paddingVertical: verticalScale(4) }]}>
+          <Ionicons name="calendar" size={moderateScale(12, 0.3)} color={isFilteredDay ? theme.colors.primary.DEFAULT : theme.colors.text.secondary} />
+          <Text style={[styles.nextDate, isFilteredDay && { color: theme.colors.primary.DEFAULT, fontWeight: theme.typography.fontWeight.semibold }]}>
+            {isFilteredDay ? `Disponível: ${formatNextAvailable(displayDate)}` : `Próx: ${formatNextAvailable(displayDate)}`}
+          </Text>
+        </View>
+      )}
+
+      {item.paymentMethods && item.paymentMethods.length > 0 && (
+        <View style={styles.paymentRow}>
+          <Ionicons name="card-outline" size={moderateScale(11, 0.3)} color={theme.colors.text.tertiary} />
+          {item.paymentMethods.slice(0, 4).map((pm) => (
+            <View key={pm.id} style={styles.paymentChip}>
+              <Text style={styles.paymentChipText}>{pm.label}</Text>
+            </View>
+          ))}
+          {item.paymentMethods.length > 4 && (
+            <Text style={styles.paymentChipText}>+{item.paymentMethods.length - 4}</Text>
+          )}
         </View>
       )}
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -327,11 +426,68 @@ export default function SearchScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <RangeSlider
+          {/* Forma de pagamento */}
+          {paymentMethodTypes.length > 0 && (
+            <View style={{ gap: verticalScale(6) }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <Ionicons name="card-outline" size={moderateScale(14, 0.3)} color={theme.colors.text.secondary} />
+                <Text style={{ fontSize: moderateScale(12, 0.3), color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium }}>Pagamento</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {paymentMethodTypes.map((pm) => {
+                  const selected = selectedPaymentMethodId === pm.id;
+                  return (
+                    <TouchableOpacity
+                      key={pm.id}
+                      style={[styles.categoryChip, selected && styles.categoryChipActive, { flexDirection: "row", alignItems: "center", gap: 4 }]}
+                      onPress={() => setSelectedPaymentMethodId(selected ? null : pm.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name={pm.name?.toLowerCase().includes("pix") ? "flash-outline" : pm.name?.toLowerCase().includes("dinheiro") || pm.name?.toLowerCase().includes("cash") ? "cash-outline" : "card-outline"}
+                        size={moderateScale(12, 0.3)}
+                        color={selected ? theme.palette.neutral[0] : theme.colors.text.secondary}
+                      />
+                      <Text style={[styles.categoryChipText, selected && styles.categoryChipTextActive]}>
+                        {pm.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Dia da semana */}
+          <View style={{ gap: verticalScale(6) }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <Ionicons name="calendar-outline" size={moderateScale(14, 0.3)} color={theme.colors.text.secondary} />
+              <Text style={{ fontSize: moderateScale(12, 0.3), color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium }}>Dia da semana</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {WEEK_DAYS.map((day) => {
+                const selected = selectedDayOfWeek === day.value;
+                return (
+                  <TouchableOpacity
+                    key={day.value}
+                    style={[styles.categoryChip, selected && styles.categoryChipActive]}
+                    onPress={() => setSelectedDayOfWeek(selected ? null : day.value)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.categoryChipText, selected && styles.categoryChipTextActive]}>
+                      {day.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Faixa de preço */}
+          <PriceRangeFilter
             min={priceMin}
             max={priceMax}
-            onMinChange={setPriceMin}
-            onMaxChange={setPriceMax}
+            onCommit={(newMin, newMax) => { setPriceMin(newMin); setPriceMax(newMax); }}
           />
         </View>
       )}
@@ -348,6 +504,17 @@ export default function SearchScreen() {
           data={allItems}
           keyExtractor={(item) => item.id}
           renderItem={renderProvider}
+          ItemSeparatorComponent={() => (
+            <View style={{ height: 1, backgroundColor: theme.colors.border.DEFAULT, marginHorizontal: moderateScale(14, 0.5), marginVertical: verticalScale(4) }} />
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary.DEFAULT]}
+              tintColor={theme.colors.primary.DEFAULT}
+            />
+          }
           onEndReached={() => hasNextPage && fetchNextPage()}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}

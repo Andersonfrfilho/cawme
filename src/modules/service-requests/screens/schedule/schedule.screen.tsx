@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -52,6 +52,22 @@ function formatScheduledTime(isoDate: string): string {
   return `${hours}:${minutes}`;
 }
 
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price);
+}
+
+function formatDuration(hours: number): string {
+  const wholeHours = Math.floor(hours);
+  const minutes = Math.round((hours - wholeHours) * 60);
+  if (wholeHours === 0) return `${minutes}min`;
+  if (minutes === 0) return `${wholeHours}h`;
+  return `${wholeHours}h${minutes}min`;
+}
+
+function formatAddress(address: NonNullable<ServiceRequest["address"]>): string {
+  return `${address.street}, ${address.number} — ${address.city}`;
+}
+
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
   const { serviceRequests: locale } = useLocale<LocaleKeys>();
@@ -66,6 +82,7 @@ export default function ScheduleScreen() {
   const [selectedDate, setSelectedDate] = useState<string>(todayKey);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadRequests = useCallback(async () => {
     try {
@@ -75,6 +92,18 @@ export default function ScheduleScreen() {
       showToast(locale.loadError, "error");
     } finally {
       setCalendarLoading(false);
+    }
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const list = await listMyRequests();
+      setRequests(list);
+    } catch {
+      showToast(locale.loadError, "error");
+    } finally {
+      setRefreshing(false);
     }
   }, []);
 
@@ -134,6 +163,8 @@ export default function ScheduleScreen() {
     CANCELLED: locale.statusCancelled,
   };
 
+  const iconSize = moderateScale(14, 0.3);
+
   return (
     <View style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + verticalScale(24) }]}>
@@ -147,7 +178,18 @@ export default function ScheduleScreen() {
         <Text style={styles.headerTitle}>{locale.scheduleTitle}</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary.DEFAULT]}
+            tintColor={theme.colors.primary.DEFAULT}
+          />
+        }
+      >
         <View style={styles.calendarCard}>
           <View style={styles.monthNav}>
             <TouchableOpacity onPress={prevMonth} hitSlop={8} style={styles.navButton}>
@@ -251,17 +293,65 @@ export default function ScheduleScreen() {
                         {formatScheduledTime(request.scheduledAt)}
                       </Text>
                     ) : null}
-                    <View
-                      style={[styles.statusBadge, { backgroundColor: labelColors.badge }]}
-                    >
+                    <View style={[styles.statusBadge, { backgroundColor: labelColors.badge }]}>
                       <Text style={[styles.statusText, { color: labelColors.text }]}>
                         {statusLabels[request.status]}
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.appointmentId}>
-                    ID: {request.id.slice(0, 8)}...
-                  </Text>
+
+                  {request.service?.name ? (
+                    <View style={styles.appointmentInfoRow}>
+                      <Ionicons name="construct-outline" size={iconSize} color={theme.colors.text.secondary} />
+                      <Text style={styles.appointmentServiceName}>{request.service.name}</Text>
+                    </View>
+                  ) : null}
+
+                  {request.provider ? (
+                    <View style={styles.appointmentInfoRow}>
+                      {request.provider.avatarUrl ? (
+                        <Image source={{ uri: request.provider.avatarUrl }} style={styles.appointmentAvatar} />
+                      ) : (
+                        <View style={styles.appointmentAvatarFallback}>
+                          <Text style={styles.appointmentAvatarInitial}>
+                            {request.provider.businessName.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.appointmentInfoText}>{request.provider.businessName}</Text>
+                    </View>
+                  ) : null}
+
+                  {request.estimatedHours ? (
+                    <View style={styles.appointmentInfoRow}>
+                      <Ionicons name="time-outline" size={iconSize} color={theme.colors.text.secondary} />
+                      <Text style={styles.appointmentInfoText}>{formatDuration(request.estimatedHours)}</Text>
+                    </View>
+                  ) : null}
+
+                  {request.address ? (
+                    <View style={styles.appointmentInfoRow}>
+                      <Ionicons name="location-outline" size={iconSize} color={theme.colors.text.secondary} />
+                      <Text style={styles.appointmentInfoText} numberOfLines={1}>
+                        {formatAddress(request.address)}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {request.paymentMethodType || request.priceFinal != null ? (
+                    <View style={styles.appointmentPriceRow}>
+                      <View style={[styles.appointmentInfoRow, { flex: 1 }]}>
+                        <Ionicons name="card-outline" size={iconSize} color={theme.colors.text.secondary} />
+                        <Text style={styles.appointmentInfoText} numberOfLines={1}>
+                          {request.paymentMethodType?.label ?? locale.paymentMethodLabel}
+                        </Text>
+                      </View>
+                      {request.priceFinal != null ? (
+                        <Text style={styles.appointmentPriceText}>{formatPrice(request.priceFinal)}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+
                   {request.description ? (
                     <Text style={styles.appointmentDescription} numberOfLines={2}>
                       {request.description}

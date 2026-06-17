@@ -7,6 +7,8 @@ export interface SearchParams {
   available?: boolean;
   priceMin?: number;
   priceMax?: number;
+  paymentMethodId?: string;
+  dayOfWeek?: number;
   lat?: number;
   lng?: number;
   page?: number;
@@ -16,6 +18,7 @@ export interface SearchParams {
 export interface SearchProviderItem {
   id: string;
   businessName: string;
+  avatarUrl: string | null;
   averageRating: number;
   reviewCount: number;
   city: string;
@@ -23,6 +26,14 @@ export interface SearchProviderItem {
   isAvailable: boolean;
   nextAvailableDate: string | null;
   services: Array<{ name: string; priceBase: number; priceType: string }>;
+  paymentMethods: Array<{ id: string; name: string; label: string; icon: string | null }>;
+}
+
+export interface PaymentMethodType {
+  id: string;
+  name: string;
+  label: string;
+  icon: string | null;
 }
 
 export interface SearchResponse {
@@ -31,9 +42,10 @@ export interface SearchResponse {
   meta: {
     total: number;
     page: number;
-    lastPage: number;
-    hasNextPage: boolean;
+    totalPages: number;
+    priceRange?: { min: number; max: number };
   };
+  paymentMethodTypes?: PaymentMethodType[];
 }
 
 export type GetSearchResult = Promise<SearchResponse>;

@@ -18,8 +18,8 @@ export function useProviderProfile(id: string) {
           categories: ['Limpeza'],
           location: { city: 'São Paulo', state: 'SP' },
           services: [
-            { id: '1', name: 'Limpeza Completa', price: 150, unit: 'hora' },
-            { id: '2', name: 'Limpeza Rápida', price: 75, unit: 'hora' },
+            { id: '1', name: 'Limpeza Completa', price: 150, unit: 'hora', estimatedDurationMinutes: 120 },
+            { id: '2', name: 'Limpeza Rápida', price: 75, unit: 'hora', estimatedDurationMinutes: 60 },
           ],
           paymentMethods: [
             { id: '1', name: 'pix', label: 'Pix', icon: 'cash', isEnabled: true },
@@ -40,6 +40,13 @@ export function useProviderProfile(id: string) {
               serviceName: 'Limpeza Rápida',
               createdAt: '2024-04-22T10:30:00Z',
             },
+          ],
+          availability: [
+            { dayOfWeek: 1, startTime: '08:00', endTime: '18:00' },
+            { dayOfWeek: 2, startTime: '08:00', endTime: '18:00' },
+            { dayOfWeek: 3, startTime: '08:00', endTime: '18:00' },
+            { dayOfWeek: 4, startTime: '08:00', endTime: '18:00' },
+            { dayOfWeek: 5, startTime: '08:00', endTime: '18:00' },
           ],
         };
       }

@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/services/api-client';
-import type { GetProviderProfileParams, GetProviderProfileResult, ProviderProfile } from '@/modules/provider-profile/types/provider-profile.types';
+import type { GetProviderProfileParams, GetProviderProfileResult, ProviderBusySlot, ProviderProfile } from '@/modules/provider-profile/types/provider-profile.types';
 
 type BffService = {
   id: string;
@@ -7,6 +7,7 @@ type BffService = {
   category: { id: string; name: string };
   priceBase: number;
   priceType: string;
+  estimatedDurationMinutes: number | null;
 };
 
 type BffWorkLocation = { city: string; state: string; isPrimary: boolean };
@@ -27,6 +28,12 @@ type BffReview = {
   createdAt: string;
 };
 
+type BffAvailabilitySlot = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+};
+
 type BffProviderProfileResponse = {
   id: string;
   businessName: string;
@@ -40,6 +47,7 @@ type BffProviderProfileResponse = {
   workLocations: BffWorkLocation[];
   paymentMethods: BffPaymentMethod[];
   recentReviews: BffReview[];
+  availability: BffAvailabilitySlot[];
 };
 
 const PRICE_TYPE_UNIT: Record<string, string> = {
@@ -73,6 +81,7 @@ function mapBffToProviderProfile(raw: BffProviderProfileResponse): ProviderProfi
       name: service.name,
       price: service.priceBase,
       unit: PRICE_TYPE_UNIT[service.priceType] ?? service.priceType.toLowerCase(),
+      estimatedDurationMinutes: service.estimatedDurationMinutes ?? null,
     })),
     paymentMethods: (raw.paymentMethods ?? []).filter((m) => m.isEnabled),
     reviews: (raw.recentReviews ?? []).map((review) => ({
@@ -81,6 +90,11 @@ function mapBffToProviderProfile(raw: BffProviderProfileResponse): ProviderProfi
       contractorName: review.contractorName,
       serviceName: review.serviceName,
       createdAt: review.createdAt,
+    })),
+    availability: (raw.availability ?? []).map((slot) => ({
+      dayOfWeek: slot.dayOfWeek,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
     })),
   };
 }
@@ -91,5 +105,12 @@ export const ProviderProfileService = {
       `/bff/providers/${id}/profile`,
     );
     return mapBffToProviderProfile(response.data);
+  },
+
+  async getBusySlots(providerId: string, date: string): Promise<ProviderBusySlot[]> {
+    const response = await apiClient.get<ProviderBusySlot[]>(
+      `/bff/providers/${providerId}/busy-slots?date=${date}`,
+    );
+    return response.data ?? [];
   },
 };

@@ -9,7 +9,12 @@ export const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.radii.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border.DEFAULT,
+    borderColor: theme.palette.neutral[300],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   statValue: {
     fontSize: theme.typography.fontSize.xl,

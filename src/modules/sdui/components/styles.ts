@@ -71,13 +71,21 @@ export const styles = StyleSheet.create({
   providerCard: {
     backgroundColor: theme.colors.background.card,
     borderRadius: theme.radii.lg,
-    overflow: 'hidden',
     marginRight: theme.spacing[3],
+    borderWidth: 1,
+    borderColor: theme.palette.neutral[300],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   providerImage: {
     width: '100%',
     height: moderateScale(120, 0.5),
     backgroundColor: theme.palette.neutral[100],
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
   },
   providerImagePlaceholder: {
     width: '100%',
@@ -85,6 +93,8 @@ export const styles = StyleSheet.create({
     backgroundColor: theme.palette.neutral[100],
     alignItems: 'center',
     justifyContent: 'center',
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
   },
   providerContent: {
     padding: theme.spacing[3],
@@ -105,6 +115,12 @@ export const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text.secondary,
     fontWeight: theme.typography.fontWeight.medium,
+  },
+  providerPrice: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.accent.green,
+    marginBottom: verticalScale(6),
   },
   providerRating: {
     flexDirection: 'row',

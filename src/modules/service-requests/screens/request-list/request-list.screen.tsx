@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   RefreshControl,
@@ -90,14 +91,18 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
   const { listMyRequests, cancelRequest, acceptRequest, rejectRequest, completeRequest } =
     useServiceRequests();
   const { toast, toastOpacity, showToast } = useToast();
-  const { isLoading } = useLoading();
+  const { isLoading, hideLoading } = useLoading();
 
   const isProvider = user?.type === "provider";
+  const isContractor = (request: ServiceRequest) => !!user?.dbUserId && request.contractorId === user.dbUserId;
+  const isProviderOf = (request: ServiceRequest) => isProvider && !isContractor(request);
   const { logout } = useAuth();
 
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [detailRequest, setDetailRequest] = useState<ServiceRequest | null>(null);
+  const hasLoadedRef = useRef(false);
 
   const loadRequests = useCallback(async () => {
     try {
@@ -105,12 +110,20 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
       setRequests(list);
     } catch {
       showToast(serviceRequests.loadError, "error");
+    } finally {
+      hideLoading();
+      if (!hasLoadedRef.current) {
+        hasLoadedRef.current = true;
+        setIsInitialLoading(false);
+      }
     }
-  }, [listMyRequests, showToast, serviceRequests.loadError]);
+  }, [listMyRequests, showToast, serviceRequests.loadError, hideLoading]);
 
-  useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
+  useFocusEffect(
+    useCallback(() => {
+      loadRequests();
+    }, [loadRequests]),
+  );
 
   async function handleRefresh(): Promise<void> {
     setRefreshing(true);
@@ -195,7 +208,11 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
         </View>
       )}
 
-      {requests.length === 0 ? (
+      {isInitialLoading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary.DEFAULT} />
+        </View>
+      ) : requests.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons
             name="document-text-outline"
@@ -296,7 +313,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                 />
               </View>
 
-              {!isProvider && request.status === "PENDING" && (
+              {isContractor(request) && request.status === "PENDING" && (
                 <View style={styles.cardActions}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.cancelButton]}
@@ -309,7 +326,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                 </View>
               )}
 
-              {!isProvider && request.status === "ACCEPTED" && (
+              {isContractor(request) && request.status === "ACCEPTED" && (
                 <View style={styles.cardActions}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.completeButton]}
@@ -330,7 +347,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                 </View>
               )}
 
-              {isProvider && request.status === "PENDING" && (
+              {isProviderOf(request) && request.status === "PENDING" && (
                 <View style={styles.cardActions}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.acceptButton]}
@@ -465,7 +482,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                     </Text>
                   </View>
 
-                  {!isProvider && detailRequest.status === "PENDING" && (
+                  {isContractor(detailRequest) && detailRequest.status === "PENDING" && (
                     <View style={styles.cardActions}>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.cancelButton]}
@@ -477,7 +494,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                     </View>
                   )}
 
-                  {!isProvider && detailRequest.status === "ACCEPTED" && (
+                  {isContractor(detailRequest) && detailRequest.status === "ACCEPTED" && (
                     <View style={styles.cardActions}>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.completeButton]}
@@ -496,7 +513,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                     </View>
                   )}
 
-                  {isProvider && detailRequest.status === "PENDING" && (
+                  {isProviderOf(detailRequest) && detailRequest.status === "PENDING" && (
                     <View style={styles.cardActions}>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.acceptButton]}
@@ -515,7 +532,7 @@ export default function RequestListScreen({ hideHeader }: { hideHeader?: boolean
                     </View>
                   )}
 
-                  {!isProvider && detailRequest.status === "COMPLETED" && (
+                  {isContractor(detailRequest) && detailRequest.status === "COMPLETED" && (
                     <View style={styles.cardActions}>
                       <TouchableOpacity
                         style={[styles.actionButton, styles.completeButton]}

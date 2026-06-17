@@ -17,11 +17,12 @@ export type ServiceRequest = {
   description?: string;
   scheduledAt?: string;
   priceFinal?: number;
+  estimatedHours?: number | null;
   createdAt: string;
   updatedAt?: string;
   paymentMethodTypeId?: string;
   service?: { id: string; name: string };
-  provider?: { id: string; businessName: string };
+  provider?: { id: string; businessName: string; avatarUrl?: string | null };
   paymentMethodType?: { id: string; name: string; label: string };
   address?: { id: string; street: string; number: string; city: string; state: string; neighborhood: string; latitude?: string; longitude?: string };
 };
@@ -34,6 +35,7 @@ export type CreateServiceRequestServiceParams = {
   scheduledAt?: string;
   priceFinal?: number;
   paymentMethodTypeId?: string;
+  estimatedHours?: number;
 };
 
 export type CreateServiceRequestServiceResult = ServiceRequest;

@@ -12,7 +12,7 @@ export function useSearch(params: Omit<SearchParams, 'page'>) {
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
-      lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined,
+      lastPage.meta.page < lastPage.meta.totalPages ? lastPage.meta.page + 1 : undefined,
     staleTime: 2 * 60 * 1000,
   });
 }

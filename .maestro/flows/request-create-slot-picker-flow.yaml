@@ -1,0 +1,151 @@
+appId: com.andersonfilho.cawme
+name: 📅 Request Create - Slot Picker (15 min)
+description: |
+  Verifica o picker de horários na tela de criação de solicitação:
+  1. Registra contractor e navega para Home
+  2. Acessa lista de profissionais → perfil da "Maria Limpeza"
+  3. Toca "Solicitar Serviço"
+  4. Seleciona serviço "Limpeza Completa"
+  5. Abre seletor de Data e Hora
+  6. Verifica que slots aparecem em formato HH:mm (15 min)
+  7. Verifica label de duração estimada
+  8. Confirma a seleção
+  9. Verifica que a data ficou preenchida no campo
+tags:
+  - request
+  - slot-picker
+  - e2e
+---
+# ── Gera dados únicos ─────────────────────────────────────────────────────────
+- evalScript: ${output.TS=Date.now().toString().slice(-8); output.PHONE='119'+output.TS; var d=[]; for(var i=0;i<9;i++) d.push(Math.floor(Math.random()*10)); var s=0; for(var i=0;i<9;i++) s+=d[i]*(10-i); var r=(s*10)%11; if(r>=10)r=0; d.push(r); s=0; for(var i=0;i<10;i++) s+=d[i]*(11-i); r=(s*10)%11; if(r>=10)r=0; d.push(r); output.CPF=d.join('');}
+
+# ── Inicia app limpo ──────────────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Cawme"
+    timeout: 30000
+
+- runFlow:
+    file: ../common/logout-if-needed.yaml
+
+# ── Welcome → cadastro contractor ─────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Encontre profissionais"
+    timeout: 15000
+
+- tapOn:
+    id: "welcome-hire-button"
+
+- extendedWaitUntil:
+    visible: "Crie sua conta"
+    timeout: 8000
+
+- runFlow:
+    file: ../common/fill-register-form.yaml
+    env:
+      DOCUMENT_TYPE: "cpf"
+      FIRST_NAME: "Slot"
+      LAST_NAME: "Test"
+      EMAIL: "slot-test-${output.TS}@test.com"
+      PHONE: "${output.PHONE}"
+      DOCUMENT: "${output.CPF}"
+      PASSWORD: "Senha@123"
+
+- extendedWaitUntil:
+    visible: "Termos de Uso"
+    timeout: 15000
+
+- tapOn:
+    id: "terms-accept-checkbox"
+- tapOn:
+    id: "terms-submit-button"
+
+- runFlow:
+    file: ../common/skip-to-home.yaml
+
+# ── Navega para lista de profissionais ────────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "tab-home"
+    timeout: 10000
+
+- tapOn:
+    id: "tab-providers"
+
+- extendedWaitUntil:
+    visible: "Maria Limpeza"
+    timeout: 12000
+
+# ── Acessa perfil da Maria Limpeza ────────────────────────────────────────────
+- tapOn:
+    text: "Maria Limpeza"
+
+- extendedWaitUntil:
+    visible:
+      id: "provider-profile-name"
+    timeout: 10000
+
+- assertVisible: "Maria Limpeza"
+
+# ── Solicitar Serviço ─────────────────────────────────────────────────────────
+- tapOn:
+    id: "request-service-button"
+
+- extendedWaitUntil:
+    visible: "Solicitar serviço"
+    timeout: 10000
+
+# ── Seleciona o serviço "Limpeza Completa" ────────────────────────────────────
+- tapOn:
+    id: "service-selector"
+
+- extendedWaitUntil:
+    visible: "Limpeza Completa"
+    timeout: 8000
+
+- tapOn:
+    id: "service-option-1"
+
+- tapOn:
+    id: "service-modal-confirm"
+
+# Verifica que o serviço foi selecionado (nome aparece no selector)
+- assertVisible: "Limpeza Completa"
+
+# ── Abre o seletor de Data e Hora ─────────────────────────────────────────────
+- tapOn:
+    id: "date-selector"
+
+- extendedWaitUntil:
+    visible: "Data e hora"
+    timeout: 8000
+
+# ── Verifica label de duração estimada ───────────────────────────────────────
+# O serviço "Limpeza Completa" tem estimatedDurationMinutes: 120 (mock)
+# Deve mostrar "Duração estimada: 2h"
+- assertVisible: "Duração estimada"
+- assertVisible: "2h"
+
+# ── Verifica que slots aparecem em formato HH:mm ─────────────────────────────
+# Os slots gerados são como "08:00", "08:15", "08:30"...
+# Com disponibilidade 08:00–18:00 e duração 2h, últimos slots serão até 16:00
+- assertVisible:
+    text: ".*\\d{2}:\\d{2}.*"
+    enabled: true
+
+# Verifica que existe pelo menos um slot do turno da manhã
+- assertVisible: "08:00"
+
+# ── Confirma a seleção de horário ─────────────────────────────────────────────
+- tapOn:
+    id: "date-confirm-button"
+
+# Verifica que o campo de data ficou preenchido (mostra "às HH:mm")
+- extendedWaitUntil:
+    visible: ".*às \\d{2}:\\d{2}.*"
+    timeout: 5000
+
+- assertVisible:
+    text: ".*às \\d{2}:\\d{2}.*"

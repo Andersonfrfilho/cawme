@@ -25,7 +25,7 @@ const mockRequest: ServiceRequestSummary = {
 };
 
 export function useContractorDashboard() {
-  const { data, isLoading, isPending, error } = useQuery({
+  const { data, isLoading, isPending, isRefetching, error, refetch } = useQuery({
     queryKey: ['dashboard', 'contractor'],
     queryFn: async () => {
       if (isTestEnvironment()) {
@@ -40,7 +40,7 @@ export function useContractorDashboard() {
     },
     staleTime: 60 * 1000,
   });
-  return { data, isLoading: isLoading || isPending, error };
+  return { data, isLoading: isLoading || isPending, isRefetching, error, refetch };
 }
 
 export function useProviderDashboard() {
